@@ -16,13 +16,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import org.jetbrains.compose.resources.painterResource
 
+import com.lmartin.qrguardian.presentation.theme.QrGuardianTheme
 import qrguardian.shared.generated.resources.Res
 import qrguardian.shared.generated.resources.compose_multiplatform
 
 @Composable
 @Preview
 fun App() {
-    MaterialTheme {
+    QrGuardianTheme {
         var showContent by remember { mutableStateOf(false) }
         Column(
             modifier = Modifier
