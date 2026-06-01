@@ -1,31 +1,87 @@
-This is a Kotlin Multiplatform project targeting Android, iOS.
+<div align="center">
+  <img src="docs/assets/qr-guardian-hero.png" alt="QR Guardian hero - secure QR scanning" width="100%">
+</div>
 
-* [/iosApp](./iosApp/iosApp) contains an iOS application. Even if you’re sharing your UI with Compose Multiplatform,
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
+# QR Guardian
 
-* [/shared](./shared/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./shared/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./shared/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./shared/src/jvmMain/kotlin)
-    folder is the appropriate location.
+> **Read in another language:** **English** · [Español](README.es.md)
 
-### Running the apps
+[![Kotlin Multiplatform](https://img.shields.io/badge/Kotlin-Multiplatform-7F52FF)](https://kotlinlang.org/docs/multiplatform.html)
+[![Compose Multiplatform](https://img.shields.io/badge/Compose-Multiplatform-4285F4)](https://www.jetbrains.com/compose-multiplatform/)
+[![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS-0A7EA4)](https://developer.android.com/)
+[![Package](https://img.shields.io/badge/Package-com.lmartin.qrguardian-2ea44f)](https://kotlinlang.org/docs/packages.html)
 
-Use the run configurations provided by the run widget in your IDE's toolbar. You can also use these commands and options:
+### Scan smarter. Open safer.
 
-- Android app: `./gradlew :androidApp:assembleDebug`
-- iOS app: open the [/iosApp](./iosApp) directory in Xcode and run it from there.
+## What is QR Guardian?
+QR Guardian is a Kotlin Multiplatform mobile app for Android and iOS.
 
-### Running tests
+It scans QR codes and barcodes, detects the scanned content type, and helps users evaluate potentially malicious URLs **before opening them**.
 
-Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:
+## Why this project?
+- Build a practical, security-aware mobile app.
+- Showcase clean KMP + Compose architecture in a portfolio-ready project.
+- Keep logic shared, UI polished, and behavior predictable.
 
-- Android tests: `./gradlew :shared:testAndroidHostTest`
-- iOS tests: `./gradlew :shared:iosSimulatorArm64Test`
+## Core product flow
+1. User opens the app.
+2. User starts scanning.
+3. App reads QR/barcode content.
+4. App detects content type.
+5. If content is a URL, app evaluates safety.
+6. App shows result first; user decides what to do next.
 
----
+## Planned main screens
+- Intro / Launch
+- Camera Capture
+- Result
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+## Safety principles
+- Never auto-open scanned URLs.
+- Warn clearly on suspicious or malicious results.
+- Treat unknown results as uncertain.
+- Keep security-provider secrets out of mobile clients.
+
+## Tech stack
+- Kotlin Multiplatform
+- Compose Multiplatform
+- Android + iOS
+- Kotlin Coroutines
+- Clean Architecture principles
+
+## Project structure
+- `androidApp/`: Android host app.
+- `iosApp/`: iOS host app (Xcode project).
+- `shared/`: shared KMP logic and shared Compose UI.
+- `docs/`: product, architecture, roadmap, security and testing docs.
+
+## Run
+Android debug build:
+```bash
+./gradlew :androidApp:assembleDebug
+```
+
+iOS (from Xcode):
+`iosApp/` → open in Xcode and run target.
+
+## Test
+Android host tests:
+```bash
+./gradlew :shared:testAndroidHostTest
+```
+
+iOS simulator tests:
+```bash
+./gradlew :shared:iosSimulatorArm64Test
+```
+
+## Documentation index
+- [Overview](docs/00-overview.md)
+- [Roadmap](docs/01-roadmap.md)
+- [Functional Specification](docs/02-functional-specification.md)
+- [Architecture](docs/03-architecture.md)
+- [UI Flow](docs/04-ui-flow.md)
+- [Security Model](docs/05-security-model.md)
+- [Testing Strategy](docs/06-testing-strategy.md)
+- [Agent Tasks](docs/07-agent-tasks.md)
+- [Agent Guidelines](AGENTS.md)
