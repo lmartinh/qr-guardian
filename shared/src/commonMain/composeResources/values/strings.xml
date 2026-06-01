@@ -1,0 +1,8 @@
+<resources>
+    <string name="intro_badge">Tu escudo digital</string>
+    <string name="intro_title_main">Hola, escanea con</string>
+    <string name="intro_title_highlight">seguridad</string>
+    <string name="intro_description">Protege tu privacidad y navega sin riesgos. Analizamos cada código QR antes de que lo abras para garantizar que tu destino sea 100&#37; seguro.</string>
+    <string name="intro_start_scanning">Empezar a Escanear</string>
+    <string name="scanner_launching">Abriendo escáner...</string>
+</resources>

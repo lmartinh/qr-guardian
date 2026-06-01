@@ -13,7 +13,7 @@ private val DarkColorScheme = darkColorScheme(
     background = QrGuardianColors.DarkBackground,
     surface = QrGuardianColors.DarkSurface,
     surfaceVariant = QrGuardianColors.DarkSurfaceVariant,
-    onPrimary = Color(0xFF031018),
+    onPrimary = Color(0xFFF7F5FC),
     onBackground = QrGuardianColors.DarkTextPrimary,
     onSurface = QrGuardianColors.DarkTextPrimary,
     onSurfaceVariant = QrGuardianColors.DarkTextSecondary,
@@ -27,7 +27,7 @@ private val LightColorScheme = lightColorScheme(
     background = QrGuardianColors.LightBackground,
     surface = QrGuardianColors.LightSurface,
     surfaceVariant = QrGuardianColors.LightSurfaceVariant,
-    onPrimary = Color.White,
+    onPrimary = Color(0xFFFFFFFF),
     onBackground = QrGuardianColors.LightTextPrimary,
     onSurface = QrGuardianColors.LightTextPrimary,
     onSurfaceVariant = QrGuardianColors.LightTextSecondary,
@@ -43,7 +43,7 @@ fun QrGuardianTheme(
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = QrGuardianTypography,
+        typography = qrGuardianTypography(),
         shapes = QrGuardianShapes,
         content = content,
     )
