@@ -7,3 +7,11 @@ enum class ThreatCategory {
     UnwantedSoftware,
     Unknown
 }
+
+fun ThreatCategory.displayName(): String = when (this) {
+    ThreatCategory.Malware -> "Malware"
+    ThreatCategory.Phishing -> "Phishing"
+    ThreatCategory.SocialEngineering -> "Social engineering"
+    ThreatCategory.UnwantedSoftware -> "Unwanted software"
+    ThreatCategory.Unknown -> "Unknown"
+}

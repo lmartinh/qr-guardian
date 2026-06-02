@@ -20,19 +20,11 @@ Camera scan
 ↓  
 Raw scanned content  
 ↓  
-AnalyzeQrContentUseCase  
-↓  
-DetectQrContentTypeUseCase  
-↓  
-If URL: CheckUrlSafetyUseCase  
-↓  
-UrlSafetyRepository  
-↓  
-Fake provider or backend provider  
-↓  
 QrAnalysisResult  
 ↓  
 Result screen
+
+Current shared logic normalizes and classifies the payload first, then runs the local scan and remote reputation blocks. URL payloads also perform a HEAD metadata check so the result can show destination details separately from the remote provider state.
 
 Initial implementation should use fake data first, then evolve toward real camera scanning and backend/provider integration.
 

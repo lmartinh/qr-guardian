@@ -6,9 +6,10 @@ For optional remote reputation details, see [Remote Reputation](remote-reputatio
 
 ## Current Behavior
 - The app normalizes and classifies scanned text locally.
-- The local analyzer evaluates URLs and sensitive QR payloads without any backend.
-- Remote reputation checks are prepared but not enabled in the current version.
-- The current remote reputation repository is a `NoOpUrlReputationRepository`.
+- The local scan block evaluates URLs and sensitive QR payloads without any backend.
+- URLs also get a HEAD metadata check so the app can show destination details before opening anything.
+- Remote reputation checks are optional and only apply to URLs.
+- Non-URL payloads do not trigger HEAD or remote reputation checks.
 - No API keys are required to run the project.
 - No backend is required to run the project.
 
@@ -30,7 +31,7 @@ The remote reputation layer is represented by a repository contract and a no-op 
 - `UrlReputationRepository`
 - `NoOpUrlReputationRepository`
 
-The current version only returns `NotConfigured` for remote checks.
+The remote section uses `NotApplicable` for non-URL payloads and `NotConfigured` when no provider is enabled.
 
 ## Future Integration
 When a real provider is added, the use case should merge local and remote signals without letting remote `Clean` results override local suspicious findings.

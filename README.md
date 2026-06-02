@@ -46,10 +46,13 @@ It scans QR codes and barcodes, detects the scanned content type, and helps user
 
 ## Security checks
 - Local checks are enabled by default.
-- Remote reputation checks are optional.
+- The local scan block evaluates normalization, classification, URL rules and HEAD metadata.
+- Remote reputation checks are optional and only run for URLs.
 - Google Safe Browsing and URLhaus can be configured by each developer.
+- Non-URL payloads do not trigger HEAD or remote reputation checks.
 - No API keys are included.
 - Without an API key, QR Guardian runs in local-only mode.
+- The result is split into `Local Scan` and `Remote Reputation` sections.
 
 ## Tech stack
 - Kotlin Multiplatform

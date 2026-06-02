@@ -13,6 +13,8 @@ Prioritize coverage for:
 - Normalization: whitespace trimming, null removal, empty input, long input.
 - Classification: URL, email, phone, SMS, WiFi, vCard, geo, crypto, plain text.
 - URL checks: HTTPS, `@` in URL, IPv4 host, link shorteners, dangerous file extensions, sensitive words, long URLs, too many query params, too many subdomains, brand impersonation.
+- URL metadata: HEAD parsing, file type detection, attachment detection, redirect handling and unavailable responses.
+- Result section mapping: local scan and remote reputation sections, including `NotApplicable`, `NotConfigured` and `Unavailable` states.
 - Sensitive actions: `tel:`, `sms:`, `mailto:`, WiFi QR, crypto URIs.
 - Final result mapping: dangerous overrides, suspicious warning behavior, safe/unknown output, `canOpen` derivation.
 - Unknown content fallback.
@@ -39,6 +41,8 @@ The current implementation already includes focused tests for:
 - `SensitiveActionAnalyzer`
 - `PlainTextSecurityAnalyzer`
 - `DefaultQrSecurityAnalyzer`
+- `KtorUrlMetadataRepository`
+- `AnalyzeQrSafetyUseCase`
 
 These tests document the expected behavior of the local verification pipeline and act as regression coverage for future rules.
 

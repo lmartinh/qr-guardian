@@ -9,9 +9,10 @@ QR Guardian performs a local first-pass analysis on the scanned text before any 
 The pipeline is:
 1. Normalize the raw text.
 2. Classify the content type.
-3. Run type-specific local checks.
-4. Combine the detected signals into a single security result.
-5. Show the result to the user before any opening action.
+3. If the payload is a URL, run the local scan and remote reputation checks in parallel.
+4. For URL payloads, perform a HEAD metadata check to inspect the destination before opening it.
+5. Combine the detected signals into a single overall result.
+6. Show the result to the user before any opening action.
 
 ## Normalization Checks
 Before classification, the scanner payload is normalized locally:
@@ -42,6 +43,13 @@ The final local result follows these rules:
 - If there is no `Dangerous` signal but at least one `Suspicious` signal, the result is `Suspicious`.
 - If the content is a clean HTTPS URL with no signals, it can be marked `Safe`.
 - If the content cannot be evaluated reliably, it stays `Unknown`.
+
+When the URL HEAD metadata check is available, the local scan section also shows:
+- Final URL after redirects
+- Content type and content disposition
+- Content length, file name and file extension
+- File type classification
+- Whether the destination looks like a downloadable file
 
 `canOpen` is derived from the level:
 - `Dangerous` -> `false`
@@ -116,6 +124,7 @@ These schemes should be rejected or strongly blocked when URL handling is implem
 ## URL Processing Rules
 - Normalize URL before analysis.
 - Validate structure and supported schemes.
+- Use HEAD for URL metadata when the payload is a URL.
 - Keep unknown/failed analysis outcomes clearly marked as uncertain.
 
 ## Result Texts
@@ -130,6 +139,18 @@ Descriptions:
 - `Suspicious`: "This QR code contains signals that should be reviewed before opening."
 - `Dangerous`: "This QR code contains high-risk signals. Opening it is not recommended."
 - `Unknown`: "This QR code could not be fully evaluated locally."
+
+## Result Sections
+The current analysis result is split into two sections so the UI can present them independently:
+
+- `Local Scan`: local normalization, content classification, URL rules and HEAD metadata.
+- `Remote Reputation`: optional provider lookup, shown only for URL payloads.
+
+Remote reputation section states:
+- `Completed`: the provider returned a reputation result.
+- `NotConfigured`: no provider is configured for this installation.
+- `NotApplicable`: the scanned payload is not a URL.
+- `Unavailable`: the provider could not be reached.
 
 ## Key Management Rule
 Mobile apps must not expose URL reputation provider API keys.
