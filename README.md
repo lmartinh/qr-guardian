@@ -46,7 +46,8 @@ It scans QR codes and barcodes, detects the scanned content type, and helps user
 
 ## Security checks
 - Local checks are enabled by default.
-- Google Safe Browsing remote reputation is optional.
+- Remote reputation checks are optional.
+- Google Safe Browsing and URLhaus can be configured by each developer.
 - No API keys are included.
 - Without an API key, QR Guardian runs in local-only mode.
 

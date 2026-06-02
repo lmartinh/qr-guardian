@@ -9,13 +9,29 @@ object UrlReputationRepositoryFactory {
         config: RemoteReputationConfig,
         httpClient: HttpClient
     ): UrlReputationRepository {
-        return if (config.isGoogleSafeBrowsingEnabled) {
-            GoogleSafeBrowsingUrlReputationRepository(
-                httpClient = httpClient,
-                apiKey = config.googleSafeBrowsingApiKey.orEmpty()
-            )
-        } else {
-            NoOpUrlReputationRepository()
+        val repositories = buildList<UrlReputationRepository> {
+            if (config.isGoogleSafeBrowsingEnabled) {
+                add(
+                    GoogleSafeBrowsingUrlReputationRepository(
+                        httpClient = httpClient,
+                        apiKey = config.googleSafeBrowsingApiKey.orEmpty()
+                    )
+                )
+            }
+            if (config.isUrlHausEnabled) {
+                add(
+                    UrlHausReputationRepository(
+                        httpClient = httpClient,
+                        apiKey = config.urlHausApiKey.orEmpty()
+                    )
+                )
+            }
+        }
+
+        return when (repositories.size) {
+            0 -> NoOpUrlReputationRepository()
+            1 -> repositories.first()
+            else -> CompositeUrlReputationRepository(repositories)
         }
     }
 }
