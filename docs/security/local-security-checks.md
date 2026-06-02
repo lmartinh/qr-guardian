@@ -12,6 +12,7 @@ For optional remote reputation details, see [Remote Reputation](remote-reputatio
 - Non-URL payloads do not trigger HEAD or remote reputation checks.
 - No API keys are required to run the project.
 - No backend is required to run the project.
+- Runtime wiring is centralized in `QrGuardianHttpClientFactory` and `QrGuardianSecurityPipelineFactory`.
 
 ## Remote Reputation Readiness
 The project is prepared for future optional providers such as:

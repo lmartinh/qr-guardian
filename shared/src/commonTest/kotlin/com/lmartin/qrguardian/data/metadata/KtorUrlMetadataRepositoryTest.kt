@@ -74,6 +74,45 @@ class KtorUrlMetadataRepositoryTest {
         assertEquals(DownloadFileType.Pdf, result.fileType)
     }
 
+    @Test
+    fun `filename star is preferred when content disposition is present`() = runBlocking {
+        val repository = KtorUrlMetadataRepository(
+            httpClient = httpClient(
+                status = HttpStatusCode.OK,
+                headers = listOf(
+                    HttpHeaders.ContentType to listOf(ContentType.Application.Pdf.toString()),
+                    HttpHeaders.ContentDisposition to listOf("""attachment; filename*=report-from-server.pdf""")
+                )
+            )
+        )
+
+        val result = repository.fetchMetadata("https://example.com/ignored")
+
+        assertEquals(UrlMetadataStatus.Available, result.status)
+        assertEquals("report-from-server.pdf", result.fileName)
+        assertEquals("pdf", result.fileExtension)
+        assertEquals(DownloadFileType.Pdf, result.fileType)
+        assertTrue(result.isLikelyDownload)
+    }
+
+    @Test
+    fun `octet stream keeps unknown file type but marks download as likely`() = runBlocking {
+        val repository = KtorUrlMetadataRepository(
+            httpClient = httpClient(
+                status = HttpStatusCode.OK,
+                headers = listOf(
+                    HttpHeaders.ContentType to listOf("application/octet-stream")
+                )
+            )
+        )
+
+        val result = repository.fetchMetadata("https://example.com/file")
+
+        assertEquals(UrlMetadataStatus.Available, result.status)
+        assertEquals(DownloadFileType.Unknown, result.fileType)
+        assertTrue(result.isLikelyDownload)
+    }
+
     private fun httpClient(
         status: HttpStatusCode,
         headers: List<Pair<String, List<String>>> = emptyList(),

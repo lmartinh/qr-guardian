@@ -178,6 +178,51 @@ class AnalyzeQrSafetyUseCaseTest {
     }
 
     @Test
+    fun `executable metadata makes result dangerous`() = runBlocking {
+        val localAnalyzer = RecordingLocalScanAnalyzer(
+            result = scanSection(
+                level = SecurityLevel.Safe,
+                reasons = emptyList()
+            )
+        )
+        val metadataRepository = RecordingUrlMetadataRepository(
+            result = UrlMetadataResult(
+                status = UrlMetadataStatus.Available,
+                finalUrl = "https://example.com/installer.exe",
+                contentType = "application/octet-stream",
+                contentDisposition = """attachment; filename="installer.exe"""",
+                contentLength = 1024L,
+                fileName = "installer.exe",
+                fileExtension = "exe",
+                fileType = DownloadFileType.WindowsExecutable,
+                isLikelyDownload = true,
+                reasons = emptyList()
+            ),
+            gate = CompletableDeferred<Unit>().apply { complete(Unit) }
+        )
+        val reputationRepository = RecordingUrlReputationRepository(
+            result = UrlReputationResult(
+                status = UrlReputationStatus.Clean,
+                provider = "Dummy",
+                categories = emptyList(),
+                reasons = emptyList()
+            ),
+            gate = CompletableDeferred<Unit>().apply { complete(Unit) }
+        )
+        val useCase = AnalyzeQrSafetyUseCase(
+            localScanAnalyzer = localAnalyzer,
+            urlMetadataRepository = metadataRepository,
+            urlReputationRepository = reputationRepository
+        )
+
+        val result = useCase("https://example.com/installer.exe")
+
+        assertEquals(SecurityLevel.Dangerous, result.overallLevel)
+        assertFalse(result.canOpen)
+        assertTrue(result.localScan.metadata.any { it.label == "File type" && it.value == "Windows executable" })
+    }
+
+    @Test
     fun `remote malicious makes overall result dangerous`() = runBlocking {
         val localAnalyzer = RecordingLocalScanAnalyzer(
             result = scanSection(
