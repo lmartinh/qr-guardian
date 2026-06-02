@@ -82,6 +82,11 @@ Shared domain verification tests:
 ./gradlew :shared:allTests
 ```
 
+Coverage report:
+```bash
+./gradlew :shared:koverHtmlReport
+```
+
 ## Documentation index
 - [Overview](docs/00-overview.md)
 - [Roadmap](docs/01-roadmap.md)
