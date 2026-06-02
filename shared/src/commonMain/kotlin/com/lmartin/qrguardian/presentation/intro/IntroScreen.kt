@@ -21,18 +21,13 @@ import androidx.compose.ui.unit.dp
 import com.lmartin.qrguardian.presentation.components.QRGuardianPrimaryButton
 import com.lmartin.qrguardian.presentation.theme.QrGuardianColors.PrimaryDark
 import com.lmartin.qrguardian.presentation.theme.QrGuardianSpacing
-import org.jetbrains.compose.resources.stringResource
-import qrguardian.shared.generated.resources.Res
-import qrguardian.shared.generated.resources.intro_badge
-import qrguardian.shared.generated.resources.intro_description
-import qrguardian.shared.generated.resources.intro_start_scanning
-import qrguardian.shared.generated.resources.intro_title_highlight
-import qrguardian.shared.generated.resources.intro_title_main
 
 @Composable
 fun IntroScreen(
     onStartScanningClick: () -> Unit,
 ) {
+    val texts = rememberIntroTexts()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -46,7 +41,7 @@ fun IntroScreen(
             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.20f),
         ) {
             Text(
-                text = "✦ ${stringResource(Res.string.intro_badge)}",
+                text = "✦ ${texts.badge}",
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
@@ -54,14 +49,14 @@ fun IntroScreen(
         }
         Spacer(modifier = Modifier.height(QrGuardianSpacing.L))
         Text(
-            text = stringResource(Res.string.intro_title_main),
+            text = texts.titleMain,
             style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.SemiBold),
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onBackground,
         )
         Spacer(modifier = Modifier.height(QrGuardianSpacing.S))
         Text(
-            text = stringResource(Res.string.intro_title_highlight),
+            text = texts.titleHighlight,
             style = MaterialTheme.typography.displayMedium.copy(
                 fontWeight = FontWeight.SemiBold,
                 fontStyle = FontStyle.Italic,
@@ -71,14 +66,14 @@ fun IntroScreen(
         )
         Spacer(modifier = Modifier.height(QrGuardianSpacing.L))
         Text(
-            text = stringResource(Res.string.intro_description),
+            text = texts.description,
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.height(QrGuardianSpacing.Xxl))
         QRGuardianPrimaryButton(
-            text = "${stringResource(Res.string.intro_start_scanning)}  →",
+            text = "${texts.startScanning}  →",
             onClick = onStartScanningClick,
             modifier = Modifier
                 .fillMaxWidth()
