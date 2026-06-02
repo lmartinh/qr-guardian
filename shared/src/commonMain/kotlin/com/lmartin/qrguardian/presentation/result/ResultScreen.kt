@@ -38,14 +38,6 @@ import com.lmartin.qrguardian.domain.model.ScanStatus
 import com.lmartin.qrguardian.domain.model.SecurityLevel
 import com.lmartin.qrguardian.presentation.theme.QrGuardianColors
 import com.lmartin.qrguardian.presentation.theme.QrGuardianSpacing
-import org.jetbrains.compose.resources.stringResource
-import qrguardian.shared.generated.resources.Res
-import qrguardian.shared.generated.resources.result_local_scan
-import qrguardian.shared.generated.resources.result_open_link
-import qrguardian.shared.generated.resources.result_remote_reputation
-import qrguardian.shared.generated.resources.result_rescan
-import qrguardian.shared.generated.resources.result_title
-import qrguardian.shared.generated.resources.result_url_analyzed
 
 @Composable
 fun ResultScreen(
@@ -55,23 +47,26 @@ fun ResultScreen(
     modifier: Modifier = Modifier,
 ) {
     val state = viewModel.uiState
+    val texts = rememberResultTexts()
 
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
     ) {
         when {
-            state.isLoading -> ResultLoadingContent()
+            state.isLoading -> ResultLoadingContent(texts)
             state.errorMessage != null -> ResultErrorContent(
                 message = state.errorMessage,
                 onRescanClick = onRescanClick,
+                texts = texts,
             )
             state.analysis != null -> ResultContent(
                 state = state,
                 onOpenLinkClick = onOpenLinkClick,
                 onRescanClick = onRescanClick,
+                texts = texts,
             )
-            else -> ResultEmptyContent(onRescanClick = onRescanClick)
+            else -> ResultEmptyContent(onRescanClick = onRescanClick, texts = texts)
         }
     }
 }
@@ -81,6 +76,7 @@ private fun ResultContent(
     state: ResultUiState,
     onOpenLinkClick: (String) -> Unit,
     onRescanClick: () -> Unit,
+    texts: ResultTexts,
 ) {
     val analysis = state.analysis ?: return
     val level = analysis.overallLevel
@@ -108,7 +104,7 @@ private fun ResultContent(
             color = MaterialTheme.colorScheme.surface.copy(alpha = 0.84f),
         ) {
             Text(
-                text = stringResource(Res.string.result_title),
+                text = texts.title,
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
@@ -121,33 +117,36 @@ private fun ResultContent(
             title = level.title(),
             description = level.description(),
             tone = tone,
+            texts = texts,
         )
 
         PrimaryActionButton(
-            text = stringResource(Res.string.result_open_link),
+            text = texts.openLink,
             tone = tone,
             onClick = { onOpenLinkClick(analysis.normalizedText) },
         )
 
         ResultUrlCard(
             url = analysis.normalizedText,
-            detailItems = emptyList(),
+            texts = texts,
         )
 
         SectionCard(
-            title = stringResource(Res.string.result_local_scan),
+            title = texts.localScan,
             section = analysis.localScan,
             tone = tone,
-            detailItems = buildLocalDetails(analysis),
-            reasonGroupLabel = "Señales locales",
+            detailItems = buildLocalDetails(analysis, texts),
+            reasonGroupLabel = texts.localSignals,
+            texts = texts,
         )
 
         SectionCard(
-            title = stringResource(Res.string.result_remote_reputation),
+            title = texts.remoteReputation,
             section = analysis.remoteReputation,
             tone = tone,
-            detailItems = buildRemoteDetails(analysis.remoteReputation),
-            reasonGroupLabel = "Verificaciones remotas",
+            detailItems = buildRemoteDetails(analysis.remoteReputation, texts),
+            reasonGroupLabel = texts.remoteChecks,
+            texts = texts,
         )
 
         Spacer(modifier = Modifier.height(QrGuardianSpacing.Xs))
@@ -158,7 +157,7 @@ private fun ResultContent(
             shape = MaterialTheme.shapes.large,
         ) {
             Text(
-                text = stringResource(Res.string.result_rescan),
+                text = texts.rescan,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -172,6 +171,7 @@ private fun ResultHeader(
     title: String,
     description: String,
     tone: ResultTone,
+    texts: ResultTexts,
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -230,10 +230,10 @@ private fun ResultHeader(
             )
             StatusPill(
                 label = when (level) {
-                    SecurityLevel.Safe -> "Recomendado"
-                    SecurityLevel.Suspicious -> "Revisar"
-                    SecurityLevel.Dangerous -> "Bloqueado"
-                    SecurityLevel.Unknown -> "Sin certeza"
+                    SecurityLevel.Safe -> texts.statusRecommended
+                    SecurityLevel.Suspicious -> texts.statusReview
+                    SecurityLevel.Dangerous -> texts.statusBlocked
+                    SecurityLevel.Unknown -> texts.statusUncertain
                 },
                 backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
                 contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -245,7 +245,7 @@ private fun ResultHeader(
 @Composable
 private fun ResultUrlCard(
     url: String,
-    detailItems: List<ResultDetailItem>,
+    texts: ResultTexts,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -260,18 +260,12 @@ private fun ResultUrlCard(
                 .padding(QrGuardianSpacing.M),
             verticalArrangement = Arrangement.spacedBy(QrGuardianSpacing.S),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(Res.string.result_url_analyzed),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            Text(
+                text = texts.urlLabel,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
 
             Text(
                 text = url,
@@ -281,15 +275,6 @@ private fun ResultUrlCard(
                 overflow = TextOverflow.Ellipsis,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-
-            if (detailItems.isNotEmpty()) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
-                Column(verticalArrangement = Arrangement.spacedBy(QrGuardianSpacing.S)) {
-                    detailItems.forEach { item ->
-                        DetailRow(item = item)
-                    }
-                }
-            }
         }
     }
 }
@@ -301,6 +286,7 @@ private fun SectionCard(
     tone: ResultTone,
     detailItems: List<ResultDetailItem>,
     reasonGroupLabel: String,
+    texts: ResultTexts,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -373,10 +359,10 @@ private fun SectionCard(
             ) {
                 EmptyCheckState(
                     text = when (section.status) {
-                        ScanStatus.NotConfigured -> "La reputación remota no está configurada."
-                        ScanStatus.NotApplicable -> "No aplica para este tipo de contenido."
-                        ScanStatus.Unavailable -> "No hay verificaciones remotas disponibles en este momento."
-                        ScanStatus.Completed -> ""
+                        ScanStatus.NotConfigured -> texts.remoteNotConfigured
+                        ScanStatus.NotApplicable -> texts.remoteNotApplicable
+                        ScanStatus.Unavailable -> texts.remoteUnavailable
+                        ScanStatus.Completed -> texts.remoteCompleted
                     }
                 )
             }
@@ -397,11 +383,12 @@ private fun SectionCard(
 private fun ResultErrorContent(
     message: String,
     onRescanClick: () -> Unit,
+    texts: ResultTexts,
 ) {
     PlaceholderContent(
-        title = "No pudimos mostrar el resultado",
+        title = texts.errorTitle,
         message = message,
-        actionLabel = stringResource(Res.string.result_rescan),
+        actionLabel = texts.rescan,
         onActionClick = onRescanClick,
     )
 }
@@ -409,21 +396,22 @@ private fun ResultErrorContent(
 @Composable
 private fun ResultEmptyContent(
     onRescanClick: () -> Unit,
+    texts: ResultTexts,
 ) {
     PlaceholderContent(
-        title = "Resultado pendiente",
-        message = "Cuando haya un análisis disponible, se mostrará aquí.",
-        actionLabel = stringResource(Res.string.result_rescan),
+        title = texts.idleTitle,
+        message = texts.idleMessage,
+        actionLabel = texts.rescan,
         onActionClick = onRescanClick,
     )
 }
 
 @Composable
-private fun ResultLoadingContent() {
+private fun ResultLoadingContent(texts: ResultTexts) {
     PlaceholderContent(
-        title = "Analizando...",
-        message = "Estamos preparando el diagnóstico del enlace.",
-        actionLabel = "Espera un momento",
+        title = texts.loadingTitle,
+        message = texts.loadingMessage,
+        actionLabel = texts.loadingAction,
         onActionClick = {},
         actionEnabled = false,
     )
@@ -693,65 +681,68 @@ private fun SecurityLevel.toResultTone(): ResultTone {
     }
 }
 
-private fun buildLocalDetails(analysis: QrAnalysisResult): List<ResultDetailItem> {
+private fun buildLocalDetails(
+    analysis: QrAnalysisResult,
+    texts: ResultTexts,
+): List<ResultDetailItem> {
     return when (analysis.contentType) {
-        QrContentType.Url -> buildUrlLocalDetails(analysis.normalizedText)
+        QrContentType.Url -> buildUrlLocalDetails(analysis.normalizedText, texts)
         QrContentType.Email -> listOf(
-            detailItem("✉", "Tipo", "Correo electrónico", QrGuardianColors.PrimaryDark),
-            detailItem("@", "Acción", "Abrir cliente de correo", QrGuardianColors.PrimaryDark),
-            detailItem("→", "Destino", extractMailTarget(analysis.normalizedText), QrGuardianColors.PrimaryDark),
-            detailItem("↧", "Campo extra", extractMailExtras(analysis.normalizedText), QrGuardianColors.PrimaryDark),
+            detailItem("✉", texts.detailType, texts.detailContact, QrGuardianColors.PrimaryDark),
+            detailItem("@", texts.detailAction, texts.emailAction, QrGuardianColors.PrimaryDark),
+            detailItem("→", texts.detailDestination, extractMailTarget(analysis.normalizedText, texts), QrGuardianColors.PrimaryDark),
+            detailItem("↧", texts.detailExtraField, extractMailExtras(analysis.normalizedText, texts), QrGuardianColors.PrimaryDark),
         )
         QrContentType.Phone -> listOf(
-            detailItem("☎", "Tipo", "Número de teléfono", QrGuardianColors.PrimaryDark),
-            detailItem("↗", "Acción", "Iniciar llamada", QrGuardianColors.PrimaryDark),
-            detailItem("#", "Número", extractTelephoneTarget(analysis.normalizedText), QrGuardianColors.PrimaryDark),
+            detailItem("☎", texts.detailType, texts.phoneType, QrGuardianColors.PrimaryDark),
+            detailItem("↗", texts.detailAction, texts.phoneAction, QrGuardianColors.PrimaryDark),
+            detailItem("#", texts.detailNumber, extractTelephoneTarget(analysis.normalizedText, texts), QrGuardianColors.PrimaryDark),
         )
         QrContentType.Sms -> listOf(
-            detailItem("✉", "Tipo", "SMS", QrGuardianColors.PrimaryDark),
-            detailItem("↗", "Acción", "Abrir app de mensajería", QrGuardianColors.PrimaryDark),
-            detailItem("#", "Destino", extractSmsTarget(analysis.normalizedText), QrGuardianColors.PrimaryDark),
-            detailItem("⌕", "Mensaje", extractSmsBody(analysis.normalizedText), QrGuardianColors.PrimaryDark),
+            detailItem("✉", texts.detailType, texts.smsType, QrGuardianColors.PrimaryDark),
+            detailItem("↗", texts.detailAction, texts.smsAction, QrGuardianColors.PrimaryDark),
+            detailItem("#", texts.detailDestination, extractSmsTarget(analysis.normalizedText, texts), QrGuardianColors.PrimaryDark),
+            detailItem("⌕", texts.detailMessage, extractSmsBody(analysis.normalizedText, texts), QrGuardianColors.PrimaryDark),
         )
         QrContentType.Wifi -> listOf(
-            detailItem("≋", "Tipo", "Wi‑Fi", QrGuardianColors.PrimaryDark),
-            detailItem("⌁", "Acción", "Configurar red", QrGuardianColors.PrimaryDark),
-            detailItem("SSID", "Red", extractWifiField(analysis.normalizedText, "S"), QrGuardianColors.PrimaryDark),
-            detailItem("T", "Seguridad", extractWifiField(analysis.normalizedText, "T"), QrGuardianColors.PrimaryDark),
+            detailItem("≋", texts.detailType, texts.wifiType, QrGuardianColors.PrimaryDark),
+            detailItem("⌁", texts.detailAction, texts.wifiAction, QrGuardianColors.PrimaryDark),
+            detailItem(texts.detailSsidKey, texts.detailNetwork, extractWifiField(analysis.normalizedText, "S", texts), QrGuardianColors.PrimaryDark),
+            detailItem(texts.detailSecurityKey, texts.detailSecurity, extractWifiField(analysis.normalizedText, "T", texts), QrGuardianColors.PrimaryDark),
         )
         QrContentType.VCard -> listOf(
-            detailItem("👤", "Tipo", "Contacto / vCard", QrGuardianColors.PrimaryDark),
-        detailItem("↗", "Acción", "Importar contacto", QrGuardianColors.PrimaryDark),
+            detailItem("👤", texts.detailType, texts.vCardType, QrGuardianColors.PrimaryDark),
+            detailItem("↗", texts.detailAction, texts.importContactAction, QrGuardianColors.PrimaryDark),
         )
         QrContentType.Geo -> listOf(
-            detailItem("⌖", "Tipo", "Ubicación", QrGuardianColors.PrimaryDark),
-        detailItem("↗", "Acción", "Abrir mapa", QrGuardianColors.PrimaryDark),
+            detailItem("⌖", texts.detailType, texts.locationType, QrGuardianColors.PrimaryDark),
+            detailItem("↗", texts.detailAction, texts.openMapAction, QrGuardianColors.PrimaryDark),
         )
         QrContentType.Crypto -> listOf(
-            detailItem("◈", "Tipo", "Pago cripto", QrGuardianColors.PrimaryDark),
-        detailItem("↗", "Acción", "Iniciar transferencia", QrGuardianColors.PrimaryDark),
+            detailItem("◈", texts.detailType, texts.cryptoType, QrGuardianColors.PrimaryDark),
+            detailItem("↗", texts.detailAction, texts.cryptoAction, QrGuardianColors.PrimaryDark),
         )
         QrContentType.PlainText -> listOf(
-            detailItem("⇲", "Tipo", "Texto plano", QrGuardianColors.PrimaryDark),
-            detailItem("i", "Uso", "No es un enlace ni una acción directa", QrGuardianColors.PrimaryDark),
+            detailItem("⇲", texts.detailType, texts.plainTextType, QrGuardianColors.PrimaryDark),
+            detailItem("i", texts.detailUsage, texts.notALink, QrGuardianColors.PrimaryDark),
         )
         QrContentType.Unknown -> listOf(
-            detailItem("?", "Tipo", "Desconocido", QrGuardianColors.PrimaryDark),
-            detailItem("i", "Estado", "No se pudo clasificar con precisión", QrGuardianColors.PrimaryDark),
+            detailItem("?", texts.detailType, texts.unknownType, QrGuardianColors.PrimaryDark),
+            detailItem("i", texts.detailState, texts.notClassifiedPrecisely, QrGuardianColors.PrimaryDark),
         )
     }
 }
 
-private fun buildUrlLocalDetails(url: String): List<ResultDetailItem> {
+private fun buildUrlLocalDetails(url: String, texts: ResultTexts): List<ResultDetailItem> {
     val details = mutableListOf<ResultDetailItem>()
-    val downloadType = detectDownloadType(url)
+    val downloadType = detectDownloadType(url, texts)
     val path = extractUrlPath(url)
 
     if (downloadType.isNotBlank()) {
-        details += detailItem("⬇", "Archivo", downloadType, QrGuardianColors.PrimaryDark)
+        details += detailItem("⬇", texts.detailFile, downloadType, QrGuardianColors.PrimaryDark)
     }
     if (path.isNotBlank()) {
-        details += detailItem("→", "Ruta", path, QrGuardianColors.PrimaryDark)
+        details += detailItem("→", texts.detailPath, path, QrGuardianColors.PrimaryDark)
     }
 
     return details
@@ -765,25 +756,28 @@ private fun extractUrlPath(url: String): String {
     return pathWithQuery.substringBefore('?')
 }
 
-private fun detectDownloadType(url: String): String {
+private fun detectDownloadType(url: String, texts: ResultTexts): String {
     val path = extractUrlPath(url).lowercase()
     return when {
-        path.endsWith(".apk") -> "APK"
-        path.endsWith(".pdf") -> "PDF"
-        path.endsWith(".zip") -> "ZIP"
-        path.endsWith(".rar") -> "RAR"
-        path.endsWith(".7z") -> "7z"
-        path.endsWith(".doc") || path.endsWith(".docx") -> "Documento"
-        path.endsWith(".xls") || path.endsWith(".xlsx") -> "Hoja de cálculo"
-        path.endsWith(".ppt") || path.endsWith(".pptx") -> "Presentación"
-        path.endsWith(".mp3") || path.endsWith(".wav") -> "Audio"
-        path.endsWith(".mp4") || path.endsWith(".mov") || path.endsWith(".mkv") -> "Vídeo"
-        path.endsWith(".png") || path.endsWith(".jpg") || path.endsWith(".jpeg") || path.endsWith(".webp") -> "Imagen"
+        path.endsWith(".apk") -> texts.fileTypeApk
+        path.endsWith(".pdf") -> texts.fileTypePdf
+        path.endsWith(".zip") -> texts.fileTypeZip
+        path.endsWith(".rar") -> texts.fileTypeRar
+        path.endsWith(".7z") -> texts.fileTypeSevenZip
+        path.endsWith(".doc") || path.endsWith(".docx") -> texts.fileTypeDocument
+        path.endsWith(".xls") || path.endsWith(".xlsx") -> texts.fileTypeSpreadsheet
+        path.endsWith(".ppt") || path.endsWith(".pptx") -> texts.fileTypePresentation
+        path.endsWith(".mp3") || path.endsWith(".wav") -> texts.fileTypeAudio
+        path.endsWith(".mp4") || path.endsWith(".mov") || path.endsWith(".mkv") -> texts.fileTypeVideo
+        path.endsWith(".png") || path.endsWith(".jpg") || path.endsWith(".jpeg") || path.endsWith(".webp") -> texts.fileTypeImage
         else -> ""
     }
 }
 
-private fun buildRemoteDetails(section: ScanSectionResult): List<ResultDetailItem> {
+private fun buildRemoteDetails(
+    section: ScanSectionResult,
+    texts: ResultTexts,
+): List<ResultDetailItem> {
     val details = mutableListOf<ResultDetailItem>()
 
     details += detailItem(
@@ -793,12 +787,12 @@ private fun buildRemoteDetails(section: ScanSectionResult): List<ResultDetailIte
             ScanStatus.NotApplicable -> "—"
             ScanStatus.Unavailable -> "?"
         },
-        label = "Estado",
+        label = texts.detailState,
         value = when (section.status) {
-            ScanStatus.Completed -> "Verificación remota ejecutada"
-            ScanStatus.NotConfigured -> "Sin configuración remota"
-            ScanStatus.NotApplicable -> "No aplica para este contenido"
-            ScanStatus.Unavailable -> "No disponible en este momento"
+            ScanStatus.Completed -> texts.remoteCompleted
+            ScanStatus.NotConfigured -> texts.remoteNotConfiguredStatus
+            ScanStatus.NotApplicable -> texts.remoteNotApplicableStatus
+            ScanStatus.Unavailable -> texts.remoteUnavailableStatus
         },
         color = when (section.level) {
             SecurityLevel.Safe -> QrGuardianColors.Safe
@@ -831,33 +825,33 @@ private fun detailItem(
     )
 }
 
-private fun extractMailTarget(text: String): String {
-    return text.removePrefix("mailto:").substringBefore('?').ifBlank { "No especificado" }
+private fun extractMailTarget(text: String, texts: ResultTexts): String {
+    return text.removePrefix("mailto:").substringBefore('?').ifBlank { texts.noValue }
 }
 
-private fun extractMailExtras(text: String): String {
+private fun extractMailExtras(text: String, texts: ResultTexts): String {
     val query = text.substringAfter('?', "")
     return when {
-        query.isBlank() -> "Sin asunto ni cuerpo predefinido"
-        query.contains("subject=") || query.contains("body=") -> "Incluye campos predefinidos"
-        else -> "Parámetros presentes"
+        query.isBlank() -> texts.noSubjectOrBody
+        query.contains("subject=") || query.contains("body=") -> texts.predefinedFields
+        else -> texts.parametersPresent
     }
 }
 
-private fun extractTelephoneTarget(text: String): String {
-    return text.removePrefix("tel:").ifBlank { "No especificado" }
+private fun extractTelephoneTarget(text: String, texts: ResultTexts): String {
+    return text.removePrefix("tel:").ifBlank { texts.noValue }
 }
 
-private fun extractSmsTarget(text: String): String {
-    return text.removePrefix("sms:").substringBefore('?').ifBlank { "No especificado" }
+private fun extractSmsTarget(text: String, texts: ResultTexts): String {
+    return text.removePrefix("sms:").substringBefore('?').ifBlank { texts.noValue }
 }
 
-private fun extractSmsBody(text: String): String {
+private fun extractSmsBody(text: String, texts: ResultTexts): String {
     val body = text.substringAfter("body=", "")
-    return if (body.isBlank()) "Sin mensaje predefinido" else body.substringBefore('&')
+    return if (body.isBlank()) texts.noPredefinedMessage else body.substringBefore('&')
 }
 
-private fun extractWifiField(text: String, key: String): String {
+private fun extractWifiField(text: String, key: String, texts: ResultTexts): String {
     val payload = text.removePrefix("WIFI:")
     return payload.split(';')
         .asSequence()
@@ -870,5 +864,5 @@ private fun extractWifiField(text: String, key: String): String {
         }
         .firstOrNull()
         .orEmpty()
-        .ifBlank { "No especificado" }
+        .ifBlank { texts.noValue }
 }
