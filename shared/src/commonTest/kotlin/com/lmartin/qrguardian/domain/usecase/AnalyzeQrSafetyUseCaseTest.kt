@@ -1,21 +1,21 @@
 package com.lmartin.qrguardian.domain.usecase
 
-import com.lmartin.qrguardian.domain.analyzer.QrSecurityAnalyzer
+import com.lmartin.qrguardian.domain.analyzer.LocalScanAnalyzer
+import com.lmartin.qrguardian.domain.classifier.QrContentClassifier
 import com.lmartin.qrguardian.domain.metadata.DownloadFileType
 import com.lmartin.qrguardian.domain.metadata.UrlMetadataRepository
 import com.lmartin.qrguardian.domain.metadata.UrlMetadataResult
 import com.lmartin.qrguardian.domain.metadata.UrlMetadataStatus
+import com.lmartin.qrguardian.domain.model.QrAnalysisResult
 import com.lmartin.qrguardian.domain.model.QrContentType
-import com.lmartin.qrguardian.domain.model.QrSecurityResult
-import com.lmartin.qrguardian.domain.model.SecurityLevel
+import com.lmartin.qrguardian.domain.model.ScanSectionResult
 import com.lmartin.qrguardian.domain.model.ScanStatus
+import com.lmartin.qrguardian.domain.model.SecurityLevel
 import com.lmartin.qrguardian.domain.reputation.ThreatCategory
 import com.lmartin.qrguardian.domain.reputation.UrlReputationRepository
 import com.lmartin.qrguardian.domain.reputation.UrlReputationResult
 import com.lmartin.qrguardian.domain.reputation.UrlReputationStatus
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -28,21 +28,15 @@ import kotlin.test.assertTrue
 class AnalyzeQrSafetyUseCaseTest {
     @Test
     fun `non url skips metadata and remote reputation`() = runBlocking {
-        val localAnalyzer = RecordingQrSecurityAnalyzer(
-            result = QrSecurityResult(
-                originalText = "hello world",
-                normalizedText = "hello world",
-                contentType = QrContentType.PlainText,
-                securityLevel = SecurityLevel.Unknown,
-                title = SecurityLevel.Unknown.title(),
-                description = SecurityLevel.Unknown.description(),
-                reasons = listOf("Plain text is not evaluated as a URL."),
-                canOpen = true
+        val localAnalyzer = RecordingLocalScanAnalyzer(
+            result = scanSection(
+                level = SecurityLevel.Unknown,
+                reasons = listOf("Plain text is not evaluated as a URL.")
             )
         )
         val metadataRepository = RecordingUrlMetadataRepository(
             result = unavailableMetadataResult(),
-            gate = CompletableDeferred()
+            gate = CompletableDeferred<Unit>().apply { complete(Unit) }
         )
         val reputationRepository = RecordingUrlReputationRepository(
             result = UrlReputationResult(
@@ -51,14 +45,19 @@ class AnalyzeQrSafetyUseCaseTest {
                 categories = emptyList(),
                 reasons = listOf("No threats were reported by the external reputation service.")
             ),
-            gate = CompletableDeferred()
+            gate = CompletableDeferred<Unit>().apply { complete(Unit) }
         )
-        val useCase = AnalyzeQrSafetyUseCase(localAnalyzer, metadataRepository, reputationRepository)
+        val useCase = AnalyzeQrSafetyUseCase(
+            localScanAnalyzer = localAnalyzer,
+            urlMetadataRepository = metadataRepository,
+            urlReputationRepository = reputationRepository
+        )
 
         val result = useCase("hello world")
 
         assertEquals(SecurityLevel.Unknown, result.overallLevel)
-        assertTrue(result.canOpen)
+        assertFalse(result.canOpen)
+        assertEquals(QrContentType.PlainText, result.contentType)
         assertEquals(ScanStatus.Completed, result.localScan.status)
         assertEquals(ScanStatus.NotApplicable, result.remoteReputation.status)
         assertEquals(0, metadataRepository.callCount)
@@ -70,28 +69,22 @@ class AnalyzeQrSafetyUseCaseTest {
     fun `url analysis runs metadata and reputation in parallel`() = runBlocking {
         val metadataGate = CompletableDeferred<Unit>()
         val reputationGate = CompletableDeferred<Unit>()
-        val localAnalyzer = RecordingQrSecurityAnalyzer(
-            result = QrSecurityResult(
-                originalText = "example.com/download",
-                normalizedText = "example.com/download",
-                contentType = QrContentType.Url,
-                securityLevel = SecurityLevel.Safe,
-                title = SecurityLevel.Safe.title(),
-                description = SecurityLevel.Safe.description(),
-                reasons = emptyList(),
-                canOpen = true
+        val localAnalyzer = RecordingLocalScanAnalyzer(
+            result = scanSection(
+                level = SecurityLevel.Safe,
+                reasons = emptyList()
             )
         )
         val metadataRepository = RecordingUrlMetadataRepository(
             result = UrlMetadataResult(
                 status = UrlMetadataStatus.Available,
                 finalUrl = "https://example.com/download",
-                contentType = "application/vnd.android.package-archive",
-                contentDisposition = """attachment; filename="app.apk"""",
+                contentType = "application/pdf",
+                contentDisposition = """inline; filename="report.pdf"""",
                 contentLength = 2048L,
-                fileName = "app.apk",
-                fileExtension = "apk",
-                fileType = DownloadFileType.AndroidApp,
+                fileName = "report.pdf",
+                fileExtension = "pdf",
+                fileType = DownloadFileType.Pdf,
                 isLikelyDownload = true,
                 reasons = emptyList()
             ),
@@ -106,11 +99,15 @@ class AnalyzeQrSafetyUseCaseTest {
             ),
             gate = reputationGate
         )
-        val useCase = AnalyzeQrSafetyUseCase(localAnalyzer, metadataRepository, reputationRepository)
+        val useCase = AnalyzeQrSafetyUseCase(
+            localScanAnalyzer = localAnalyzer,
+            urlMetadataRepository = metadataRepository,
+            urlReputationRepository = reputationRepository
+        )
 
-        var result: com.lmartin.qrguardian.domain.model.QrAnalysisResult? = null
+        var result: QrAnalysisResult? = null
         val job = launch {
-            result = useCase("example.com/download")
+            result = useCase("https://example.com/download")
         }
 
         withTimeout(1_000) {
@@ -128,27 +125,64 @@ class AnalyzeQrSafetyUseCaseTest {
         job.join()
 
         val analysisResult = result!!
-        assertEquals(SecurityLevel.Dangerous, analysisResult.overallLevel)
-        assertFalse(analysisResult.canOpen)
-        assertEquals(SecurityLevel.Dangerous, analysisResult.localScan.level)
+        assertEquals(SecurityLevel.Safe, analysisResult.overallLevel)
+        assertTrue(analysisResult.canOpen)
         assertEquals(ScanStatus.Completed, analysisResult.localScan.status)
-        assertTrue(analysisResult.localScan.metadata.any { it.label == "File type" && it.value == "Android app" })
-        assertEquals(SecurityLevel.Safe, analysisResult.remoteReputation.level)
+        assertTrue(analysisResult.localScan.metadata.any { it.label == "File type" && it.value == "PDF" })
         assertEquals(ScanStatus.Completed, analysisResult.remoteReputation.status)
     }
 
     @Test
+    fun `attachment metadata keeps result suspicious`() = runBlocking {
+        val localAnalyzer = RecordingLocalScanAnalyzer(
+            result = scanSection(
+                level = SecurityLevel.Safe,
+                reasons = emptyList()
+            )
+        )
+        val metadataRepository = RecordingUrlMetadataRepository(
+            result = UrlMetadataResult(
+                status = UrlMetadataStatus.Available,
+                finalUrl = "https://example.com/file",
+                contentType = "application/octet-stream",
+                contentDisposition = """attachment; filename="payload.bin"""",
+                contentLength = 512L,
+                fileName = "payload.bin",
+                fileExtension = "bin",
+                fileType = DownloadFileType.Unknown,
+                isLikelyDownload = true,
+                reasons = emptyList()
+            ),
+            gate = CompletableDeferred<Unit>().apply { complete(Unit) }
+        )
+        val reputationRepository = RecordingUrlReputationRepository(
+            result = UrlReputationResult(
+                status = UrlReputationStatus.Clean,
+                provider = "Dummy",
+                categories = emptyList(),
+                reasons = emptyList()
+            ),
+            gate = CompletableDeferred<Unit>().apply { complete(Unit) }
+        )
+        val useCase = AnalyzeQrSafetyUseCase(
+            localScanAnalyzer = localAnalyzer,
+            urlMetadataRepository = metadataRepository,
+            urlReputationRepository = reputationRepository
+        )
+
+        val result = useCase("https://example.com/file")
+
+        assertEquals(SecurityLevel.Suspicious, result.overallLevel)
+        assertTrue(result.canOpen)
+        assertTrue(result.localScan.metadata.any { it.label == "Content type" && it.value == "application/octet-stream" })
+    }
+
+    @Test
     fun `remote malicious makes overall result dangerous`() = runBlocking {
-        val localAnalyzer = RecordingQrSecurityAnalyzer(
-            result = QrSecurityResult(
-                originalText = "https://example.com",
-                normalizedText = "https://example.com",
-                contentType = QrContentType.Url,
-                securityLevel = SecurityLevel.Safe,
-                title = SecurityLevel.Safe.title(),
-                description = SecurityLevel.Safe.description(),
-                reasons = emptyList(),
-                canOpen = true
+        val localAnalyzer = RecordingLocalScanAnalyzer(
+            result = scanSection(
+                level = SecurityLevel.Safe,
+                reasons = emptyList()
             )
         )
         val metadataRepository = RecordingUrlMetadataRepository(
@@ -175,7 +209,11 @@ class AnalyzeQrSafetyUseCaseTest {
             ),
             gate = CompletableDeferred<Unit>().apply { complete(Unit) }
         )
-        val useCase = AnalyzeQrSafetyUseCase(localAnalyzer, metadataRepository, reputationRepository)
+        val useCase = AnalyzeQrSafetyUseCase(
+            localScanAnalyzer = localAnalyzer,
+            urlMetadataRepository = metadataRepository,
+            urlReputationRepository = reputationRepository
+        )
 
         val result = useCase("https://example.com")
 
@@ -184,6 +222,60 @@ class AnalyzeQrSafetyUseCaseTest {
         assertEquals(ScanStatus.Completed, result.localScan.status)
         assertEquals(ScanStatus.Completed, result.remoteReputation.status)
         assertTrue(result.remoteReputation.metadata.any { it.label == "Categories" && it.value == "Phishing" })
+    }
+
+    @Test
+    fun `dangerous schemes are blocked before url work starts`() = runBlocking {
+        val localAnalyzer = RecordingLocalScanAnalyzer(
+            result = scanSection(
+                level = SecurityLevel.Safe,
+                reasons = emptyList()
+            )
+        )
+        val metadataRepository = RecordingUrlMetadataRepository(
+            result = unavailableMetadataResult(),
+            gate = CompletableDeferred<Unit>().apply { complete(Unit) }
+        )
+        val reputationRepository = RecordingUrlReputationRepository(
+            result = UrlReputationResult(
+                status = UrlReputationStatus.Clean,
+                provider = "Dummy",
+                categories = emptyList(),
+                reasons = emptyList()
+            ),
+            gate = CompletableDeferred<Unit>().apply { complete(Unit) }
+        )
+        val useCase = AnalyzeQrSafetyUseCase(
+            localScanAnalyzer = localAnalyzer,
+            urlMetadataRepository = metadataRepository,
+            urlReputationRepository = reputationRepository
+        )
+
+        val result = useCase("javascript:alert(1)")
+
+        assertEquals(QrContentType.Unknown, result.contentType)
+        assertEquals(SecurityLevel.Dangerous, result.overallLevel)
+        assertFalse(result.canOpen)
+        assertEquals(0, localAnalyzer.callCount)
+        assertEquals(0, metadataRepository.callCount)
+        assertEquals(0, reputationRepository.callCount)
+        assertEquals(ScanStatus.NotApplicable, result.remoteReputation.status)
+    }
+
+    private fun scanSection(
+        level: SecurityLevel,
+        reasons: List<String>,
+        metadata: List<com.lmartin.qrguardian.domain.model.ScanMetadataItem> = emptyList()
+    ): ScanSectionResult {
+        return ScanSectionResult(
+            name = "Local Scan",
+            level = level,
+            status = ScanStatus.Completed,
+            title = level.title(),
+            description = level.description(),
+            reasons = reasons,
+            metadata = metadata
+        )
     }
 
     private fun unavailableMetadataResult(): UrlMetadataResult {
@@ -197,17 +289,21 @@ class AnalyzeQrSafetyUseCaseTest {
             fileExtension = null,
             fileType = DownloadFileType.Unknown,
             isLikelyDownload = false,
-            reasons = listOf("Destination metadata could not be checked.")
+            reasons = emptyList()
         )
     }
 
-    private class RecordingQrSecurityAnalyzer(
-        private val result: QrSecurityResult
-    ) : QrSecurityAnalyzer {
+    private class RecordingLocalScanAnalyzer(
+        private val result: ScanSectionResult
+    ) : LocalScanAnalyzer {
         var callCount: Int = 0
             private set
 
-        override fun analyze(rawText: String): QrSecurityResult {
+        override fun analyze(
+            rawText: String,
+            normalizedText: String,
+            contentType: QrContentType
+        ): ScanSectionResult {
             callCount += 1
             return result
         }

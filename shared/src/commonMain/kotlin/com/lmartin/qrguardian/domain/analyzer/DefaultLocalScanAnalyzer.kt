@@ -1,30 +1,23 @@
 package com.lmartin.qrguardian.domain.analyzer
 
-import com.lmartin.qrguardian.domain.classifier.DefaultQrContentClassifier
-import com.lmartin.qrguardian.domain.classifier.QrContentClassifier
 import com.lmartin.qrguardian.domain.model.LocalSecurityCheck
 import com.lmartin.qrguardian.domain.model.QrContentType
-import com.lmartin.qrguardian.domain.model.QrSecurityResult
+import com.lmartin.qrguardian.domain.model.ScanSectionResult
+import com.lmartin.qrguardian.domain.model.ScanStatus
 import com.lmartin.qrguardian.domain.model.SecurityLevel
-import com.lmartin.qrguardian.domain.normalizer.DefaultQrTextNormalizer
-import com.lmartin.qrguardian.domain.normalizer.QrTextNormalizer
 
-class DefaultQrSecurityAnalyzer(
-    private val textNormalizer: QrTextNormalizer = DefaultQrTextNormalizer(),
-    private val contentClassifier: QrContentClassifier = DefaultQrContentClassifier(),
+class DefaultLocalScanAnalyzer(
     private val urlSecurityAnalyzer: UrlLocalSecurityAnalyzer = UrlLocalSecurityAnalyzer(),
     private val wifiSecurityAnalyzer: WifiLocalSecurityAnalyzer = WifiLocalSecurityAnalyzer(),
     private val sensitiveActionAnalyzer: SensitiveActionAnalyzer = SensitiveActionAnalyzer(),
     private val plainTextSecurityAnalyzer: PlainTextSecurityAnalyzer = PlainTextSecurityAnalyzer()
-) : QrSecurityAnalyzer {
-    override fun analyze(rawText: String): QrSecurityResult {
-        val normalizedText = textNormalizer.normalize(rawText)
+) : LocalScanAnalyzer {
+    override fun analyze(
+        rawText: String,
+        normalizedText: String,
+        contentType: QrContentType
+    ): ScanSectionResult {
         val normalizationCheck = analyzeNormalization(rawText, normalizedText)
-        val contentType = if (normalizedText.isBlank()) {
-            QrContentType.Unknown
-        } else {
-            contentClassifier.classify(normalizedText)
-        }
         val contentCheck = if (normalizedText.isBlank()) {
             LocalSecurityCheck(
                 level = SecurityLevel.Unknown,
@@ -41,15 +34,13 @@ class DefaultQrSecurityAnalyzer(
             contentLevel = contentCheck.level
         )
 
-        return QrSecurityResult(
-            originalText = rawText,
-            normalizedText = normalizedText,
-            contentType = contentType,
-            securityLevel = finalLevel,
+        return ScanSectionResult(
+            name = "Local Scan",
+            level = finalLevel,
+            status = ScanStatus.Completed,
             title = finalLevel.title(),
             description = finalLevel.description(),
-            reasons = reasons,
-            canOpen = finalLevel != SecurityLevel.Dangerous
+            reasons = reasons
         )
     }
 

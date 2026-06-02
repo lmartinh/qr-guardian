@@ -40,7 +40,7 @@ The current implementation already includes focused tests for:
 - `WifiLocalSecurityAnalyzer`
 - `SensitiveActionAnalyzer`
 - `PlainTextSecurityAnalyzer`
-- `DefaultQrSecurityAnalyzer`
+- `DefaultLocalScanAnalyzer`
 - `KtorUrlMetadataRepository`
 - `AnalyzeQrSafetyUseCase`
 

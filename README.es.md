@@ -41,6 +41,13 @@ Escanea códigos QR y de barras, detecta el tipo de contenido escaneado y ayuda 
 - Mostrar advertencias claras en resultados sospechosos o maliciosos.
 - Tratar resultados desconocidos como inciertos.
 - No exponer secretos de proveedores de seguridad en el cliente móvil.
+- Ejecutar primero el análisis local y después la reputación remota solo para URLs.
+- Separar el resultado en `Local Scan` y `Remote Reputation` para la UI.
+
+## Verificaciones de seguridad
+- El bloque local valida normalización, clasificación, reglas de URL y metadata HEAD.
+- La reputación remota es opcional y solo se ejecuta para URLs.
+- Sin API key, QR Guardian funciona en modo local-only.
 
 ## Stack técnico
 - Kotlin Multiplatform

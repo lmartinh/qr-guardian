@@ -1,6 +1,9 @@
 package com.lmartin.qrguardian.domain.usecase
 
-import com.lmartin.qrguardian.domain.analyzer.QrSecurityAnalyzer
+import com.lmartin.qrguardian.domain.analyzer.LocalScanAnalyzer
+import com.lmartin.qrguardian.domain.analyzer.DefaultLocalScanAnalyzer
+import com.lmartin.qrguardian.domain.classifier.DefaultQrContentClassifier
+import com.lmartin.qrguardian.domain.classifier.QrContentClassifier
 import com.lmartin.qrguardian.domain.metadata.DownloadFileType
 import com.lmartin.qrguardian.domain.metadata.UrlMetadataRepository
 import com.lmartin.qrguardian.domain.metadata.UrlMetadataResult
@@ -10,39 +13,68 @@ import com.lmartin.qrguardian.domain.metadata.formatFileSize
 import com.lmartin.qrguardian.domain.metadata.normalizeUrlForRequest
 import com.lmartin.qrguardian.domain.model.QrAnalysisResult
 import com.lmartin.qrguardian.domain.model.QrContentType
-import com.lmartin.qrguardian.domain.model.QrSecurityResult
 import com.lmartin.qrguardian.domain.model.ScanMetadataItem
 import com.lmartin.qrguardian.domain.model.ScanSectionResult
 import com.lmartin.qrguardian.domain.model.ScanStatus
 import com.lmartin.qrguardian.domain.model.SecurityLevel
-import com.lmartin.qrguardian.domain.reputation.displayName as threatCategoryDisplayName
+import com.lmartin.qrguardian.domain.normalizer.DefaultQrTextNormalizer
+import com.lmartin.qrguardian.domain.normalizer.QrTextNormalizer
+import com.lmartin.qrguardian.domain.reputation.ThreatCategory
 import com.lmartin.qrguardian.domain.reputation.UrlReputationRepository
 import com.lmartin.qrguardian.domain.reputation.UrlReputationResult
 import com.lmartin.qrguardian.domain.reputation.UrlReputationStatus
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.CancellationException
 
 class AnalyzeQrSafetyUseCase(
-    private val localAnalyzer: QrSecurityAnalyzer,
+    private val textNormalizer: QrTextNormalizer = DefaultQrTextNormalizer(),
+    private val contentClassifier: QrContentClassifier = DefaultQrContentClassifier(),
+    private val localScanAnalyzer: LocalScanAnalyzer = DefaultLocalScanAnalyzer(),
     private val urlMetadataRepository: UrlMetadataRepository,
     private val urlReputationRepository: UrlReputationRepository
 ) {
     suspend operator fun invoke(rawText: String): QrAnalysisResult {
-        val localResult = localAnalyzer.analyze(rawText)
-        if (localResult.contentType != QrContentType.Url) {
+        val normalizedText = textNormalizer.normalize(rawText)
+        val dangerousScheme = detectDangerousScheme(normalizedText)
+        val contentType = if (dangerousScheme != null || normalizedText.isBlank()) {
+            QrContentType.Unknown
+        } else {
+            contentClassifier.classify(normalizedText)
+        }
+
+        if (dangerousScheme != null) {
+            val localScan = buildDangerousSchemeSection(dangerousScheme)
             return QrAnalysisResult(
-                originalText = localResult.originalText,
-                normalizedText = localResult.normalizedText,
-                contentType = localResult.contentType,
-                overallLevel = localResult.securityLevel,
-                canOpen = localResult.canOpen,
-                localScan = buildLocalSection(localResult, null),
+                originalText = rawText,
+                normalizedText = normalizedText,
+                contentType = contentType,
+                overallLevel = SecurityLevel.Dangerous,
+                canOpen = false,
+                localScan = localScan,
                 remoteReputation = buildNotApplicableRemoteSection()
             )
         }
 
-        val networkUrl = normalizeUrlForRequest(localResult.normalizedText)
+        val baseLocalScan = localScanAnalyzer.analyze(
+            rawText = rawText,
+            normalizedText = normalizedText,
+            contentType = contentType
+        )
+
+        if (contentType != QrContentType.Url) {
+            return QrAnalysisResult(
+                originalText = rawText,
+                normalizedText = normalizedText,
+                contentType = contentType,
+                overallLevel = baseLocalScan.level,
+                canOpen = false,
+                localScan = baseLocalScan,
+                remoteReputation = buildNotApplicableRemoteSection()
+            )
+        }
+
+        val networkUrl = normalizeUrlForRequest(normalizedText)
         return coroutineScope {
             val metadataDeferred = async { loadMetadataSafely(networkUrl) }
             val reputationDeferred = async { checkReputationSafely(networkUrl) }
@@ -50,20 +82,32 @@ class AnalyzeQrSafetyUseCase(
             val metadataResult = metadataDeferred.await()
             val reputationResult = reputationDeferred.await()
 
-            val localSection = buildLocalSection(localResult, metadataResult)
+            val localSection = buildLocalSection(baseLocalScan, metadataResult)
             val remoteSection = buildRemoteSection(reputationResult)
             val overallLevel = combineLevels(localSection.level, remoteSection.level)
 
             QrAnalysisResult(
-                originalText = localResult.originalText,
-                normalizedText = localResult.normalizedText,
-                contentType = localResult.contentType,
+                originalText = rawText,
+                normalizedText = normalizedText,
+                contentType = contentType,
                 overallLevel = overallLevel,
                 canOpen = overallLevel != SecurityLevel.Dangerous,
                 localScan = localSection,
                 remoteReputation = remoteSection
             )
         }
+    }
+
+    private fun buildDangerousSchemeSection(scheme: String): ScanSectionResult {
+        return ScanSectionResult(
+            name = "Local Scan",
+            level = SecurityLevel.Dangerous,
+            status = ScanStatus.Completed,
+            title = SecurityLevel.Dangerous.title(),
+            description = "The scanned content uses a blocked URL scheme.",
+            reasons = listOf("The scanned content uses the blocked scheme \"$scheme\"."),
+            metadata = emptyList()
+        )
     }
 
     private suspend fun loadMetadataSafely(url: String): UrlMetadataResult {
@@ -82,7 +126,7 @@ class AnalyzeQrSafetyUseCase(
                 fileExtension = null,
                 fileType = DownloadFileType.Unknown,
                 isLikelyDownload = false,
-                reasons = listOf("Destination metadata could not be checked.")
+                reasons = emptyList()
             )
         }
     }
@@ -103,18 +147,17 @@ class AnalyzeQrSafetyUseCase(
     }
 
     private fun buildLocalSection(
-        localResult: QrSecurityResult,
-        metadataResult: UrlMetadataResult?
+        baseLocalScan: ScanSectionResult,
+        metadataResult: UrlMetadataResult
     ): ScanSectionResult {
         val metadataItems = metadataResult.toMetadataItems()
         val metadataReasons = metadataResult.toMetadataReasons()
-        val sectionLevel = combineLevels(localResult.securityLevel, metadataRiskLevel(metadataResult))
-        val reasons = distinctReasons(localResult.reasons + metadataReasons)
+        val metadataRiskLevel = metadataRiskLevel(metadataResult)
+        val sectionLevel = combineLevels(baseLocalScan.level, metadataRiskLevel)
+        val reasons = distinctReasons(baseLocalScan.reasons + metadataReasons)
 
-        return ScanSectionResult(
-            name = "Local Scan",
+        return baseLocalScan.copy(
             level = sectionLevel,
-            status = ScanStatus.Completed,
             title = sectionLevel.title(),
             description = localSectionDescription(sectionLevel, metadataResult),
             reasons = reasons,
@@ -170,10 +213,10 @@ class AnalyzeQrSafetyUseCase(
 
     private fun localSectionDescription(
         level: SecurityLevel,
-        metadataResult: UrlMetadataResult?
+        metadataResult: UrlMetadataResult
     ): String {
         return when {
-            metadataResult?.status == UrlMetadataStatus.Available && metadataResult.isLikelyDownload ->
+            metadataResult.status == UrlMetadataStatus.Available && metadataResult.isLikelyDownload ->
                 "The destination looks like a downloadable file."
             else -> level.description()
         }
@@ -217,14 +260,22 @@ class AnalyzeQrSafetyUseCase(
         if (remoteResult.categories.isNotEmpty()) {
             metadata += ScanMetadataItem(
                 label = "Categories",
-                value = remoteResult.categories.joinToString(", ") { it.threatCategoryDisplayName() }
+                value = remoteResult.categories.joinToString(", ") { category ->
+                    when (category) {
+                        ThreatCategory.Malware -> "Malware"
+                        ThreatCategory.Phishing -> "Phishing"
+                        ThreatCategory.SocialEngineering -> "Social engineering"
+                        ThreatCategory.UnwantedSoftware -> "Unwanted software"
+                        ThreatCategory.Unknown -> "Unknown"
+                    }
+                }
             )
         }
         return metadata
     }
 
-    private fun UrlMetadataResult?.toMetadataItems(): List<ScanMetadataItem> {
-        if (this == null || status != UrlMetadataStatus.Available) {
+    private fun UrlMetadataResult.toMetadataItems(): List<ScanMetadataItem> {
+        if (status != UrlMetadataStatus.Available) {
             return emptyList()
         }
 
@@ -255,50 +306,44 @@ class AnalyzeQrSafetyUseCase(
         return metadata
     }
 
-    private fun UrlMetadataResult?.toMetadataReasons(): List<String> {
-        if (this == null) {
+    private fun UrlMetadataResult.toMetadataReasons(): List<String> {
+        if (status != UrlMetadataStatus.Available) {
             return emptyList()
         }
 
         val reasons = mutableListOf<String>()
-        if (status == UrlMetadataStatus.Unavailable) {
-            reasons += this.reasons
+        finalUrl?.let {
+            reasons += "The destination redirects to a different URL."
+        }
+        if (contentDisposition.orEmpty().contains("attachment", ignoreCase = true)) {
+            reasons += "The server marks this destination as a downloadable attachment."
         }
 
-        if (status == UrlMetadataStatus.Available) {
-            finalUrl?.let {
-                reasons += "The destination redirects to a different URL."
+        when (fileType) {
+            DownloadFileType.AndroidApp,
+            DownloadFileType.AppleDiskImage,
+            DownloadFileType.WindowsExecutable,
+            DownloadFileType.Script -> {
+                reasons += "The destination points to an executable or script file."
             }
-            if (contentDisposition.orEmpty().contains("attachment", ignoreCase = true)) {
-                reasons += "The server marks this destination as a downloadable attachment."
+            DownloadFileType.Archive -> {
+                reasons += "The destination points to a downloadable archive."
             }
-
-            when (fileType) {
-                DownloadFileType.AndroidApp,
-                DownloadFileType.AppleDiskImage,
-                DownloadFileType.WindowsExecutable,
-                DownloadFileType.Script -> {
-                    reasons += "The destination points to an executable or script file."
-                }
-                DownloadFileType.Archive -> {
-                    reasons += "The destination points to a downloadable archive."
-                }
-                DownloadFileType.Unknown,
-                DownloadFileType.Pdf,
-                DownloadFileType.Document,
-                DownloadFileType.Spreadsheet,
-                DownloadFileType.Presentation,
-                DownloadFileType.Image,
-                DownloadFileType.Audio,
-                DownloadFileType.Video -> Unit
-            }
+            DownloadFileType.Unknown,
+            DownloadFileType.Pdf,
+            DownloadFileType.Document,
+            DownloadFileType.Spreadsheet,
+            DownloadFileType.Presentation,
+            DownloadFileType.Image,
+            DownloadFileType.Audio,
+            DownloadFileType.Video -> Unit
         }
 
         return reasons
     }
 
-    private fun metadataRiskLevel(metadataResult: UrlMetadataResult?): SecurityLevel? {
-        if (metadataResult == null || metadataResult.status != UrlMetadataStatus.Available) {
+    private fun metadataRiskLevel(metadataResult: UrlMetadataResult): SecurityLevel? {
+        if (metadataResult.status != UrlMetadataStatus.Available) {
             return null
         }
 
@@ -309,19 +354,27 @@ class AnalyzeQrSafetyUseCase(
                 DownloadFileType.WindowsExecutable,
                 DownloadFileType.Script
             ) -> SecurityLevel.Dangerous
-            metadataResult.isLikelyDownload -> SecurityLevel.Suspicious
+            metadataResult.fileType == DownloadFileType.Archive ||
+                metadataResult.contentDisposition.orEmpty().contains("attachment", ignoreCase = true) ||
+                metadataResult.contentType.equals("application/octet-stream", ignoreCase = true) ->
+                SecurityLevel.Suspicious
             else -> null
         }
     }
 
-    private fun combineLevels(first: SecurityLevel, second: SecurityLevel?): SecurityLevel {
-        val levels = listOfNotNull(first, second)
+    private fun combineLevels(localLevel: SecurityLevel, remoteLevel: SecurityLevel?): SecurityLevel {
         return when {
-            levels.any { it == SecurityLevel.Dangerous } -> SecurityLevel.Dangerous
-            levels.any { it == SecurityLevel.Suspicious } -> SecurityLevel.Suspicious
-            levels.any { it == SecurityLevel.Safe } -> SecurityLevel.Safe
+            localLevel == SecurityLevel.Dangerous || remoteLevel == SecurityLevel.Dangerous -> SecurityLevel.Dangerous
+            localLevel == SecurityLevel.Suspicious || remoteLevel == SecurityLevel.Suspicious -> SecurityLevel.Suspicious
+            localLevel == SecurityLevel.Safe -> SecurityLevel.Safe
             else -> SecurityLevel.Unknown
         }
+    }
+
+    private fun detectDangerousScheme(text: String): String? {
+        val lowerCaseText = text.trim().lowercase()
+        return listOf("javascript:", "file:", "data:", "intent:")
+            .firstOrNull { lowerCaseText.startsWith(it) }
     }
 
     private fun distinctReasons(reasons: List<String>): List<String> {
