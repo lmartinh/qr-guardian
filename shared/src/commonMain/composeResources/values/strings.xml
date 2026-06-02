@@ -5,4 +5,10 @@
     <string name="intro_description">Protege tu privacidad y navega sin riesgos. Analizamos cada código QR antes de que lo abras para garantizar que tu destino sea 100&#37; seguro.</string>
     <string name="intro_start_scanning">Empezar a Escanear</string>
     <string name="scanner_launching">Abriendo escáner...</string>
+    <string name="result_title">Resultado del análisis</string>
+    <string name="result_url_analyzed">URL analizada</string>
+    <string name="result_local_scan">Análisis local</string>
+    <string name="result_remote_reputation">Reputación remota</string>
+    <string name="result_open_link">Abrir enlace</string>
+    <string name="result_rescan">Volver a escanear</string>
 </resources>
