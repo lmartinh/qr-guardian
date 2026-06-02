@@ -41,6 +41,8 @@ It scans QR codes and barcodes, detects the scanned content type, and helps user
 - Warn clearly on suspicious or malicious results.
 - Treat unknown results as uncertain.
 - Keep security-provider secrets out of mobile clients.
+- Perform a local first-pass verification before any opening action.
+- Surface the analyzed content type, security level, reasons, and `canOpen` decision to the result screen.
 
 ## Tech stack
 - Kotlin Multiplatform
@@ -73,6 +75,11 @@ Android host tests:
 iOS simulator tests:
 ```bash
 ./gradlew :shared:iosSimulatorArm64Test
+```
+
+Shared domain verification tests:
+```bash
+./gradlew :shared:allTests
 ```
 
 ## Documentation index
