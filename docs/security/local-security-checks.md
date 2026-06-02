@@ -2,6 +2,8 @@
 
 QR Guardian runs with local security checks only by default.
 
+For optional remote reputation details, see [Remote Reputation](remote-reputation.md).
+
 ## Current Behavior
 - The app normalizes and classifies scanned text locally.
 - The local analyzer evaluates URLs and sensitive QR payloads without any backend.

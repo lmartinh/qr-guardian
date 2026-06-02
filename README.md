@@ -45,11 +45,10 @@ It scans QR codes and barcodes, detects the scanned content type, and helps user
 - Surface the analyzed content type, security level, reasons, and `canOpen` decision to the result screen.
 
 ## Security checks
-QR Guardian includes local security checks by default.
-Remote reputation checks are prepared but not enabled in the current version.
-No API keys are required to run the project.
-Future versions may support optional providers configured by each developer.
-This repository does not include real API keys or a shared backend.
+- Local checks are enabled by default.
+- Google Safe Browsing remote reputation is optional.
+- No API keys are included.
+- Without an API key, QR Guardian runs in local-only mode.
 
 ## Tech stack
 - Kotlin Multiplatform
@@ -102,6 +101,7 @@ Coverage report:
 - [UI Flow](docs/04-ui-flow.md)
 - [Security Model](docs/05-security-model.md)
 - [Local Security Checks](docs/security/local-security-checks.md)
+- [Remote Reputation](docs/security/remote-reputation.md)
 - [Testing Strategy](docs/06-testing-strategy.md)
 - [Agent Tasks](docs/07-agent-tasks.md)
 - [Agent Guidelines](AGENTS.md)

@@ -1,6 +1,7 @@
 # Security Model
 
 For implementation details of the current local-first checks, see [Local Security Checks](security/local-security-checks.md).
+For provider-specific remote configuration, see [Remote Reputation](security/remote-reputation.md).
 
 ## Local Verification Pipeline
 QR Guardian performs a local first-pass analysis on the scanned text before any user action.
