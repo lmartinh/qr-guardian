@@ -44,6 +44,13 @@ It scans QR codes and barcodes, detects the scanned content type, and helps user
 - Perform a local first-pass verification before any opening action.
 - Surface the analyzed content type, security level, reasons, and `canOpen` decision to the result screen.
 
+## Security checks
+QR Guardian includes local security checks by default.
+Remote reputation checks are prepared but not enabled in the current version.
+No API keys are required to run the project.
+Future versions may support optional providers configured by each developer.
+This repository does not include real API keys or a shared backend.
+
 ## Tech stack
 - Kotlin Multiplatform
 - Compose Multiplatform
@@ -94,6 +101,7 @@ Coverage report:
 - [Architecture](docs/03-architecture.md)
 - [UI Flow](docs/04-ui-flow.md)
 - [Security Model](docs/05-security-model.md)
+- [Local Security Checks](docs/security/local-security-checks.md)
 - [Testing Strategy](docs/06-testing-strategy.md)
 - [Agent Tasks](docs/07-agent-tasks.md)
 - [Agent Guidelines](AGENTS.md)

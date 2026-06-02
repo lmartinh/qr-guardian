@@ -1,12 +1,11 @@
 package com.lmartin.qrguardian.data.reputation
 
+import com.lmartin.qrguardian.domain.reputation.ThreatCategory
 import com.lmartin.qrguardian.domain.reputation.UrlReputationRepository
 import com.lmartin.qrguardian.domain.reputation.UrlReputationResult
 import com.lmartin.qrguardian.domain.reputation.UrlReputationStatus
 
-class KtorRemoteUrlReputationService(
-    httpClient: io.ktor.client.HttpClient
-) : BaseKtorRepository(httpClient), UrlReputationRepository {
+class NoOpUrlReputationRepository : UrlReputationRepository {
     override suspend fun checkUrl(url: String): UrlReputationResult {
         return UrlReputationResult(
             status = UrlReputationStatus.NotConfigured,

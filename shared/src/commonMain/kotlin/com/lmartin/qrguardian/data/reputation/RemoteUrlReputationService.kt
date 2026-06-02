@@ -1,12 +1,5 @@
 package com.lmartin.qrguardian.data.reputation
 
-import com.lmartin.qrguardian.domain.model.SecurityLevel
+import com.lmartin.qrguardian.domain.reputation.UrlReputationRepository
 
-interface RemoteUrlReputationService {
-    suspend fun checkUrl(url: String): RemoteUrlReputationResult
-}
-
-data class RemoteUrlReputationResult(
-    val securityLevel: SecurityLevel,
-    val reasons: List<String> = emptyList()
-)
+typealias RemoteUrlReputationService = UrlReputationRepository

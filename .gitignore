@@ -6,6 +6,13 @@
 xcuserdata
 !src/**/build/
 local.properties
+.env
+.env.*
+secrets.properties
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
 .idea
 .DS_Store
 captures
