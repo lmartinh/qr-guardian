@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,6 +27,9 @@ import com.lmartin.qrguardian.presentation.theme.QrGuardianSpacing
 @Composable
 fun IntroScreen(
     onStartScanningClick: () -> Unit,
+    showPermissionMessage: Boolean,
+    showPermissionSettingsCard: Boolean,
+    onOpenSettingsClick: () -> Unit,
 ) {
     val texts = rememberIntroTexts()
 
@@ -79,5 +84,59 @@ fun IntroScreen(
                 .fillMaxWidth()
                 .height(60.dp),
         )
+
+        if (showPermissionMessage) {
+            Spacer(modifier = Modifier.height(QrGuardianSpacing.M))
+            Text(
+                text = texts.permissionMessage,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        if (showPermissionSettingsCard) {
+            Spacer(modifier = Modifier.height(QrGuardianSpacing.M))
+            PermissionSettingsCard(
+                texts = texts,
+                onOpenSettingsClick = onOpenSettingsClick,
+            )
+        }
+    }
+}
+
+@Composable
+private fun PermissionSettingsCard(
+    texts: IntroTexts,
+    onOpenSettingsClick: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(QrGuardianSpacing.M),
+            verticalArrangement = Arrangement.spacedBy(QrGuardianSpacing.S),
+        ) {
+            Text(
+                text = texts.permissionCardTitle,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = texts.permissionCardMessage,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            QRGuardianPrimaryButton(
+                text = texts.permissionCardAction,
+                onClick = onOpenSettingsClick,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }

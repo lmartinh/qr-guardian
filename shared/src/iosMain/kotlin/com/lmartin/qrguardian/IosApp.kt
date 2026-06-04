@@ -9,6 +9,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.lmartin.qrguardian.core.network.QrGuardianHttpClientFactory
 import com.lmartin.qrguardian.core.security.QrGuardianSecurityPipelineFactory
+import com.lmartin.qrguardian.presentation.permissions.CameraPermissionState
 import io.ktor.client.engine.darwin.Darwin
 import kotlinx.coroutines.launch
 import platform.AVFoundation.AVCaptureDevice
@@ -19,12 +20,17 @@ import platform.AVFoundation.AVAuthorizationStatusRestricted
 import platform.AVFoundation.AVMediaTypeVideo
 import platform.AVFoundation.authorizationStatusForMediaType
 import platform.AVFoundation.requestAccessForMediaType
+import platform.Foundation.NSNotificationCenter
+import platform.Foundation.NSURL
+import platform.UIKit.UIApplication
+import platform.UIKit.UIApplicationDidBecomeActiveNotification
+import platform.UIKit.UIApplicationOpenSettingsURLString
 
 @Composable
 fun IosApp() {
     val scope = rememberCoroutineScope()
-    var cameraPermissionGranted by remember {
-        mutableStateOf(hasCameraPermission())
+    var cameraPermissionState by remember {
+        mutableStateOf(resolveCameraPermissionState())
     }
 
     val httpClient = remember {
@@ -40,26 +46,47 @@ fun IosApp() {
         }
     }
 
+    DisposableEffect(Unit) {
+        val observer = NSNotificationCenter.defaultCenter.addObserverForName(
+            name = UIApplicationDidBecomeActiveNotification,
+            `object` = null,
+            queue = null,
+            usingBlock = {
+                cameraPermissionState = resolveCameraPermissionState()
+            },
+        )
+        onDispose {
+            NSNotificationCenter.defaultCenter.removeObserver(observer)
+        }
+    }
+
     App(
-        cameraPermissionGranted = cameraPermissionGranted,
-        onRequestCameraPermission = {
+        cameraPermissionState = cameraPermissionState,
+        onRequestCameraPermission = { onResult ->
             requestCameraPermission { granted ->
                 scope.launch {
-                    cameraPermissionGranted = granted
+                    cameraPermissionState = resolveCameraPermissionState()
+                    onResult(granted)
                 }
+            }
+        },
+        onOpenCameraSettings = {
+            val settingsUrl = NSURL.URLWithString(UIApplicationOpenSettingsURLString)
+            if (settingsUrl != null) {
+                UIApplication.sharedApplication.openURL(settingsUrl)
             }
         },
         analyzeQr = analyzeQr,
     )
 }
 
-private fun hasCameraPermission(): Boolean {
+private fun resolveCameraPermissionState(): CameraPermissionState {
     return when (AVCaptureDevice.authorizationStatusForMediaType(AVMediaTypeVideo)) {
-        AVAuthorizationStatusAuthorized -> true
+        AVAuthorizationStatusAuthorized -> CameraPermissionState.granted()
         AVAuthorizationStatusDenied,
-        AVAuthorizationStatusRestricted,
-        AVAuthorizationStatusNotDetermined -> false
-        else -> false
+        AVAuthorizationStatusRestricted -> CameraPermissionState.denied(canRequestAgain = false)
+        AVAuthorizationStatusNotDetermined -> CameraPermissionState.denied(canRequestAgain = true)
+        else -> CameraPermissionState.denied(canRequestAgain = false)
     }
 }
 

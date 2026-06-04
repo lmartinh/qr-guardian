@@ -12,31 +12,11 @@ private fun CameraScreenPreview() {
             viewModel = CameraViewModel.preview(
                 CameraUiState(
                     isScanning = true,
-                    isPermissionGranted = true,
                     isTorchAvailable = true,
                     isTorchEnabled = false,
                 )
             ),
             onCloseClick = {},
-            onPermissionActionClick = {},
-            onScanResult = {},
-        )
-    }
-}
-
-@Preview
-@Composable
-private fun CameraScreenPermissionPreview() {
-    QrGuardianTheme {
-        CameraScreen(
-            viewModel = CameraViewModel.preview(
-                CameraUiState(
-                    isScanning = false,
-                    isPermissionGranted = false,
-                )
-            ),
-            onCloseClick = {},
-            onPermissionActionClick = {},
             onScanResult = {},
         )
     }

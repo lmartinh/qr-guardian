@@ -1,8 +1,6 @@
 package com.lmartin.qrguardian.presentation.camera
 
-import android.util.Log
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
@@ -105,8 +103,13 @@ actual fun PlatformQrScanner(
             cameraController.clearImageAnalysisAnalyzer()
             cameraController.enableTorch(false)
             onTorchAvailabilityChangedState.value(false)
-            barcodeScanner.close()
             runCatching { cameraController.unbind() }
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            barcodeScanner.close()
         }
     }
 

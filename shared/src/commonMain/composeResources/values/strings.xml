@@ -4,14 +4,15 @@
     <string name="intro_title_highlight">seguridad</string>
     <string name="intro_description">Protege tu privacidad y navega sin riesgos. Analizamos cada código QR antes de que lo abras para garantizar que tu destino sea 100&#37; seguro.</string>
     <string name="intro_start_scanning">Empezar a Escanear</string>
+    <string name="intro_permission_message">Necesitamos acceso a la cámara para poder leer códigos QR de forma segura.</string>
+    <string name="intro_permission_card_title">Permiso de cámara bloqueado</string>
+    <string name="intro_permission_card_message">Activa la cámara desde Ajustes para continuar con el escaneo.</string>
+    <string name="intro_permission_open_settings">Abrir ajustes</string>
     <string name="scanner_launching">Abriendo escáner...</string>
 
     <string name="camera_title">Scan a code</string>
     <string name="camera_subtitle">Align the QR code inside the frame</string>
     <string name="camera_hint">We analyze the result before you open anything.</string>
-    <string name="camera_permission_title">Camera access required</string>
-    <string name="camera_permission_message">Allow camera access to scan QR codes securely.</string>
-    <string name="camera_permission_action">Grant access</string>
     <string name="camera_torch_on">Torch on</string>
     <string name="camera_torch_off">Torch off</string>
     <string name="camera_close">Close</string>

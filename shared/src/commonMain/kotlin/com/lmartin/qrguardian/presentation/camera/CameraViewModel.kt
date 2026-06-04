@@ -10,13 +10,6 @@ class CameraViewModel(
     var uiState by mutableStateOf(initialState)
         private set
 
-    fun setPermissionGranted(isGranted: Boolean) {
-        uiState = uiState.copy(
-            isPermissionGranted = isGranted,
-            errorMessage = if (isGranted) null else uiState.errorMessage,
-        )
-    }
-
     fun setTorchAvailable(isAvailable: Boolean) {
         uiState = uiState.copy(isTorchAvailable = isAvailable)
     }

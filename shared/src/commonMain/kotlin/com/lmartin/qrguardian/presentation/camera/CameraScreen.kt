@@ -29,7 +29,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.lmartin.qrguardian.presentation.components.QRGuardianPrimaryButton
 import com.lmartin.qrguardian.presentation.theme.QrGuardianColors
 import com.lmartin.qrguardian.presentation.theme.QrGuardianSpacing
 
@@ -37,7 +36,6 @@ import com.lmartin.qrguardian.presentation.theme.QrGuardianSpacing
 fun CameraScreen(
     viewModel: CameraViewModel,
     onCloseClick: () -> Unit,
-    onPermissionActionClick: () -> Unit,
     onScanResult: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -84,13 +82,6 @@ fun CameraScreen(
             )
 
             CameraInstructionCard(texts = texts)
-
-            if (!state.isPermissionGranted) {
-                PermissionCard(
-                    texts = texts,
-                    onPermissionActionClick = onPermissionActionClick,
-                )
-            }
 
             state.errorMessage?.let { errorMessage ->
                 ErrorBanner(message = errorMessage)
@@ -154,7 +145,7 @@ private fun CameraScannerCard(
                 .padding(QrGuardianSpacing.M),
         ) {
             PlatformQrScanner(
-                isActive = state.isPermissionGranted,
+                isActive = state.isScanning,
                 isTorchEnabled = state.isTorchEnabled,
                 onScanResult = onScanResult,
                 onScannerError = onScannerError,
@@ -216,42 +207,6 @@ private fun CameraInstructionCard(texts: CameraTexts) {
                 text = texts.hint,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-private fun PermissionCard(
-    texts: CameraTexts,
-    onPermissionActionClick: () -> Unit,
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.42f),
-        ),
-    ) {
-        Column(
-            modifier = Modifier.padding(QrGuardianSpacing.M),
-            verticalArrangement = Arrangement.spacedBy(QrGuardianSpacing.S),
-        ) {
-            Text(
-                text = texts.permissionTitle,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = texts.permissionMessage,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            QRGuardianPrimaryButton(
-                text = texts.permissionAction,
-                onClick = onPermissionActionClick,
-                modifier = Modifier.fillMaxWidth(),
             )
         }
     }

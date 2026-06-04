@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.platform.LocalUriHandler
 import com.lmartin.qrguardian.domain.model.QrAnalysisResult
+import com.lmartin.qrguardian.presentation.permissions.CameraPermissionState
 import com.lmartin.qrguardian.presentation.intro.IntroScreen
 import com.lmartin.qrguardian.presentation.camera.CameraScreen
 import com.lmartin.qrguardian.presentation.camera.CameraViewModel
@@ -29,26 +30,44 @@ fun App() {
 
 @Composable
 fun App(
-    cameraPermissionGranted: Boolean = true,
-    onRequestCameraPermission: () -> Unit = {},
+    cameraPermissionState: CameraPermissionState = CameraPermissionState.granted(),
+    onRequestCameraPermission: ((Boolean) -> Unit) -> Unit = {},
+    onOpenCameraSettings: () -> Unit = {},
     analyzeQr: suspend (String) -> QrAnalysisResult,
 ) {
     val uriHandler = LocalUriHandler.current
     val scope = rememberCoroutineScope()
     var currentScreen by remember { mutableStateOf<AppScreen>(AppScreen.Intro) }
     var hasHandledScan by remember { mutableStateOf(false) }
+    var showPermissionMessage by remember { mutableStateOf(false) }
+    var waitingForSettingsReturn by remember { mutableStateOf(false) }
     val cameraViewModel = remember { CameraViewModel() }
     val resultViewModel = remember { ResultViewModel(ResultUiState.idle()) }
-
-    LaunchedEffect(cameraPermissionGranted) {
-        cameraViewModel.setPermissionGranted(cameraPermissionGranted)
-    }
 
     LaunchedEffect(currentScreen) {
         if (currentScreen == AppScreen.Camera) {
             cameraViewModel.setScanning(true)
             cameraViewModel.setError(null)
             hasHandledScan = false
+        }
+    }
+
+    LaunchedEffect(cameraPermissionState.isGranted, waitingForSettingsReturn) {
+        if (cameraPermissionState.isGranted) {
+            showPermissionMessage = false
+            if (waitingForSettingsReturn) {
+                waitingForSettingsReturn = false
+                currentScreen = AppScreen.Camera
+            }
+        } else if (!cameraPermissionState.canRequestAgain) {
+            showPermissionMessage = false
+            waitingForSettingsReturn = false
+        }
+    }
+
+    LaunchedEffect(currentScreen, cameraPermissionState.isGranted) {
+        if (currentScreen == AppScreen.Camera && !cameraPermissionState.isGranted) {
+            currentScreen = AppScreen.Intro
         }
     }
 
@@ -62,7 +81,34 @@ fun App(
             when (currentScreen) {
                 AppScreen.Intro -> IntroScreen(
                     onStartScanningClick = {
-                        currentScreen = AppScreen.Camera
+                        when {
+                            cameraPermissionState.isGranted -> {
+                                showPermissionMessage = false
+                                currentScreen = AppScreen.Camera
+                            }
+
+                            cameraPermissionState.canRequestAgain -> {
+                                onRequestCameraPermission { granted ->
+                                    if (granted) {
+                                        showPermissionMessage = false
+                                        currentScreen = AppScreen.Camera
+                                    } else {
+                                        showPermissionMessage = true
+                                    }
+                                }
+                            }
+
+                            else -> {
+                                showPermissionMessage = false
+                            }
+                        }
+                    },
+                    showPermissionMessage = showPermissionMessage,
+                    showPermissionSettingsCard = !cameraPermissionState.isGranted && !cameraPermissionState.canRequestAgain,
+                    onOpenSettingsClick = {
+                        showPermissionMessage = false
+                        waitingForSettingsReturn = true
+                        onOpenCameraSettings()
                     },
                 )
 
@@ -71,10 +117,9 @@ fun App(
                     onCloseClick = {
                         currentScreen = AppScreen.Intro
                         resultViewModel.reset()
-                        cameraViewModel.setScanning(true)
+                        cameraViewModel.setScanning(false)
                         cameraViewModel.setError(null)
                     },
-                    onPermissionActionClick = onRequestCameraPermission,
                     onScanResult = { rawText ->
                         if (hasHandledScan) return@CameraScreen
                         hasHandledScan = true
@@ -97,7 +142,11 @@ fun App(
                     onOpenLinkClick = { uriHandler.openUri(it) },
                     onRescanClick = {
                         resultViewModel.reset()
-                        currentScreen = AppScreen.Camera
+                        currentScreen = if (cameraPermissionState.isGranted) {
+                            AppScreen.Camera
+                        } else {
+                            AppScreen.Intro
+                        }
                     },
                 )
             }

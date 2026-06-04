@@ -5,9 +5,6 @@ import org.jetbrains.compose.resources.stringResource
 import qrguardian.shared.generated.resources.Res
 import qrguardian.shared.generated.resources.camera_close
 import qrguardian.shared.generated.resources.camera_hint
-import qrguardian.shared.generated.resources.camera_permission_action
-import qrguardian.shared.generated.resources.camera_permission_message
-import qrguardian.shared.generated.resources.camera_permission_title
 import qrguardian.shared.generated.resources.camera_scanner_frame
 import qrguardian.shared.generated.resources.camera_scanner_placeholder
 import qrguardian.shared.generated.resources.camera_scanning
@@ -22,9 +19,6 @@ internal fun rememberCameraTexts(): CameraTexts {
         title = stringResource(Res.string.camera_title),
         subtitle = stringResource(Res.string.camera_subtitle),
         hint = stringResource(Res.string.camera_hint),
-        permissionTitle = stringResource(Res.string.camera_permission_title),
-        permissionMessage = stringResource(Res.string.camera_permission_message),
-        permissionAction = stringResource(Res.string.camera_permission_action),
         torchOn = stringResource(Res.string.camera_torch_on),
         torchOff = stringResource(Res.string.camera_torch_off),
         close = stringResource(Res.string.camera_close),
@@ -38,9 +32,6 @@ internal data class CameraTexts(
     val title: String,
     val subtitle: String,
     val hint: String,
-    val permissionTitle: String,
-    val permissionMessage: String,
-    val permissionAction: String,
     val torchOn: String,
     val torchOff: String,
     val close: String,
