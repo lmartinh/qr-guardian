@@ -96,7 +96,7 @@
     <string name="result_file_type_video">Video</string>
     <string name="result_file_type_image">Image</string>
     <string name="result_remote_status_completed">Remote check completed</string>
-    <string name="result_remote_status_not_configured">Remote checks are not configured</string>
+    <string name="result_remote_status_not_configured">Unavailable</string>
     <string name="result_remote_status_not_applicable">Remote checks do not apply</string>
     <string name="result_remote_status_unavailable">Remote checks are unavailable</string>
 </resources>

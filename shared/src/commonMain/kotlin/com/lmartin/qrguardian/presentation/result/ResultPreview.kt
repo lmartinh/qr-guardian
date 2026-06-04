@@ -156,8 +156,8 @@ private fun sampleNoRemoteResult(): QrAnalysisResult {
             name = "Remote reputation",
             level = SecurityLevel.Unknown,
             status = ScanStatus.NotConfigured,
-            title = "Reputación remota no configurada",
-            description = "Todavía no hay verificaciones remotas conectadas a esta pantalla.",
+            title = "Remote reputation is not configured",
+            description = "This build does not have remote reputation checks enabled.",
             reasons = emptyList(),
             metadata = listOf(
                 ScanMetadataItem(label = "Provider", value = "Not configured"),

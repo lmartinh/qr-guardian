@@ -287,25 +287,34 @@ private fun SectionCard(
     detailItems: List<ResultDetailItem>,
     reasonGroupLabel: String,
     texts: ResultTexts,
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(QrGuardianSpacing.M),
-            verticalArrangement = Arrangement.spacedBy(QrGuardianSpacing.M),
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.large,
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+            ),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(QrGuardianSpacing.M),
+                verticalArrangement = Arrangement.spacedBy(QrGuardianSpacing.M),
             ) {
+                if (section.status == ScanStatus.NotConfigured) {
+                    RemoteNotConfiguredCard(
+                        title = title,
+                        tone = tone,
+                        texts = texts,
+                    )
+                    return@Column
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
                         text = title,
@@ -376,6 +385,42 @@ private fun SectionCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun RemoteNotConfiguredCard(
+    title: String,
+    tone: ResultTone,
+    texts: ResultTexts,
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(QrGuardianSpacing.S),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            StatusPill(
+                label = texts.remoteNotConfiguredStatus,
+                backgroundColor = tone.sectionTint(SecurityLevel.Unknown),
+                contentColor = tone.sectionContent(SecurityLevel.Unknown),
+            )
+        }
+
+        Text(
+            text = texts.remoteNotConfigured,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        
     }
 }
 
