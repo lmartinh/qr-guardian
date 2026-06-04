@@ -420,7 +420,7 @@ private fun RemoteNotConfiguredCard(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        
+
     }
 }
 

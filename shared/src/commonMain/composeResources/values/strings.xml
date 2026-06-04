@@ -18,7 +18,6 @@
     <string name="camera_close">Close</string>
     <string name="camera_scanning">Scanning…</string>
     <string name="camera_scanner_placeholder">Native scanner host</string>
-    <string name="camera_scanner_frame">Scanner frame</string>
 
     <string name="result_title">Scan result</string>
     <string name="result_url_analyzed">Analyzed URL</string>

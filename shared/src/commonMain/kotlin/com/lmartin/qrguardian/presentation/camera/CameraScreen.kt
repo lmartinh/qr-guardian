@@ -50,7 +50,7 @@ fun CameraScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .safeContentPadding()
-                .padding(horizontal = QrGuardianSpacing.M, vertical = QrGuardianSpacing.M),
+                .padding(horizontal = QrGuardianSpacing.M, vertical = QrGuardianSpacing.Xs),
             verticalArrangement = Arrangement.spacedBy(QrGuardianSpacing.M),
         ) {
             CameraTopBar(
@@ -164,26 +164,21 @@ private fun CameraScannerCard(
                         shape = RoundedCornerShape(28.dp),
                     )
                     .background(Color.Transparent),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = texts.scannerFrame,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
-                )
-            }
+            )
 
             Surface(
-                modifier = Modifier.align(Alignment.BottomCenter),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = QrGuardianSpacing.S),
                 shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                color = QrGuardianColors.PrimaryDark.copy(alpha = 0.72f),
             ) {
                 Text(
                     text = if (state.isScanning) texts.scanning else texts.scannerPlaceholder,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onPrimary,
                 )
             }
         }

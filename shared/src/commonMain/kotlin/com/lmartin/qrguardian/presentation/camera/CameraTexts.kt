@@ -5,7 +5,6 @@ import org.jetbrains.compose.resources.stringResource
 import qrguardian.shared.generated.resources.Res
 import qrguardian.shared.generated.resources.camera_close
 import qrguardian.shared.generated.resources.camera_hint
-import qrguardian.shared.generated.resources.camera_scanner_frame
 import qrguardian.shared.generated.resources.camera_scanner_placeholder
 import qrguardian.shared.generated.resources.camera_scanning
 import qrguardian.shared.generated.resources.camera_subtitle
@@ -24,7 +23,6 @@ internal fun rememberCameraTexts(): CameraTexts {
         close = stringResource(Res.string.camera_close),
         scanning = stringResource(Res.string.camera_scanning),
         scannerPlaceholder = stringResource(Res.string.camera_scanner_placeholder),
-        scannerFrame = stringResource(Res.string.camera_scanner_frame),
     )
 }
 
@@ -37,5 +35,4 @@ internal data class CameraTexts(
     val close: String,
     val scanning: String,
     val scannerPlaceholder: String,
-    val scannerFrame: String,
 )
