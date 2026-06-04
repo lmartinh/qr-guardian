@@ -23,6 +23,10 @@ class ResultViewModel(
         uiState = ResultUiState.error(message)
     }
 
+    fun reset() {
+        uiState = ResultUiState.idle()
+    }
+
     companion object {
         fun preview(state: ResultUiState): ResultViewModel = ResultViewModel(state)
     }

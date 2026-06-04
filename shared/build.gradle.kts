@@ -39,6 +39,11 @@ kotlin {
     
     sourceSets {
         androidMain.dependencies {
+            implementation(libs.androidx.camera.core)
+            implementation(libs.androidx.camera.camera2)
+            implementation(libs.androidx.camera.lifecycle)
+            implementation(libs.androidx.camera.view)
+            implementation(libs.mlkit.barcode.scanning)
             implementation(libs.compose.uiToolingPreview)
         }
         commonMain.dependencies {
@@ -52,6 +57,9 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.ktor.client.core)
             implementation(libs.kotlinx.serialization.json)
+        }
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

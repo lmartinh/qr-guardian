@@ -6,6 +6,19 @@
     <string name="intro_start_scanning">Empezar a Escanear</string>
     <string name="scanner_launching">Abriendo escáner...</string>
 
+    <string name="camera_title">Scan a code</string>
+    <string name="camera_subtitle">Align the QR code inside the frame</string>
+    <string name="camera_hint">We analyze the result before you open anything.</string>
+    <string name="camera_permission_title">Camera access required</string>
+    <string name="camera_permission_message">Allow camera access to scan QR codes securely.</string>
+    <string name="camera_permission_action">Grant access</string>
+    <string name="camera_torch_on">Torch on</string>
+    <string name="camera_torch_off">Torch off</string>
+    <string name="camera_close">Close</string>
+    <string name="camera_scanning">Scanning…</string>
+    <string name="camera_scanner_placeholder">Native scanner host</string>
+    <string name="camera_scanner_frame">Scanner frame</string>
+
     <string name="result_title">Scan result</string>
     <string name="result_url_analyzed">Analyzed URL</string>
     <string name="result_local_scan">Local scan</string>

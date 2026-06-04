@@ -3,64 +3,125 @@ package com.lmartin.qrguardian
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.platform.LocalUriHandler
 import com.lmartin.qrguardian.domain.model.QrAnalysisResult
-import com.lmartin.qrguardian.domain.model.QrContentType
-import com.lmartin.qrguardian.domain.model.ScanMetadataItem
-import com.lmartin.qrguardian.domain.model.ScanSectionResult
-import com.lmartin.qrguardian.domain.model.ScanStatus
-import com.lmartin.qrguardian.domain.model.SecurityLevel
 import com.lmartin.qrguardian.presentation.intro.IntroScreen
+import com.lmartin.qrguardian.presentation.camera.CameraScreen
+import com.lmartin.qrguardian.presentation.camera.CameraViewModel
 import com.lmartin.qrguardian.presentation.result.ResultScreen
 import com.lmartin.qrguardian.presentation.result.ResultUiState
 import com.lmartin.qrguardian.presentation.result.ResultViewModel
 import com.lmartin.qrguardian.presentation.theme.QrGuardianTheme
+import kotlinx.coroutines.launch
 
 @Composable
 @Preview
 fun App() {
+    App(
+        analyzeQr = { demoResult() },
+    )
+}
+
+@Composable
+fun App(
+    cameraPermissionGranted: Boolean = true,
+    onRequestCameraPermission: () -> Unit = {},
+    analyzeQr: suspend (String) -> QrAnalysisResult,
+) {
+    val uriHandler = LocalUriHandler.current
+    val scope = rememberCoroutineScope()
+    var currentScreen by remember { mutableStateOf<AppScreen>(AppScreen.Intro) }
+    var hasHandledScan by remember { mutableStateOf(false) }
+    val cameraViewModel = remember { CameraViewModel() }
+    val resultViewModel = remember { ResultViewModel(ResultUiState.idle()) }
+
+    LaunchedEffect(cameraPermissionGranted) {
+        cameraViewModel.setPermissionGranted(cameraPermissionGranted)
+    }
+
+    LaunchedEffect(currentScreen) {
+        if (currentScreen == AppScreen.Camera) {
+            cameraViewModel.setScanning(true)
+            cameraViewModel.setError(null)
+            hasHandledScan = false
+        }
+    }
+
     QrGuardianTheme {
-        var launchRequested by remember { mutableStateOf(false) }
-        val resultViewModel = remember { ResultViewModel(ResultUiState.success(demoResult())) }
         Column(
             modifier = Modifier
                 .background(MaterialTheme.colorScheme.background)
                 .safeContentPadding()
                 .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            if (launchRequested) {
-                ResultScreen(
-                    viewModel = resultViewModel,
-                    onOpenLinkClick = { },
-                    onRescanClick = { launchRequested = false },
+            when (currentScreen) {
+                AppScreen.Intro -> IntroScreen(
+                    onStartScanningClick = {
+                        currentScreen = AppScreen.Camera
+                    },
                 )
-            } else {
-                IntroScreen(
-                    onStartScanningClick = { launchRequested = true },
+
+                AppScreen.Camera -> CameraScreen(
+                    viewModel = cameraViewModel,
+                    onCloseClick = {
+                        currentScreen = AppScreen.Intro
+                        resultViewModel.reset()
+                        cameraViewModel.setScanning(true)
+                        cameraViewModel.setError(null)
+                    },
+                    onPermissionActionClick = onRequestCameraPermission,
+                    onScanResult = { rawText ->
+                        if (hasHandledScan) return@CameraScreen
+                        hasHandledScan = true
+                        resultViewModel.showLoading()
+                        currentScreen = AppScreen.Result
+                        scope.launch {
+                            runCatching { analyzeQr(rawText) }
+                                .onSuccess { resultViewModel.showResult(it) }
+                                .onFailure { throwable ->
+                                    resultViewModel.showError(
+                                        throwable.message ?: "Unable to analyze the scanned content."
+                                    )
+                                }
+                        }
+                    },
+                )
+
+                AppScreen.Result -> ResultScreen(
+                    viewModel = resultViewModel,
+                    onOpenLinkClick = { uriHandler.openUri(it) },
+                    onRescanClick = {
+                        resultViewModel.reset()
+                        currentScreen = AppScreen.Camera
+                    },
                 )
             }
         }
     }
 }
 
+private enum class AppScreen {
+    Intro,
+    Camera,
+    Result,
+}
+
 private fun demoResult(): QrAnalysisResult {
     return QrAnalysisResult(
         originalText = "https://secure-login.example.com/account",
         normalizedText = "https://secure-login.example.com/account",
-        contentType = QrContentType.Url,
-        overallLevel = SecurityLevel.Suspicious,
+        contentType = com.lmartin.qrguardian.domain.model.QrContentType.Url,
+        overallLevel = com.lmartin.qrguardian.domain.model.SecurityLevel.Suspicious,
         canOpen = true,
-        localScan = ScanSectionResult(
+        localScan = com.lmartin.qrguardian.domain.model.ScanSectionResult(
             name = "Local scan",
-            level = SecurityLevel.Suspicious,
-            status = ScanStatus.Completed,
+            level = com.lmartin.qrguardian.domain.model.SecurityLevel.Suspicious,
+            status = com.lmartin.qrguardian.domain.model.ScanStatus.Completed,
             title = "Phishing-like patterns detected",
             description = "The destination looks like a login or credential collection flow.",
             reasons = listOf(
@@ -69,13 +130,13 @@ private fun demoResult(): QrAnalysisResult {
                 "The destination asks for user action.",
             ),
             metadata = listOf(
-                ScanMetadataItem(label = "Content", value = "URL"),
+                com.lmartin.qrguardian.domain.model.ScanMetadataItem(label = "Content", value = "URL"),
             ),
         ),
-        remoteReputation = ScanSectionResult(
+        remoteReputation = com.lmartin.qrguardian.domain.model.ScanSectionResult(
             name = "Remote reputation",
-            level = SecurityLevel.Unknown,
-            status = ScanStatus.Unavailable,
+            level = com.lmartin.qrguardian.domain.model.SecurityLevel.Unknown,
+            status = com.lmartin.qrguardian.domain.model.ScanStatus.Unavailable,
             title = "Reputation not available",
             description = "Remote checks are not available in this demo state.",
             reasons = listOf(
@@ -83,8 +144,8 @@ private fun demoResult(): QrAnalysisResult {
                 "The app keeps the result visible before opening the link.",
             ),
             metadata = listOf(
-                ScanMetadataItem(label = "Provider", value = "Not configured"),
-                ScanMetadataItem(label = "Last check", value = "Unavailable"),
+                com.lmartin.qrguardian.domain.model.ScanMetadataItem(label = "Provider", value = "Not configured"),
+                com.lmartin.qrguardian.domain.model.ScanMetadataItem(label = "Last check", value = "Unavailable"),
             ),
         ),
     )
