@@ -14,6 +14,16 @@ import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.SubdirectoryArrowRight
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -27,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -196,10 +207,11 @@ private fun ResultHeader(
                     ),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = tone.symbol,
-                    style = MaterialTheme.typography.displayMedium,
-                    color = tone.badgeContentColor,
+                Icon(
+                    imageVector = tone.icon,
+                    contentDescription = null,
+                    tint = tone.badgeContentColor,
+                    modifier = Modifier.size(48.dp),
                 )
             }
         }
@@ -397,6 +409,12 @@ private fun RemoteNotConfiguredCard(
     Column(
         verticalArrangement = Arrangement.spacedBy(QrGuardianSpacing.S),
     ) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp),
+        )
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -486,10 +504,11 @@ private fun PlaceholderContent(
                 modifier = Modifier.size(88.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = "↻",
-                    style = MaterialTheme.typography.displayMedium,
-                    color = MaterialTheme.colorScheme.primary,
+                Icon(
+                    imageVector = Icons.Outlined.Refresh,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(42.dp),
                 )
             }
         }
@@ -554,11 +573,19 @@ private fun DetailRow(item: ResultDetailItem) {
         horizontalArrangement = Arrangement.spacedBy(QrGuardianSpacing.S),
         verticalAlignment = Alignment.Top,
     ) {
-        Text(
-            text = item.leading,
-            style = MaterialTheme.typography.labelLarge,
-            color = item.color,
-        )
+        when {
+            item.leadingIcon != null -> Icon(
+                imageVector = item.leadingIcon,
+                contentDescription = null,
+                tint = item.color,
+                modifier = Modifier.size(18.dp),
+            )
+            item.leadingText != null -> Text(
+                text = item.leadingText,
+                style = MaterialTheme.typography.labelLarge,
+                color = item.color,
+            )
+        }
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = item.label,
@@ -596,10 +623,11 @@ private fun ReasonRow(text: String) {
         horizontalArrangement = Arrangement.spacedBy(QrGuardianSpacing.S),
         verticalAlignment = Alignment.Top,
     ) {
-        Text(
-            text = "•",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.primary,
+        Icon(
+            imageVector = Icons.Outlined.Info,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(18.dp),
         )
         Text(
             text = text,
@@ -650,7 +678,7 @@ private fun StatusPill(
 }
 
 private data class ResultTone(
-    val symbol: String,
+    val icon: ImageVector,
     val badgeColor: Color,
     val badgeContentColor: Color,
     val glowColor: Color,
@@ -675,7 +703,8 @@ private data class ResultTone(
 }
 
 private data class ResultDetailItem(
-    val leading: String,
+    val leadingText: String?,
+    val leadingIcon: ImageVector?,
     val label: String,
     val value: String,
     val color: Color,
@@ -684,7 +713,7 @@ private data class ResultDetailItem(
 private fun SecurityLevel.toResultTone(): ResultTone {
     return when (this) {
         SecurityLevel.Safe -> ResultTone(
-            symbol = "✓",
+            icon = Icons.Filled.CheckCircle,
             badgeColor = QrGuardianColors.SafeContainerLight,
             badgeContentColor = QrGuardianColors.Safe,
             glowColor = QrGuardianColors.Safe,
@@ -694,7 +723,7 @@ private fun SecurityLevel.toResultTone(): ResultTone {
             buttonContentColor = Color.White,
         )
         SecurityLevel.Suspicious -> ResultTone(
-            symbol = "!",
+            icon = Icons.Filled.Warning,
             badgeColor = QrGuardianColors.WarningContainerLight,
             badgeContentColor = Color(0xFF9A6B00),
             glowColor = QrGuardianColors.Warning,
@@ -704,7 +733,7 @@ private fun SecurityLevel.toResultTone(): ResultTone {
             buttonContentColor = Color.White,
         )
         SecurityLevel.Dangerous -> ResultTone(
-            symbol = "!",
+            icon = Icons.Filled.Error,
             badgeColor = QrGuardianColors.DangerContainerLight,
             badgeContentColor = Color(0xFFB42318),
             glowColor = QrGuardianColors.Danger,
@@ -714,7 +743,7 @@ private fun SecurityLevel.toResultTone(): ResultTone {
             buttonContentColor = Color.White,
         )
         SecurityLevel.Unknown -> ResultTone(
-            symbol = "?",
+            icon = Icons.AutoMirrored.Outlined.HelpOutline,
             badgeColor = QrGuardianColors.Secondary.copy(alpha = 0.24f),
             badgeContentColor = QrGuardianColors.PrimaryDark,
             glowColor = QrGuardianColors.Neutral,
@@ -784,10 +813,20 @@ private fun buildUrlLocalDetails(url: String, texts: ResultTexts): List<ResultDe
     val path = extractUrlPath(url)
 
     if (downloadType.isNotBlank()) {
-        details += detailItem("⬇", texts.detailFile, downloadType, QrGuardianColors.PrimaryDark)
+        details += detailItem(
+            leadingIcon = Icons.Outlined.Description,
+            label = texts.detailFile,
+            value = downloadType,
+            color = QrGuardianColors.PrimaryDark,
+        )
     }
     if (path.isNotBlank()) {
-        details += detailItem("→", texts.detailPath, path, QrGuardianColors.PrimaryDark)
+        details += detailItem(
+            leadingIcon = Icons.Outlined.SubdirectoryArrowRight,
+            label = texts.detailPath,
+            value = path,
+            color = QrGuardianColors.PrimaryDark,
+        )
     }
 
     return details
@@ -863,7 +902,23 @@ private fun detailItem(
     color: Color,
 ): ResultDetailItem {
     return ResultDetailItem(
-        leading = leading,
+        leadingText = leading,
+        leadingIcon = null,
+        label = label,
+        value = value,
+        color = color,
+    )
+}
+
+private fun detailItem(
+    leadingIcon: ImageVector,
+    label: String,
+    value: String,
+    color: Color,
+): ResultDetailItem {
+    return ResultDetailItem(
+        leadingText = null,
+        leadingIcon = leadingIcon,
         label = label,
         value = value,
         color = color,
