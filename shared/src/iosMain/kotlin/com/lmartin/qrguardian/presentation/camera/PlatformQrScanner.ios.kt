@@ -37,6 +37,7 @@ import platform.AVFoundation.authorizationStatusForMediaType
 import platform.AVFoundation.requestAccessForMediaType
 import platform.CoreGraphics.CGRectZero
 import platform.darwin.NSObject
+import platform.darwin.dispatch_get_main_queue
 import platform.UIKit.UIView
 import platform.UIKit.UIColor
 import kotlinx.cinterop.readValue
@@ -170,7 +171,7 @@ private class QrScannerView : UIView(frame = CGRectZero.readValue()) {
                     onScannerError?.invoke(message)
                 },
             ),
-            queue = null,
+            queue = dispatch_get_main_queue(),
         )
         metadataOutput.metadataObjectTypes = listOf(
             AVMetadataObjectTypeQRCode,
