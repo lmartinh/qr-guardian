@@ -85,6 +85,14 @@ For production, use a backend or proxy instead of embedding reputation keys in t
 - Kotlin Coroutines
 - Clean Architecture principles
 
+## Dependency injection
+- QR Guardian uses Koin for KMP dependency injection.
+- Koin is used only for app wiring at the platform boundary.
+- Domain code remains framework-independent.
+- RemoteReputationConfig is provided explicitly by Android and iOS hosts.
+- Local-only mode remains the default when no keys are configured.
+- Tests can override dependencies through Koin modules.
+
 ## Project structure
 - `androidApp/`: Android host app.
 - `iosApp/`: iOS host app (Xcode project).

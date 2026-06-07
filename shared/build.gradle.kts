@@ -44,6 +44,7 @@ kotlin {
             implementation(libs.androidx.camera.lifecycle)
             implementation(libs.androidx.camera.view)
             implementation(libs.mlkit.barcode.scanning)
+            implementation(libs.ktor.client.okhttp)
             implementation(libs.compose.uiToolingPreview)
         }
         commonMain.dependencies {
@@ -57,6 +58,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.ktor.client.core)
+            implementation(libs.koin.core)
             implementation(libs.kotlinx.serialization.json)
         }
         iosMain.dependencies {

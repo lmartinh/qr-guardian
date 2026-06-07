@@ -7,11 +7,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import com.lmartin.qrguardian.core.network.QrGuardianHttpClientFactory
-import com.lmartin.qrguardian.core.security.QrGuardianSecurityPipelineFactory
 import com.lmartin.qrguardian.data.reputation.IosRemoteReputationConfigProvider
+import com.lmartin.qrguardian.di.initKoin
+import com.lmartin.qrguardian.domain.usecase.AnalyzeQrSafetyUseCase
 import com.lmartin.qrguardian.presentation.permissions.CameraPermissionState
-import io.ktor.client.engine.darwin.Darwin
 import kotlinx.coroutines.launch
 import platform.AVFoundation.AVCaptureDevice
 import platform.AVFoundation.AVAuthorizationStatusAuthorized
@@ -34,22 +33,22 @@ fun IosApp() {
         mutableStateOf(resolveCameraPermissionState())
     }
 
-    val httpClient = remember {
-        QrGuardianHttpClientFactory.create(Darwin)
-    }
     val remoteReputationConfig = remember {
         IosRemoteReputationConfigProvider.create()
     }
-    val analyzeQr = remember(httpClient, remoteReputationConfig) {
-        QrGuardianSecurityPipelineFactory.createAnalyzeQrSafetyUseCase(
-            httpClient = httpClient,
-            remoteReputationConfig = remoteReputationConfig
-        )::invoke
+    val koinApplication = remember(remoteReputationConfig) {
+        initKoin(remoteReputationConfig)
+    }
+    val analyzeQrSafetyUseCase = remember(koinApplication) {
+        koinApplication.koin.get<AnalyzeQrSafetyUseCase>()
+    }
+    val analyzeQr = remember(analyzeQrSafetyUseCase) {
+        analyzeQrSafetyUseCase::invoke
     }
 
-    DisposableEffect(Unit) {
+    DisposableEffect(koinApplication) {
         onDispose {
-            httpClient.close()
+            koinApplication.close()
         }
     }
 

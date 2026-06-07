@@ -20,12 +20,11 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.lmartin.qrguardian.core.network.QrGuardianHttpClientFactory
-import com.lmartin.qrguardian.core.security.QrGuardianSecurityPipelineFactory
 import com.lmartin.qrguardian.data.reputation.createRemoteReputationConfig
+import com.lmartin.qrguardian.di.initKoin
 import com.lmartin.qrguardian.domain.model.QrAnalysisResult
+import com.lmartin.qrguardian.domain.usecase.AnalyzeQrSafetyUseCase
 import com.lmartin.qrguardian.presentation.permissions.CameraPermissionState
-import io.ktor.client.engine.okhttp.OkHttp
 
 @Composable
 fun AndroidAppRoot() {
@@ -65,26 +64,25 @@ fun AndroidAppRoot() {
         permissionResultCallback = null
     }
 
-    val httpClient = remember {
-        QrGuardianHttpClientFactory.create(OkHttp)
-    }
-
     val remoteReputationConfig = remember {
         createRemoteReputationConfig(
             googleSafeBrowsingApiKey = BuildConfig.GOOGLE_SAFE_BROWSING_API_KEY,
             urlHausApiKey = BuildConfig.URLHAUS_API_KEY
         )
     }
-    val analyzeQr: suspend (String) -> QrAnalysisResult = remember(httpClient) {
-        QrGuardianSecurityPipelineFactory.createAnalyzeQrSafetyUseCase(
-            httpClient = httpClient,
-            remoteReputationConfig = remoteReputationConfig
-        )::invoke
+    val koinApplication = remember(remoteReputationConfig) {
+        initKoin(remoteReputationConfig)
+    }
+    val analyzeQrSafetyUseCase = remember(koinApplication) {
+        koinApplication.koin.get<AnalyzeQrSafetyUseCase>()
+    }
+    val analyzeQr: suspend (String) -> QrAnalysisResult = remember(analyzeQrSafetyUseCase) {
+        analyzeQrSafetyUseCase::invoke
     }
 
-    DisposableEffect(Unit) {
+    DisposableEffect(koinApplication) {
         onDispose {
-            httpClient.close()
+            koinApplication.close()
         }
     }
 
