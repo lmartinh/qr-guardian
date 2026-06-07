@@ -1,14 +1,14 @@
 <resources>
-    <string name="intro_badge">Tu escudo digital</string>
-    <string name="intro_title_main">Hola, escanea con</string>
-    <string name="intro_title_highlight">seguridad</string>
-    <string name="intro_description">Protege tu privacidad y navega sin riesgos. Analizamos cada código QR antes de que lo abras para garantizar que tu destino sea 100&#37; seguro.</string>
-    <string name="intro_start_scanning">Empezar a Escanear</string>
-    <string name="intro_permission_message">Necesitamos acceso a la cámara para poder leer códigos QR de forma segura.</string>
-    <string name="intro_permission_card_title">Permiso de cámara bloqueado</string>
-    <string name="intro_permission_card_message">Activa la cámara desde Ajustes para continuar con el escaneo.</string>
-    <string name="intro_permission_open_settings">Abrir ajustes</string>
-    <string name="scanner_launching">Abriendo escáner...</string>
+    <string name="intro_badge">Your digital shield</string>
+    <string name="intro_title_main">Scan with</string>
+    <string name="intro_title_highlight">confidence</string>
+    <string name="intro_description">Protect your privacy and browse safely. We analyze every QR code before you open it so your destination stays 100&#37; safe.</string>
+    <string name="intro_start_scanning">Start scanning</string>
+    <string name="intro_permission_message">We need camera access to read QR codes safely.</string>
+    <string name="intro_permission_card_title">Camera permission blocked</string>
+    <string name="intro_permission_card_message">Enable camera access in Settings to continue scanning.</string>
+    <string name="intro_permission_open_settings">Open settings</string>
+    <string name="scanner_launching">Opening scanner...</string>
 
     <string name="camera_title">Scan a code</string>
     <string name="camera_subtitle">Align the QR code inside the frame</string>

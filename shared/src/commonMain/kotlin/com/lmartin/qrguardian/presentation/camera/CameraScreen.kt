@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -29,6 +30,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import com.lmartin.qrguardian.presentation.theme.QrGuardianColors
 import com.lmartin.qrguardian.presentation.theme.QrGuardianSpacing
 
@@ -103,7 +106,10 @@ private fun CameraTopBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onCloseClick) {
-            Text(text = "✕", style = MaterialTheme.typography.titleLarge)
+            Icon(
+                imageVector = Icons.Filled.Close,
+                contentDescription = texts.close,
+            )
         }
 
         if (state.isTorchAvailable) {
