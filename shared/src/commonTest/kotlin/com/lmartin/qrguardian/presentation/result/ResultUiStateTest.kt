@@ -92,11 +92,39 @@ class ResultUiStateTest {
         }
     }
 
+    @Test
+    fun `remote reputation and local scan sections are surfaced in ui state`() {
+        val configuredRemoteState = ResultUiState.success(
+            analysis = analysis(
+                contentType = QrContentType.Url,
+                overallLevel = SecurityLevel.Suspicious,
+                canOpen = true,
+                openableUrl = "https://example.com",
+                remoteStatus = ScanStatus.NotConfigured
+            )
+        )
+        val notApplicableRemoteState = ResultUiState.success(
+            analysis = analysis(
+                contentType = QrContentType.PlainText,
+                overallLevel = SecurityLevel.Unknown,
+                canOpen = false,
+                openableUrl = null,
+                remoteStatus = ScanStatus.NotApplicable
+            )
+        )
+
+        assertEquals(ScanStatus.NotConfigured, configuredRemoteState.remoteReputation?.status)
+        assertEquals(ScanStatus.NotApplicable, notApplicableRemoteState.remoteReputation?.status)
+        assertEquals(SecurityLevel.Suspicious, configuredRemoteState.localScan?.level)
+        assertEquals(SecurityLevel.Unknown, notApplicableRemoteState.localScan?.level)
+    }
+
     private fun analysis(
         contentType: QrContentType,
         overallLevel: SecurityLevel,
         canOpen: Boolean,
-        openableUrl: String?
+        openableUrl: String?,
+        remoteStatus: ScanStatus = ScanStatus.NotApplicable
     ): QrAnalysisResult {
         return QrAnalysisResult(
             originalText = "input",
@@ -116,9 +144,23 @@ class ResultUiStateTest {
             remoteReputation = ScanSectionResult(
                 name = "Remote Reputation",
                 level = SecurityLevel.Unknown,
-                status = ScanStatus.NotApplicable,
-                title = "Remote reputation not applicable",
-                description = "Only URLs are checked against remote reputation providers.",
+                status = remoteStatus,
+                title = when (remoteStatus) {
+                    ScanStatus.NotConfigured -> "Remote reputation not configured"
+                    ScanStatus.NotApplicable -> "Remote reputation not applicable"
+                    ScanStatus.Completed -> SecurityLevel.Unknown.title()
+                    ScanStatus.Unavailable -> "Remote reputation unavailable"
+                },
+                description = when (remoteStatus) {
+                    ScanStatus.NotConfigured ->
+                        "No remote reputation providers are configured for this QR Guardian instance."
+                    ScanStatus.NotApplicable ->
+                        "Only URLs are checked against remote reputation providers."
+                    ScanStatus.Completed ->
+                        "The remote reputation provider did not report threats for this destination."
+                    ScanStatus.Unavailable ->
+                        "The remote reputation provider could not be reached."
+                },
                 reasons = emptyList()
             )
         )

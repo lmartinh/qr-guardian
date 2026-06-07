@@ -4,6 +4,8 @@ This dataset is synthetic. It is meant for manual testing, demos and documentati
 
 Do not treat these samples as real threats. The payloads are deliberately safe demo values that exercise Local Scan, HEAD metadata checks, and optional Remote Reputation behavior.
 
+The same text payloads are also mirrored in shared regression tests so the security pipeline can be validated without decoding the QR images.
+
 ## Preview
 
 ![QR Guardian sample QR contact sheet](./contact-sheet.png)

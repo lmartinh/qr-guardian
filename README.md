@@ -40,6 +40,8 @@ It covers safe URLs, suspicious URLs, downloads, WiFi, SMS, email, plain text, c
 
 Use it to validate Local Scan, HEAD metadata checks and result rendering. Remote Reputation depends on provider configuration and live lookup results.
 
+The underlying text payloads are also covered by shared regression tests, so the sample images remain manual QA assets rather than automated decoding fixtures.
+
 Dataset: [docs/assets/sample-qrs/README.md](docs/assets/sample-qrs/README.md)
 
 ## Core flow

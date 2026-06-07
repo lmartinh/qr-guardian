@@ -1,0 +1,289 @@
+package com.lmartin.qrguardian.domain.fixtures
+
+import com.lmartin.qrguardian.domain.model.QrContentType
+import com.lmartin.qrguardian.domain.model.SecurityLevel
+
+data class QrSampleCase(
+    val name: String,
+    val rawText: String,
+    val expectedContentType: QrContentType,
+    val expectedOverallLevel: SecurityLevel,
+    val expectedLocalLevel: SecurityLevel,
+    val expectedCanOpen: Boolean,
+    val expectedShowOpenButton: Boolean,
+    val expectedOpenableUrl: String?,
+    val expectedLocalReasonsContain: List<String> = emptyList(),
+    val expectedLocalMetadataContain: List<Pair<String, String>> = emptyList(),
+)
+
+val qrSampleCases: List<QrSampleCase> = listOf(
+    QrSampleCase(
+        name = "Safe HTTPS URL",
+        rawText = "https://example.com",
+        expectedContentType = QrContentType.Url,
+        expectedOverallLevel = SecurityLevel.Safe,
+        expectedLocalLevel = SecurityLevel.Safe,
+        expectedCanOpen = true,
+        expectedShowOpenButton = true,
+        expectedOpenableUrl = "https://example.com"
+    ),
+    QrSampleCase(
+        name = "Bare domain",
+        rawText = "example.com",
+        expectedContentType = QrContentType.Url,
+        expectedOverallLevel = SecurityLevel.Suspicious,
+        expectedLocalLevel = SecurityLevel.Suspicious,
+        expectedCanOpen = true,
+        expectedShowOpenButton = true,
+        expectedOpenableUrl = "https://example.com",
+        expectedLocalReasonsContain = listOf("HTTPS")
+    ),
+    QrSampleCase(
+        name = "HTTP URL",
+        rawText = "http://example.com",
+        expectedContentType = QrContentType.Url,
+        expectedOverallLevel = SecurityLevel.Suspicious,
+        expectedLocalLevel = SecurityLevel.Suspicious,
+        expectedCanOpen = true,
+        expectedShowOpenButton = true,
+        expectedOpenableUrl = "http://example.com",
+        expectedLocalReasonsContain = listOf("HTTPS")
+    ),
+    QrSampleCase(
+        name = "URL with @",
+        rawText = "https://google.com@evil.example/login",
+        expectedContentType = QrContentType.Url,
+        expectedOverallLevel = SecurityLevel.Suspicious,
+        expectedLocalLevel = SecurityLevel.Suspicious,
+        expectedCanOpen = true,
+        expectedShowOpenButton = true,
+        expectedOpenableUrl = "https://google.com@evil.example/login",
+        expectedLocalReasonsContain = listOf("@ symbol")
+    ),
+    QrSampleCase(
+        name = "IP host",
+        rawText = "http://192.168.1.20/login",
+        expectedContentType = QrContentType.Url,
+        expectedOverallLevel = SecurityLevel.Suspicious,
+        expectedLocalLevel = SecurityLevel.Suspicious,
+        expectedCanOpen = true,
+        expectedShowOpenButton = true,
+        expectedOpenableUrl = "http://192.168.1.20/login",
+        expectedLocalReasonsContain = listOf("IPv4 address")
+    ),
+    QrSampleCase(
+        name = "URL shortener",
+        rawText = "https://bit.ly/qr-guardian-test",
+        expectedContentType = QrContentType.Url,
+        expectedOverallLevel = SecurityLevel.Suspicious,
+        expectedLocalLevel = SecurityLevel.Suspicious,
+        expectedCanOpen = true,
+        expectedShowOpenButton = true,
+        expectedOpenableUrl = "https://bit.ly/qr-guardian-test",
+        expectedLocalReasonsContain = listOf("link shortener")
+    ),
+    QrSampleCase(
+        name = "APK download",
+        rawText = "https://example.com/download/app.apk",
+        expectedContentType = QrContentType.Url,
+        expectedOverallLevel = SecurityLevel.Dangerous,
+        expectedLocalLevel = SecurityLevel.Dangerous,
+        expectedCanOpen = false,
+        expectedShowOpenButton = false,
+        expectedOpenableUrl = null,
+        expectedLocalReasonsContain = listOf("potentially dangerous file type"),
+        expectedLocalMetadataContain = listOf(
+            "File type" to "Android app"
+        )
+    ),
+    QrSampleCase(
+        name = "EXE download",
+        rawText = "https://example.com/setup.exe",
+        expectedContentType = QrContentType.Url,
+        expectedOverallLevel = SecurityLevel.Dangerous,
+        expectedLocalLevel = SecurityLevel.Dangerous,
+        expectedCanOpen = false,
+        expectedShowOpenButton = false,
+        expectedOpenableUrl = null,
+        expectedLocalReasonsContain = listOf("potentially dangerous file type"),
+        expectedLocalMetadataContain = listOf(
+            "File type" to "Windows executable"
+        )
+    ),
+    QrSampleCase(
+        name = "PDF menu URL",
+        rawText = "https://example.com/menu.pdf",
+        expectedContentType = QrContentType.Url,
+        expectedOverallLevel = SecurityLevel.Safe,
+        expectedLocalLevel = SecurityLevel.Safe,
+        expectedCanOpen = true,
+        expectedShowOpenButton = true,
+        expectedOpenableUrl = "https://example.com/menu.pdf",
+        expectedLocalMetadataContain = listOf(
+            "File type" to "PDF",
+            "Likely download" to "Yes"
+        )
+    ),
+    QrSampleCase(
+        name = "ZIP archive URL",
+        rawText = "https://example.com/archive.zip",
+        expectedContentType = QrContentType.Url,
+        expectedOverallLevel = SecurityLevel.Suspicious,
+        expectedLocalLevel = SecurityLevel.Suspicious,
+        expectedCanOpen = true,
+        expectedShowOpenButton = true,
+        expectedOpenableUrl = "https://example.com/archive.zip",
+        expectedLocalReasonsContain = listOf("downloadable archive"),
+        expectedLocalMetadataContain = listOf(
+            "File type" to "Archive"
+        )
+    ),
+    QrSampleCase(
+        name = "Many query params",
+        rawText = "https://example.com/path?a=1&b=2&c=3&d=4&e=5&f=6&g=7&h=8&i=9",
+        expectedContentType = QrContentType.Url,
+        expectedOverallLevel = SecurityLevel.Suspicious,
+        expectedLocalLevel = SecurityLevel.Suspicious,
+        expectedCanOpen = true,
+        expectedShowOpenButton = true,
+        expectedOpenableUrl = "https://example.com/path?a=1&b=2&c=3&d=4&e=5&f=6&g=7&h=8&i=9",
+        expectedLocalReasonsContain = listOf("query parameters")
+    ),
+    QrSampleCase(
+        name = "Brand impersonation",
+        rawText = "https://paypal-secure-login.example.com",
+        expectedContentType = QrContentType.Url,
+        expectedOverallLevel = SecurityLevel.Suspicious,
+        expectedLocalLevel = SecurityLevel.Suspicious,
+        expectedCanOpen = true,
+        expectedShowOpenButton = true,
+        expectedOpenableUrl = "https://paypal-secure-login.example.com",
+        expectedLocalReasonsContain = listOf("known brand")
+    ),
+    QrSampleCase(
+        name = "Many subdomains",
+        rawText = "https://login.security.account.example.com",
+        expectedContentType = QrContentType.Url,
+        expectedOverallLevel = SecurityLevel.Suspicious,
+        expectedLocalLevel = SecurityLevel.Suspicious,
+        expectedCanOpen = true,
+        expectedShowOpenButton = true,
+        expectedOpenableUrl = "https://login.security.account.example.com",
+        expectedLocalReasonsContain = listOf("subdomains")
+    ),
+    QrSampleCase(
+        name = "JavaScript scheme",
+        rawText = "javascript:alert('qr')",
+        expectedContentType = QrContentType.Unknown,
+        expectedOverallLevel = SecurityLevel.Dangerous,
+        expectedLocalLevel = SecurityLevel.Dangerous,
+        expectedCanOpen = false,
+        expectedShowOpenButton = false,
+        expectedOpenableUrl = null,
+        expectedLocalReasonsContain = listOf("blocked scheme")
+    ),
+    QrSampleCase(
+        name = "Data scheme",
+        rawText = "data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==",
+        expectedContentType = QrContentType.Unknown,
+        expectedOverallLevel = SecurityLevel.Dangerous,
+        expectedLocalLevel = SecurityLevel.Dangerous,
+        expectedCanOpen = false,
+        expectedShowOpenButton = false,
+        expectedOpenableUrl = null,
+        expectedLocalReasonsContain = listOf("blocked scheme")
+    ),
+    QrSampleCase(
+        name = "Open WiFi network",
+        rawText = "WIFI:T:nopass;S:OpenCafeWiFi;;",
+        expectedContentType = QrContentType.Wifi,
+        expectedOverallLevel = SecurityLevel.Suspicious,
+        expectedLocalLevel = SecurityLevel.Suspicious,
+        expectedCanOpen = false,
+        expectedShowOpenButton = false,
+        expectedOpenableUrl = null,
+        expectedLocalReasonsContain = listOf("open network")
+    ),
+    QrSampleCase(
+        name = "WPA WiFi network",
+        rawText = "WIFI:T:WPA;S:DemoNetwork;P:DemoPassword123;;",
+        expectedContentType = QrContentType.Wifi,
+        expectedOverallLevel = SecurityLevel.Suspicious,
+        expectedLocalLevel = SecurityLevel.Suspicious,
+        expectedCanOpen = false,
+        expectedShowOpenButton = false,
+        expectedOpenableUrl = null,
+        expectedLocalReasonsContain = listOf("sensitive action")
+    ),
+    QrSampleCase(
+        name = "SMS with URL",
+        rawText = "sms:+34000000000?body=Please verify your account https://example.com/login",
+        expectedContentType = QrContentType.Sms,
+        expectedOverallLevel = SecurityLevel.Suspicious,
+        expectedLocalLevel = SecurityLevel.Suspicious,
+        expectedCanOpen = false,
+        expectedShowOpenButton = false,
+        expectedOpenableUrl = null,
+        expectedLocalReasonsContain = listOf("URL")
+    ),
+    QrSampleCase(
+        name = "Mailto with prefilled content",
+        rawText = "mailto:test@example.com?subject=Account%20Update&body=Please%20confirm%20your%20data",
+        expectedContentType = QrContentType.Email,
+        expectedOverallLevel = SecurityLevel.Suspicious,
+        expectedLocalLevel = SecurityLevel.Suspicious,
+        expectedCanOpen = false,
+        expectedShowOpenButton = false,
+        expectedOpenableUrl = null,
+        expectedLocalReasonsContain = listOf("predefined content")
+    ),
+    QrSampleCase(
+        name = "Plain text",
+        rawText = "Hello from QR Guardian sample.",
+        expectedContentType = QrContentType.PlainText,
+        expectedOverallLevel = SecurityLevel.Unknown,
+        expectedLocalLevel = SecurityLevel.Unknown,
+        expectedCanOpen = false,
+        expectedShowOpenButton = false,
+        expectedOpenableUrl = null,
+        expectedLocalReasonsContain = listOf("plain text")
+    ),
+    QrSampleCase(
+        name = "Crypto payment URI",
+        rawText = "bitcoin:bc1qexampleaddress000000000000000000000000000?amount=0.01",
+        expectedContentType = QrContentType.Crypto,
+        expectedOverallLevel = SecurityLevel.Suspicious,
+        expectedLocalLevel = SecurityLevel.Suspicious,
+        expectedCanOpen = false,
+        expectedShowOpenButton = false,
+        expectedOpenableUrl = null,
+        expectedLocalReasonsContain = listOf("transfer assets")
+    ),
+    QrSampleCase(
+        name = "vCard",
+        rawText = """
+            BEGIN:VCARD
+            VERSION:3.0
+            FN:Sample Contact
+            END:VCARD
+        """.trimIndent(),
+        expectedContentType = QrContentType.VCard,
+        expectedOverallLevel = SecurityLevel.Unknown,
+        expectedLocalLevel = SecurityLevel.Unknown,
+        expectedCanOpen = false,
+        expectedShowOpenButton = false,
+        expectedOpenableUrl = null,
+        expectedLocalReasonsContain = listOf("contact data")
+    ),
+    QrSampleCase(
+        name = "Geo",
+        rawText = "geo:40.4168,-3.7038",
+        expectedContentType = QrContentType.Geo,
+        expectedOverallLevel = SecurityLevel.Unknown,
+        expectedLocalLevel = SecurityLevel.Unknown,
+        expectedCanOpen = false,
+        expectedShowOpenButton = false,
+        expectedOpenableUrl = null,
+        expectedLocalReasonsContain = listOf("location data")
+    )
+)
