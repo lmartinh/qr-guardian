@@ -50,11 +50,33 @@ It scans QR codes and barcodes, detects the scanned content type, and helps user
 - The local scan block evaluates normalization, classification, URL rules and HEAD metadata.
 - Remote reputation checks are optional and only run for URLs.
 - Google Safe Browsing and URLhaus can be configured by each developer.
-- The current app wiring runs local-only by default unless host code injects `RemoteReputationConfig`.
+- The current app wiring reads optional host config and still runs local-only when no keys are present.
 - Non-URL payloads do not trigger HEAD or remote reputation checks.
 - No API keys are included.
 - Without an API key, QR Guardian runs in local-only mode.
 - The result is split into `Local Scan` and `Remote Reputation` sections.
+
+## Remote Reputation Configuration
+QR Guardian works out of the box without API keys.
+
+- Local Scan always runs.
+- Remote Reputation is optional and only applies to URLs.
+- `GOOGLE_SAFE_BROWSING_API_KEY` enables Google Safe Browsing.
+- `URLHAUS_API_KEY` enables URLhaus.
+- If neither key is configured, the app stays in local-only mode and the remote section shows `Not configured`.
+
+Android:
+- Add the keys to `local.properties` in the project root.
+- `local.properties.example` shows the exact empty placeholders.
+- Empty or missing values keep local-only mode.
+
+iOS:
+- Add the keys through `iosApp/Configuration/RemoteReputation.xcconfig` copied from `iosApp/Configuration/RemoteReputation.example.xcconfig`.
+- The values are exposed to `Info.plist` and read by the shared iOS config provider.
+- Empty or missing values keep local-only mode.
+
+Never commit real API keys.
+For production, use a backend or proxy instead of embedding reputation keys in the mobile binary.
 
 ## Tech stack
 - Kotlin Multiplatform

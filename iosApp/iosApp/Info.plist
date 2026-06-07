@@ -4,6 +4,10 @@
 <dict>
 	<key>NSCameraUsageDescription</key>
 	<string>This app needs camera access to scan QR codes.</string>
+	<key>GOOGLE_SAFE_BROWSING_API_KEY</key>
+	<string>$(GOOGLE_SAFE_BROWSING_API_KEY)</string>
+	<key>URLHAUS_API_KEY</key>
+	<string>$(URLHAUS_API_KEY)</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 </dict>

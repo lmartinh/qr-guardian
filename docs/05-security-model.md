@@ -147,6 +147,8 @@ The current analysis result is split into two sections so the UI can present the
 - `Local Scan`: local normalization, content classification, URL rules and HEAD metadata.
 - `Remote Reputation`: optional provider lookup, shown only for URL payloads.
 
+Android and iOS both default to local-only mode when no keys are configured. Android reads optional keys from `local.properties`; iOS reads optional keys from `iosApp/Configuration/RemoteReputation.xcconfig` through `Info.plist`.
+
 Remote reputation section states:
 - `Completed`: the provider returned a reputation result.
 - `NotConfigured`: no provider is configured for this installation.

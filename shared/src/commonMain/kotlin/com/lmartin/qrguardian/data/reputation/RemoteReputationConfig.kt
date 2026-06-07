@@ -13,3 +13,17 @@ data class RemoteReputationConfig(
     val hasAnyProviderEnabled: Boolean
         get() = isGoogleSafeBrowsingEnabled || isUrlHausEnabled
 }
+
+fun createRemoteReputationConfig(
+    googleSafeBrowsingApiKey: String?,
+    urlHausApiKey: String?
+): RemoteReputationConfig {
+    return RemoteReputationConfig(
+        googleSafeBrowsingApiKey = googleSafeBrowsingApiKey.asOptionalApiKey(),
+        urlHausApiKey = urlHausApiKey.asOptionalApiKey()
+    )
+}
+
+private fun String?.asOptionalApiKey(): String? {
+    return this?.takeIf { it.isNotBlank() }
+}

@@ -22,6 +22,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.lmartin.qrguardian.core.network.QrGuardianHttpClientFactory
 import com.lmartin.qrguardian.core.security.QrGuardianSecurityPipelineFactory
+import com.lmartin.qrguardian.data.reputation.createRemoteReputationConfig
 import com.lmartin.qrguardian.domain.model.QrAnalysisResult
 import com.lmartin.qrguardian.presentation.permissions.CameraPermissionState
 import io.ktor.client.engine.okhttp.OkHttp
@@ -68,8 +69,17 @@ fun AndroidAppRoot() {
         QrGuardianHttpClientFactory.create(OkHttp)
     }
 
+    val remoteReputationConfig = remember {
+        createRemoteReputationConfig(
+            googleSafeBrowsingApiKey = BuildConfig.GOOGLE_SAFE_BROWSING_API_KEY,
+            urlHausApiKey = BuildConfig.URLHAUS_API_KEY
+        )
+    }
     val analyzeQr: suspend (String) -> QrAnalysisResult = remember(httpClient) {
-        QrGuardianSecurityPipelineFactory.createAnalyzeQrSafetyUseCase(httpClient)::invoke
+        QrGuardianSecurityPipelineFactory.createAnalyzeQrSafetyUseCase(
+            httpClient = httpClient,
+            remoteReputationConfig = remoteReputationConfig
+        )::invoke
     }
 
     DisposableEffect(Unit) {

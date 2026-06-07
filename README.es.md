@@ -43,12 +43,34 @@ Escanea códigos QR y de barras, detecta el tipo de contenido escaneado y ayuda 
 - No exponer secretos de proveedores de seguridad en el cliente móvil.
 - Ejecutar primero el análisis local y después la reputación remota solo para URLs.
 - Separar el resultado en `Local Scan` y `Remote Reputation` para la UI.
-- El wiring actual de la app funciona en modo local-only por defecto salvo que el host inyecte `RemoteReputationConfig`.
+- El wiring actual lee configuración opcional del host y sigue funcionando en modo local-only si no hay keys.
 
 ## Verificaciones de seguridad
 - El bloque local valida normalización, clasificación, reglas de URL y metadata HEAD.
 - La reputación remota es opcional y solo se ejecuta para URLs.
 - Sin API key, QR Guardian funciona en modo local-only.
+
+## Configuración de reputación remota
+QR Guardian funciona sin API keys desde el primer momento.
+
+- Local Scan siempre se ejecuta.
+- Remote Reputation es opcional y solo se aplica a URLs.
+- `GOOGLE_SAFE_BROWSING_API_KEY` activa Google Safe Browsing.
+- `URLHAUS_API_KEY` activa URLhaus.
+- Si no hay ninguna key configurada, la app permanece en modo local-only y la sección remota muestra `Not configured`.
+
+Android:
+- Añade las keys en `local.properties` en la raíz del proyecto.
+- `local.properties.example` muestra los marcadores vacíos exactos.
+- Los valores vacíos o ausentes mantienen el modo local-only.
+
+iOS:
+- Añade las keys mediante `iosApp/Configuration/RemoteReputation.xcconfig`, copiado desde `iosApp/Configuration/RemoteReputation.example.xcconfig`.
+- Los valores se exponen a `Info.plist` y los lee el proveedor de configuración de iOS compartido.
+- Los valores vacíos o ausentes mantienen el modo local-only.
+
+No subas claves reales al repositorio.
+Para producción, usa un backend o proxy en lugar de incrustar las keys de reputación en el binario móvil.
 
 ## Stack técnico
 - Kotlin Multiplatform

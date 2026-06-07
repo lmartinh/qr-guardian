@@ -13,6 +13,7 @@ For optional remote reputation details, see [Remote Reputation](remote-reputatio
 - No API keys are required to run the project.
 - No backend is required to run the project.
 - Runtime wiring is centralized in `QrGuardianHttpClientFactory` and `QrGuardianSecurityPipelineFactory`.
+- Android reads optional keys from `local.properties`; iOS reads optional keys from its shared xcconfig/Info.plist path.
 
 ## Remote Reputation Readiness
 The codebase already includes optional remote providers for:

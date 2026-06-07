@@ -9,6 +9,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.lmartin.qrguardian.core.network.QrGuardianHttpClientFactory
 import com.lmartin.qrguardian.core.security.QrGuardianSecurityPipelineFactory
+import com.lmartin.qrguardian.data.reputation.IosRemoteReputationConfigProvider
 import com.lmartin.qrguardian.presentation.permissions.CameraPermissionState
 import io.ktor.client.engine.darwin.Darwin
 import kotlinx.coroutines.launch
@@ -36,8 +37,14 @@ fun IosApp() {
     val httpClient = remember {
         QrGuardianHttpClientFactory.create(Darwin)
     }
-    val analyzeQr = remember(httpClient) {
-        QrGuardianSecurityPipelineFactory.createAnalyzeQrSafetyUseCase(httpClient)::invoke
+    val remoteReputationConfig = remember {
+        IosRemoteReputationConfigProvider.create()
+    }
+    val analyzeQr = remember(httpClient, remoteReputationConfig) {
+        QrGuardianSecurityPipelineFactory.createAnalyzeQrSafetyUseCase(
+            httpClient = httpClient,
+            remoteReputationConfig = remoteReputationConfig
+        )::invoke
     }
 
     DisposableEffect(Unit) {
