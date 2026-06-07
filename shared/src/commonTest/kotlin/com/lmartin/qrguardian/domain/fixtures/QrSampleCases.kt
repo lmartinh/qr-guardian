@@ -50,6 +50,17 @@ val qrSampleCases: List<QrSampleCase> = listOf(
         expectedLocalReasonsContain = listOf("HTTPS")
     ),
     QrSampleCase(
+        name = "Google Safe Browsing test malware URL",
+        rawText = "http://malware.testing.google.test/testing/malware/",
+        expectedContentType = QrContentType.Url,
+        expectedOverallLevel = SecurityLevel.Suspicious,
+        expectedLocalLevel = SecurityLevel.Suspicious,
+        expectedCanOpen = true,
+        expectedShowOpenButton = true,
+        expectedOpenableUrl = "http://malware.testing.google.test/testing/malware/",
+        expectedLocalReasonsContain = listOf("HTTPS")
+    ),
+    QrSampleCase(
         name = "URL with @",
         rawText = "https://google.com@evil.example/login",
         expectedContentType = QrContentType.Url,

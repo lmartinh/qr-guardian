@@ -77,6 +77,20 @@ class GoogleSafeBrowsingUrlReputationRepositoryTest {
     }
 
     @Test
+    fun `google malware test url is malicious`() = runBlocking {
+        val repository = GoogleSafeBrowsingUrlReputationRepository(
+            httpClient = httpClientWithResponse("""{"matches":[{"threatType":"MALWARE"}]}"""),
+            apiKey = "test-key"
+        )
+
+        val result = repository.checkUrl("http://malware.testing.google.test/testing/malware/")
+
+        assertEquals(UrlReputationStatus.Malicious, result.status)
+        assertEquals(listOf(ThreatCategory.Malware), result.categories)
+        assertTrue(result.reasons.contains("Google Safe Browsing reported this URL as MALWARE."))
+    }
+
+    @Test
     fun `http error returns error`() = runBlocking {
         val repository = GoogleSafeBrowsingUrlReputationRepository(
             httpClient = httpClientWithError(),

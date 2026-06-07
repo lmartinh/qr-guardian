@@ -46,6 +46,7 @@ Remote Reputation results can vary depending on which providers are configured a
 | `qrs/21_crypto.png` | `bitcoin:bc1qexampleaddress000000000000000000000000000?amount=0.01` | Crypto payment URI | Suspicious |
 | `qrs/22_vcard.png` | `BEGIN:VCARD ... END:VCARD` | Contact card payload | Suspicious |
 | `qrs/23_geo.png` | `geo:40.4168,-3.7038` | Location payload | Suspicious |
+| `qrs/24_google_safe_browsing_test_malware.png` | `http://malware.testing.google.test/testing/malware/` | Google Safe Browsing malware test URL | Suspicious locally, malicious with Google Safe Browsing |
 
 ## Notes
 
