@@ -18,6 +18,9 @@ For optional remote reputation details, see [Remote Reputation](remote-reputatio
 - Runtime wiring is centralized in Koin, but security pipeline composition stays in `QrGuardianSecurityPipelineFactory`.
 - Android and iOS provide `RemoteReputationConfig` explicitly before initializing Koin.
 
+You can test these rules manually with the sample QR dataset:
+[Sample QR dataset](../assets/sample-qrs/README.md)
+
 ## Current Repository Contract
 
 The remote reputation layer is represented by a repository contract and a no-op implementation:

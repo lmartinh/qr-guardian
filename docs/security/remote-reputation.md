@@ -35,6 +35,7 @@ The keys are optional. Missing or blank values keep the app in local-only mode.
 - Remote Reputation only applies to URLs.
 - Without keys, the remote section is shown as `NotConfigured`.
 - Non-URL payloads remain `NotApplicable`.
+- Sample QR results can vary depending on which providers are configured and whether the live lookup succeeds.
 
 ## Android Configuration
 

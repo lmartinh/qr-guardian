@@ -33,6 +33,15 @@ QR Guardian es una app móvil Kotlin Multiplatform para Android e iOS que escane
 |---|---|
 | ![Pantalla de resultado de QR Guardian mostrando detección de archivo PDF y detalles del análisis local](docs/assets/screenshots/result-safe.png) | ![Pantalla de resultado de QR Guardian mostrando un estado sospechoso](docs/assets/screenshots/result-suspicious.png) |
 
+## Dataset de QRs de ejemplo
+
+QR Guardian incluye un pequeño dataset sintético para pruebas manuales y demos.
+Cubre URLs seguras, URLs sospechosas, descargas, WiFi, SMS, email, texto plano, crypto, vCard y geo.
+
+Sirve para validar Local Scan, las comprobaciones HEAD y el renderizado de resultados. Remote Reputation depende de la configuración de proveedores y del resultado de la consulta en vivo.
+
+Dataset: [docs/assets/sample-qrs/README.md](docs/assets/sample-qrs/README.md)
+
 ## Flujo principal
 
 Intro
