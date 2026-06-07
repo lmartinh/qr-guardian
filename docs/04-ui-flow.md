@@ -1,82 +1,91 @@
 # UI Flow
 
-## 1) Intro / Launch Screen
-**Purpose**
-- Present QR Guardian value.
-- Establish safety-first behavior.
-- Provide clear entry into scanning.
+## Overview
 
-**Main content**
-- App name: QR Guardian
-- Tagline: Scan smarter. Open safer.
-- Short explanation of scan + safety flow
+QR Guardian follows a simple security-first flow:
 
-**Main CTA**
-- Start scanning / Scan QR
+Intro
+→ Camera
+→ QR/barcode detected
+→ Local Scan
+→ Remote Reputation, optional
+→ Result
 
-**Navigation target**
-- Camera Capture Screen
+The app never opens scanned content automatically. The user always sees the result first, and the open action is only available for URL results that are not classified as dangerous.
 
-## 2) Camera Capture Screen
-**Purpose**
-- Capture QR/barcode content.
-- Guide user visually during scan.
+## Intro Screen
 
-**States and behavior**
-- Permission state: request/handle camera access.
-- Camera preview state: show live preview.
-- Scan frame: centered visual frame.
-- Helper text: e.g. "Place the QR code inside the frame".
-- Loading/analyzing state: brief processing state after detection.
-- Error state: permission denied, camera unavailable, decode failure.
+Purpose:
+- Explain the product value quickly.
+- Reinforce the safety-first promise.
+- Offer a clear entry point into scanning.
 
-**Navigation target**
-- Result Screen when scan content is detected and processed.
+Main elements:
+- App name and tagline.
+- Short explanatory text.
+- Primary call to action to start scanning.
 
-## 3) Result Screen
-**Purpose**
-- Show scanned content and interpretation.
-- Show URL safety status when applicable.
-- Enable explicit user actions.
+Navigation target:
+- Camera screen.
 
-**Main content**
-- Raw scanned content
-- Parsed value (when available)
-- Detected content type
-- URL safety status (if URL)
-- Recommended action card
+## Camera Screen
 
-**Actions**
-- Open URL (after explicit confirmation)
-- Copy content
-- Share content
-- Scan again
-- Back to intro/home
+Purpose:
+- Capture QR and barcode content.
+- Guide the user with a clear scan frame.
 
-## Primary Navigation Flow
-Intro Screen
-   ↓ Start scanning
-Camera Capture Screen
-   ↓ QR/barcode detected
-Result Screen
-   ↓ Scan again
-Camera Capture Screen
+Main states:
+- Permission request or denied state.
+- Live camera preview.
+- Centered scan frame.
+- Short helper text.
+- Brief analyzing state after detection.
+- Error state for camera unavailability or scan failure.
 
-## URL-Specific Flow
-QR contains URL
-   ↓
-Normalize URL
-   ↓
-Check safety
-   ↓
-Show result
-   ↓
-User chooses whether to open it
+Navigation target:
+- Result screen after the scan has been processed.
 
-## Visual Guidance by Safety State
+## Result Screen
+
+Purpose:
+- Show the scanned content.
+- Show the local safety result.
+- Show optional remote reputation state for URLs.
+- Let the user decide whether to open the URL.
+
+Main content:
+- Raw scanned content.
+- Detected content type.
+- Local Scan section.
+- Remote Reputation section.
+- Recommended action card.
+
+Main actions:
+- Open link when allowed.
+- Copy content.
+- Share content.
+- Scan again.
+
+## Safety States
+
 - Safe: calm positive state.
 - Suspicious: warning state.
-- Malicious: danger state.
-- Unknown: neutral/caution state.
+- Dangerous: strong caution state.
+- Unknown: uncertain state.
 
-Exact color tokens are intentionally not defined here.
+## URL Flow
+
+URL detected
+→ Normalize
+→ Run local checks
+→ Inspect HEAD metadata when available
+→ Run remote reputation only if configured
+→ Present result
+→ User chooses whether to open it
+
+## Implementation Notes
+
+- Local Scan is always enabled.
+- Remote Reputation is optional.
+- PDF and menu links can appear as file metadata in the result.
+- Executable and script downloads should be treated as high risk.

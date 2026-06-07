@@ -31,11 +31,11 @@ The app always shows analysis results first. It does not automatically open scan
 
 ## High-Level Feature List
 - Intro/launch screen with clear security value.
-- Camera capture flow for QR and barcode scanning (planned).
+- Camera capture flow for QR and barcode scanning.
 - Content type detection and parsing.
-- URL safety evaluation flow (fake first, real provider later via backend).
-- Result screen with actionable outcomes (copy, share, open with confirmation, scan again).
-- Future optional local history of scans.
+- Local security analysis with optional remote reputation for URLs.
+- Result screen with actionable outcomes and explicit open confirmation.
+- Screenshot-driven portfolio presentation.
 
 ## Technical Focus
 QR Guardian is intentionally focused on:

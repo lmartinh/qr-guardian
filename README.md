@@ -1,137 +1,163 @@
-<div align="center">
-  <img src="docs/assets/qr-guardian-hero.png" alt="QR Guardian hero - secure QR scanning" width="100%">
-</div>
+<p align="center">
+  <img src="docs/assets/qr-guardian-hero-new.png" alt="QR Guardian hero banner" width="100%">
+</p>
 
 # QR Guardian
 
-> **Read in another language:** **English** · [Español](README.es.md)
+> Scan smarter. Open safer.
+
+[English](README.md) · [Español](README.es.md)
 
 [![Kotlin Multiplatform](https://img.shields.io/badge/Kotlin-Multiplatform-7F52FF)](https://kotlinlang.org/docs/multiplatform.html)
 [![Compose Multiplatform](https://img.shields.io/badge/Compose-Multiplatform-4285F4)](https://www.jetbrains.com/compose-multiplatform/)
 [![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS-0A7EA4)](https://developer.android.com/)
 [![Package](https://img.shields.io/badge/Package-com.lmartin.qrguardian-2ea44f)](https://kotlinlang.org/docs/packages.html)
 
-### Scan smarter. Open safer.
+QR Guardian is a Kotlin Multiplatform mobile app for Android and iOS that scans QR codes and barcodes, classifies the content, and shows a safety result before the user decides whether to open anything.
 
-## What is QR Guardian?
-QR Guardian is a Kotlin Multiplatform mobile app for Android and iOS.
+## What QR Guardian does
 
-It scans QR codes and barcodes, detects the scanned content type, and helps users evaluate potentially malicious URLs **before opening them**.
+- Detects QR, barcode and common content types.
+- Runs a local security pass on every scan by default.
+- Performs optional remote reputation checks only for URLs.
+- Never opens scanned content automatically.
+- Presents clear results before the user acts.
 
-## Why this project?
-- Build a practical, security-aware mobile app.
-- Showcase clean KMP + Compose architecture in a portfolio-ready project.
-- Keep logic shared, UI polished, and behavior predictable.
+## Screenshots
 
-## Core product flow
-1. User opens the app.
-2. User starts scanning.
-3. App reads QR/barcode content.
-4. App detects content type.
-5. If content is a URL, app evaluates safety.
-6. App shows result first; user decides what to do next.
+| Intro | Camera |
+|---|---|
+| ![QR Guardian intro screen](docs/assets/screenshots/intro.png) | ![QR Guardian camera scanner screen](docs/assets/screenshots/camera.png) |
 
-## Planned main screens
-- Intro / Launch
-- Camera Capture
-- Result
+| Result: safe local scan | Result: suspicious local scan |
+|---|---|
+| ![QR Guardian result screen showing file/PDF detection with local scan details](docs/assets/screenshots/result-safe.png) | ![QR Guardian result screen showing a suspicious scan result](docs/assets/screenshots/result-suspicious.png) |
 
-## Safety principles
-- Never auto-open scanned URLs.
-- Warn clearly on suspicious or malicious results.
-- Treat unknown results as uncertain.
-- Keep security-provider secrets out of mobile clients.
-- Perform a local first-pass verification before any opening action.
-- Surface the analyzed content type, security level, reasons, and `canOpen` decision to the result screen.
-- Show the open action only for URL results that are not dangerous, and open bare domains with `https://` when possible.
+## Core flow
 
-## Security checks
-- Local checks are enabled by default.
-- The local scan block evaluates normalization, classification, URL rules and HEAD metadata.
-- Remote reputation checks are optional and only run for URLs.
-- Google Safe Browsing and URLhaus can be configured by each developer.
-- The current app wiring reads optional host config and still runs local-only when no keys are present.
-- Non-URL payloads do not trigger HEAD or remote reputation checks.
-- No API keys are included.
-- Without an API key, QR Guardian runs in local-only mode.
-- The result is split into `Local Scan` and `Remote Reputation` sections.
+Intro
+→ Camera
+→ QR/barcode detected
+→ Local Scan
+→ Remote Reputation, optional
+→ Result
 
-## Remote Reputation Configuration
-QR Guardian works out of the box without API keys.
+The app always shows the result before the user opens anything. The open action is only available for URL results that are not classified as dangerous.
 
-- Local Scan always runs.
-- Remote Reputation is optional and only applies to URLs.
-- `GOOGLE_SAFE_BROWSING_API_KEY` enables Google Safe Browsing.
-- `URLHAUS_API_KEY` enables URLhaus.
-- If neither key is configured, the app stays in local-only mode and the remote section shows `Not configured`.
+## Security model
 
-Android:
-- Add the keys to `local.properties` in the project root.
-- `local.properties.example` shows the exact empty placeholders.
-- Empty or missing values keep local-only mode.
+### Local Scan
 
-iOS:
-- Add the keys through `iosApp/Configuration/RemoteReputation.xcconfig` copied from `iosApp/Configuration/RemoteReputation.example.xcconfig`.
-- The values are exposed to `Info.plist` and read by the shared iOS config provider.
-- Empty or missing values keep local-only mode.
+- Always enabled.
+- Runs without API keys.
+- Uses local QR and content checks.
+- Performs HEAD metadata inspection for URLs when the server supports it.
+- Detects download-like content such as PDF/menu links as file metadata.
+- Treats executable or script downloads as high risk.
+- Does not call external reputation services.
 
-Never commit real API keys.
-For production, use a backend or proxy instead of embedding reputation keys in the mobile binary.
+### Remote Reputation
 
-## Tech stack
-- Kotlin Multiplatform
-- Compose Multiplatform
-- Android + iOS
-- Kotlin Coroutines
-- Clean Architecture principles
+- Optional and URL-only.
+- Uses Google Safe Browsing and URLhaus when configured.
+- Shows `Not configured` when no keys are provided.
+- Never stores keys in the repository.
 
-## Dependency injection
-- QR Guardian uses Koin for KMP dependency injection.
-- Koin is used only for app wiring at the platform boundary.
+PDF and menu URLs are shown as file metadata first. They are not automatically treated as dangerous just because they point to a downloadable file.
+
+## Getting Started
+
+### Android
+
+1. Open the project in Android Studio.
+2. Run the `androidApp` configuration or `./gradlew :androidApp:assembleDebug`.
+3. Camera permission is required for scanning.
+4. No API keys are required for local-only mode.
+5. Optional: create `local.properties` from `local.properties.example` to enable remote providers.
+
+### iOS
+
+1. Open `iosApp/iosApp.xcodeproj` in Xcode.
+2. Run the `iosApp` target.
+3. Camera permission is required for scanning.
+4. No API keys are required for local-only mode.
+5. Optional: copy `iosApp/Configuration/RemoteReputation.example.xcconfig` to `iosApp/Configuration/RemoteReputation.xcconfig` and add keys.
+
+### Camera permissions
+
+- Android uses `android.permission.CAMERA`.
+- iOS uses `NSCameraUsageDescription`.
+- If permission is denied, the camera scanner cannot start.
+
+## Optional Remote Reputation configuration
+
+QR Guardian works out of the box without API keys. Leave the values empty to keep local-only mode.
+
+### Android
+
+1. Copy or create `local.properties` in the project root.
+2. Add the keys:
+
+```properties
+GOOGLE_SAFE_BROWSING_API_KEY=your_google_key
+URLHAUS_API_KEY=your_urlhaus_auth_key
+```
+
+### iOS
+
+1. Copy `iosApp/Configuration/RemoteReputation.example.xcconfig` to `iosApp/Configuration/RemoteReputation.xcconfig`.
+2. Add the keys:
+
+```xcconfig
+GOOGLE_SAFE_BROWSING_API_KEY = your_google_key
+URLHAUS_API_KEY = your_urlhaus_auth_key
+```
+
+API keys embedded in mobile apps cannot be fully protected. This setup is suitable for development, demos and portfolio use. For production, use a backend or proxy.
+
+## Architecture and dependency injection
+
+- Shared domain and presentation logic lives in Kotlin Multiplatform code.
+- Compose Multiplatform is used for the shared UI.
+- Ktor Client handles HEAD metadata checks and remote reputation requests.
+- Koin is used only at the app wiring boundary.
+- `QrGuardianSecurityPipelineFactory` is the single source of truth for pipeline composition.
 - Domain code remains framework-independent.
-- RemoteReputationConfig is provided explicitly by Android and iOS hosts.
-- Local-only mode remains the default when no keys are configured.
-- Tests can override dependencies through Koin modules.
-- QrGuardianSecurityPipelineFactory is the single source of truth for security pipeline composition.
-- Koin delegates to that factory instead of duplicating pipeline assembly.
 
-## Project structure
-- `androidApp/`: Android host app.
-- `iosApp/`: iOS host app (Xcode project).
-- `shared/`: shared KMP logic and shared Compose UI.
-- `docs/`: product, architecture, roadmap, security and testing docs.
+Dependency injection is handled with Koin, but only at the app wiring boundary. The security pipeline is assembled by `QrGuardianSecurityPipelineFactory`, which keeps the dependency graph explicit, testable and independent from the DI framework.
 
-## Run
-Android debug build:
-```bash
-./gradlew :androidApp:assembleDebug
-```
+## Portfolio highlights
 
-iOS (from Xcode):
-`iosApp/` → open in Xcode and run target.
+- Kotlin Multiplatform shared security pipeline.
+- Compose Multiplatform UI for Android and iOS.
+- Camera-based QR and barcode scanning.
+- Local URL safety checks and HEAD metadata inspection.
+- Optional remote reputation providers.
+- Koin dependency injection kept at the wiring boundary.
+- Unit-tested domain logic and provider selection.
 
-## Test
-Android host tests:
-```bash
-./gradlew :shared:testAndroidHostTest
-```
+## Tests and validation
 
-iOS simulator tests:
-```bash
-./gradlew :shared:iosSimulatorArm64Test
-```
+Main validation commands:
 
-Shared domain verification tests:
 ```bash
 ./gradlew :shared:allTests
-```
-
-Coverage report:
-```bash
+./gradlew :androidApp:assembleDebug
+./gradlew :shared:testAndroidHostTest
+./gradlew :shared:iosSimulatorArm64Test
 ./gradlew :shared:koverHtmlReport
+git diff --check
 ```
 
-## Documentation index
+## Troubleshooting
+
+- Camera does not open: check camera permission.
+- Remote Reputation shows `Not configured`: the API keys are missing or empty.
+- PDF or file type is not shown: the server may not support HEAD or may not expose `Content-Type` or `Content-Disposition`.
+- iOS keys are not picked up: verify `RemoteReputation.xcconfig` is included and the `Info.plist` build settings still reference the values.
+
+## Documentation
+
 - [Overview](docs/00-overview.md)
 - [Roadmap](docs/01-roadmap.md)
 - [Functional Specification](docs/02-functional-specification.md)
@@ -143,3 +169,11 @@ Coverage report:
 - [Testing Strategy](docs/06-testing-strategy.md)
 - [Agent Tasks](docs/07-agent-tasks.md)
 - [Agent Guidelines](AGENTS.md)
+
+## Known limitations
+
+- Remote Reputation is optional and stays disabled until API keys are configured.
+- Mobile API keys are not fully secret when shipped in an app binary.
+- HEAD metadata depends on server support, so some URLs may not expose file details.
+- Remote providers can return false negatives, so a clean reputation result is not a guarantee of safety.
+- QR Guardian is a portfolio and demo project, not a replacement for enterprise security tooling.

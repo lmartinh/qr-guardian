@@ -1,4 +1,4 @@
-# Planned Architecture
+# Architecture
 
 ## Package Root
 `com.lmartin.qrguardian`
@@ -24,9 +24,11 @@ QrAnalysisResult
 ↓  
 Result screen
 
-Current shared logic normalizes and classifies the payload first, then runs the local scan and remote reputation blocks. URL payloads also perform a HEAD metadata check so the result can show destination details separately from the remote provider state.
+Current shared logic normalizes and classifies the payload first, then runs the local scan and optional remote reputation blocks. URL payloads also perform a HEAD metadata check so the result can show destination details separately from the remote provider state.
 
-Initial implementation should use fake data first, then evolve toward real camera scanning and backend/provider integration.
+Koin is used only at the platform app boundary. `QrGuardianSecurityPipelineFactory` composes the pipeline explicitly so the domain layer stays framework-independent and easy to test.
+
+The app now has real camera scanning, local-only security checks by default, and optional provider-backed reputation checks when keys are configured.
 
 ## Suggested Domain Models
 ```kotlin

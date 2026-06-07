@@ -1,6 +1,7 @@
 # Testing Strategy
 
 ## Testing Approach
+
 Prioritize pragmatic tests in shared Kotlin logic (`commonMain`-oriented domain and pure functions). Keep tests readable and focused on behavior.
 
 Testing style:
@@ -9,6 +10,7 @@ Testing style:
 - Assert
 
 ## Domain Tests
+
 Prioritize coverage for:
 - Normalization: whitespace trimming, null removal, empty input, long input.
 - Classification: URL, email, phone, SMS, WiFi, vCard, geo, crypto, plain text.
@@ -21,18 +23,21 @@ Prioritize coverage for:
 - Dangerous scheme rejection when URL handling is extended to support it.
 
 ## Presentation Tests
+
 Optional and incremental:
 - State holder behavior
 - UI state transitions
 - Result mapping for view state
 
 ## Platform Tests
-Camera/scanner behavior will require platform-specific testing later:
-- Android camera/scanner integration tests
-- iOS camera/scanner integration tests
+
+Camera and scanner behavior will require platform-specific testing later:
+- Android camera and scanner integration tests
+- iOS camera and scanner integration tests
 - Permission behavior tests on both platforms
 
 ## Current Shared Test Coverage
+
 The current implementation already includes focused tests for:
 - `DefaultQrTextNormalizer`
 - `DefaultQrContentClassifier`
@@ -46,7 +51,21 @@ The current implementation already includes focused tests for:
 
 These tests document the expected behavior of the local verification pipeline and act as regression coverage for future rules.
 
+## Validation Commands
+
+The main commands documented for this project are:
+
+```bash
+./gradlew :shared:allTests
+./gradlew :androidApp:assembleDebug
+./gradlew :shared:testAndroidHostTest
+./gradlew :shared:iosSimulatorArm64Test
+./gradlew :shared:koverHtmlReport
+git diff --check
+```
+
 ## Guidance
+
 - Prefer deterministic fake data sources in tests.
 - Avoid testing implementation details.
 - Avoid heavy test infrastructure until needed.
