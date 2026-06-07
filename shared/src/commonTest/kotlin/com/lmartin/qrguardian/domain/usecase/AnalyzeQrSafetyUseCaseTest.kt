@@ -57,6 +57,7 @@ class AnalyzeQrSafetyUseCaseTest {
 
         assertEquals(SecurityLevel.Unknown, result.overallLevel)
         assertFalse(result.canOpen)
+        assertEquals(null, result.openableUrl)
         assertEquals(QrContentType.PlainText, result.contentType)
         assertEquals(ScanStatus.Completed, result.localScan.status)
         assertEquals(ScanStatus.NotApplicable, result.remoteReputation.status)
@@ -127,9 +128,80 @@ class AnalyzeQrSafetyUseCaseTest {
         val analysisResult = result!!
         assertEquals(SecurityLevel.Safe, analysisResult.overallLevel)
         assertTrue(analysisResult.canOpen)
+        assertEquals("https://example.com/download", analysisResult.openableUrl)
         assertEquals(ScanStatus.Completed, analysisResult.localScan.status)
         assertTrue(analysisResult.localScan.metadata.any { it.label == "File type" && it.value == "PDF" })
         assertEquals(ScanStatus.Completed, analysisResult.remoteReputation.status)
+    }
+
+    @Test
+    fun `bare domain opens with https scheme`() = runBlocking {
+        val localAnalyzer = RecordingLocalScanAnalyzer(
+            result = scanSection(
+                level = SecurityLevel.Suspicious,
+                reasons = listOf("The URL does not use HTTPS.")
+            )
+        )
+        val metadataRepository = RecordingUrlMetadataRepository(
+            result = unavailableMetadataResult(),
+            gate = CompletableDeferred<Unit>().apply { complete(Unit) }
+        )
+        val reputationRepository = RecordingUrlReputationRepository(
+            result = UrlReputationResult(
+                status = UrlReputationStatus.Clean,
+                provider = "Dummy",
+                categories = emptyList(),
+                reasons = emptyList()
+            ),
+            gate = CompletableDeferred<Unit>().apply { complete(Unit) }
+        )
+        val useCase = AnalyzeQrSafetyUseCase(
+            localScanAnalyzer = localAnalyzer,
+            urlMetadataRepository = metadataRepository,
+            urlReputationRepository = reputationRepository
+        )
+
+        val result = useCase("example.com")
+
+        assertEquals(QrContentType.Url, result.contentType)
+        assertEquals(SecurityLevel.Suspicious, result.overallLevel)
+        assertTrue(result.canOpen)
+        assertEquals("https://example.com", result.openableUrl)
+    }
+
+    @Test
+    fun `http url keeps http scheme for opening`() = runBlocking {
+        val localAnalyzer = RecordingLocalScanAnalyzer(
+            result = scanSection(
+                level = SecurityLevel.Suspicious,
+                reasons = listOf("The URL does not use HTTPS.")
+            )
+        )
+        val metadataRepository = RecordingUrlMetadataRepository(
+            result = unavailableMetadataResult(),
+            gate = CompletableDeferred<Unit>().apply { complete(Unit) }
+        )
+        val reputationRepository = RecordingUrlReputationRepository(
+            result = UrlReputationResult(
+                status = UrlReputationStatus.Clean,
+                provider = "Dummy",
+                categories = emptyList(),
+                reasons = emptyList()
+            ),
+            gate = CompletableDeferred<Unit>().apply { complete(Unit) }
+        )
+        val useCase = AnalyzeQrSafetyUseCase(
+            localScanAnalyzer = localAnalyzer,
+            urlMetadataRepository = metadataRepository,
+            urlReputationRepository = reputationRepository
+        )
+
+        val result = useCase("http://example.com")
+
+        assertEquals(QrContentType.Url, result.contentType)
+        assertEquals(SecurityLevel.Suspicious, result.overallLevel)
+        assertTrue(result.canOpen)
+        assertEquals("http://example.com", result.openableUrl)
     }
 
     @Test
@@ -174,6 +246,7 @@ class AnalyzeQrSafetyUseCaseTest {
 
         assertEquals(SecurityLevel.Suspicious, result.overallLevel)
         assertTrue(result.canOpen)
+        assertEquals("https://example.com/file", result.openableUrl)
         assertTrue(result.localScan.metadata.any { it.label == "Content type" && it.value == "application/octet-stream" })
     }
 
@@ -219,6 +292,7 @@ class AnalyzeQrSafetyUseCaseTest {
 
         assertEquals(SecurityLevel.Dangerous, result.overallLevel)
         assertFalse(result.canOpen)
+        assertEquals(null, result.openableUrl)
         assertTrue(result.localScan.metadata.any { it.label == "File type" && it.value == "Windows executable" })
     }
 
@@ -264,6 +338,7 @@ class AnalyzeQrSafetyUseCaseTest {
 
         assertEquals(SecurityLevel.Dangerous, result.overallLevel)
         assertFalse(result.canOpen)
+        assertEquals(null, result.openableUrl)
         assertEquals(ScanStatus.Completed, result.localScan.status)
         assertEquals(ScanStatus.Completed, result.remoteReputation.status)
         assertTrue(result.remoteReputation.metadata.any { it.label == "Categories" && it.value == "Phishing" })
@@ -301,6 +376,7 @@ class AnalyzeQrSafetyUseCaseTest {
         assertEquals(QrContentType.Unknown, result.contentType)
         assertEquals(SecurityLevel.Dangerous, result.overallLevel)
         assertFalse(result.canOpen)
+        assertEquals(null, result.openableUrl)
         assertEquals(0, localAnalyzer.callCount)
         assertEquals(0, metadataRepository.callCount)
         assertEquals(0, reputationRepository.callCount)

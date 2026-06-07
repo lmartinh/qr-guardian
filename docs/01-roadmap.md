@@ -70,9 +70,9 @@
 ### Phase 5 - Real URL Safety Provider
 **Goal**
 - Integrate a real URL reputation provider through backend.
+- The current codebase already includes local optional providers for Google Safe Browsing and URLhaus; this phase is about the backend-mediated production path.
 
 **Potential providers**
-- Google Safe Browsing.
 - PhishTank.
 - VirusTotal.
 - urlscan.io.

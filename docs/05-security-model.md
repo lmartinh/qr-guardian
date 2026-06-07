@@ -113,6 +113,7 @@ QR and barcode payloads can hide malicious links that are not obvious to users b
 The app must never open scanned links automatically.
 
 Users always see the analysis result first and explicitly decide what to do.
+The result screen only shows an open action for URL payloads that are not classified as dangerous, and bare domains are opened as `https://...` when possible.
 
 ## Dangerous Schemes
 These schemes should be rejected or strongly blocked when URL handling is implemented:
@@ -166,10 +167,10 @@ Backend normalized response
 ↓  
 Mobile app result screen
 
-## Potential Providers (Future)
-- Google Safe Browsing
+## Provider Status
+Google Safe Browsing and URLhaus are already implemented in the codebase as optional remote providers.
+
+Other provider ideas remain future work and are intentionally out of scope for this documentation task:
 - PhishTank
 - VirusTotal
 - urlscan.io
-
-Provider integration is future work and is intentionally out of scope for this documentation task.

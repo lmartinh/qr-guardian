@@ -53,7 +53,7 @@ import com.lmartin.qrguardian.presentation.theme.QrGuardianSpacing
 @Composable
 fun ResultScreen(
     viewModel: ResultViewModel,
-    onOpenLinkClick: (String) -> Unit,
+    onOpenUrl: (String) -> Unit,
     onRescanClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -73,7 +73,7 @@ fun ResultScreen(
             )
             state.analysis != null -> ResultContent(
                 state = state,
-                onOpenLinkClick = onOpenLinkClick,
+                onOpenUrl = onOpenUrl,
                 onRescanClick = onRescanClick,
                 texts = texts,
             )
@@ -85,7 +85,7 @@ fun ResultScreen(
 @Composable
 private fun ResultContent(
     state: ResultUiState,
-    onOpenLinkClick: (String) -> Unit,
+    onOpenUrl: (String) -> Unit,
     onRescanClick: () -> Unit,
     texts: ResultTexts,
 ) {
@@ -131,11 +131,15 @@ private fun ResultContent(
             texts = texts,
         )
 
-        PrimaryActionButton(
-            text = texts.openLink,
-            tone = tone,
-            onClick = { onOpenLinkClick(analysis.normalizedText) },
-        )
+        state.openableUrl?.let { openableUrl ->
+            if (state.showOpenButton) {
+                PrimaryActionButton(
+                    text = texts.openLink,
+                    tone = tone,
+                    onClick = { onOpenUrl(openableUrl) },
+                )
+            }
+        }
 
         ResultUrlCard(
             url = analysis.normalizedText,

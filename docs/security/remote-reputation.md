@@ -9,16 +9,17 @@ QR Guardian keeps local security checks enabled by default.
 - Without an API key, the app falls back to local-only mode through `NoOpUrlReputationRepository`.
 - The result model separates `Local Scan` and `Remote Reputation`.
 - Remote reputation only runs for URL payloads; non-URL payloads surface `NotApplicable`.
+- The current Android and iOS app roots still construct the pipeline with the default remote config, so the shipped app runs local-only unless host wiring passes keys into `RemoteReputationConfig`.
 
 ## Configuration
-In a future setup, each developer can provide their own API key for Google Safe Browsing.
-URLhaus uses its own optional API key as well.
-
-The repository includes `local.properties.example` as a documentation aid:
+The repository includes `local.properties.example` as a safe placeholder file for the current keys:
 - `GOOGLE_SAFE_BROWSING_API_KEY=`
 - `URLHAUS_API_KEY=`
 
 The example file is intentionally empty and does not contain secrets.
+
+The codebase exposes `RemoteReputationConfig` as the wiring input for host apps or launchers that want to enable providers.
+The repository does not currently auto-load keys from `local.properties`.
 
 ## Production Guidance
 Mobile binaries can be inspected, so API keys should not be treated as secret when embedded directly in an app.

@@ -43,12 +43,14 @@ It scans QR codes and barcodes, detects the scanned content type, and helps user
 - Keep security-provider secrets out of mobile clients.
 - Perform a local first-pass verification before any opening action.
 - Surface the analyzed content type, security level, reasons, and `canOpen` decision to the result screen.
+- Show the open action only for URL results that are not dangerous, and open bare domains with `https://` when possible.
 
 ## Security checks
 - Local checks are enabled by default.
 - The local scan block evaluates normalization, classification, URL rules and HEAD metadata.
 - Remote reputation checks are optional and only run for URLs.
 - Google Safe Browsing and URLhaus can be configured by each developer.
+- The current app wiring runs local-only by default unless host code injects `RemoteReputationConfig`.
 - Non-URL payloads do not trigger HEAD or remote reputation checks.
 - No API keys are included.
 - Without an API key, QR Guardian runs in local-only mode.

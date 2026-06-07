@@ -4,27 +4,34 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.tooling.preview.Preview
 import com.lmartin.qrguardian.domain.model.QrAnalysisResult
-import com.lmartin.qrguardian.presentation.permissions.CameraPermissionState
-import com.lmartin.qrguardian.presentation.intro.IntroScreen
+import com.lmartin.qrguardian.domain.model.QrContentType
+import com.lmartin.qrguardian.domain.model.ScanMetadataItem
+import com.lmartin.qrguardian.domain.model.ScanSectionResult
+import com.lmartin.qrguardian.domain.model.ScanStatus
+import com.lmartin.qrguardian.domain.model.SecurityLevel
+import com.lmartin.qrguardian.presentation.app.AppScreen
+import com.lmartin.qrguardian.presentation.app.rememberQrGuardianAppState
 import com.lmartin.qrguardian.presentation.camera.CameraScreen
 import com.lmartin.qrguardian.presentation.camera.CameraViewModel
+import com.lmartin.qrguardian.presentation.intro.IntroScreen
+import com.lmartin.qrguardian.presentation.permissions.CameraPermissionState
 import com.lmartin.qrguardian.presentation.result.ResultScreen
 import com.lmartin.qrguardian.presentation.result.ResultUiState
 import com.lmartin.qrguardian.presentation.result.ResultViewModel
 import com.lmartin.qrguardian.presentation.theme.QrGuardianTheme
-import kotlinx.coroutines.launch
 
 @Composable
 @Preview
 fun App() {
-    App(
-        analyzeQr = { demoResult() },
-    )
+    App(analyzeQr = { demoResult() })
 }
 
 @Composable
@@ -35,38 +42,47 @@ fun App(
     analyzeQr: suspend (String) -> QrAnalysisResult,
 ) {
     val uriHandler = LocalUriHandler.current
-    val scope = rememberCoroutineScope()
-    var currentScreen by remember { mutableStateOf<AppScreen>(AppScreen.Intro) }
-    var hasHandledScan by remember { mutableStateOf(false) }
-    var showPermissionMessage by remember { mutableStateOf(false) }
-    var waitingForSettingsReturn by remember { mutableStateOf(false) }
+    val appState = rememberQrGuardianAppState(initialCameraPermissionGranted = cameraPermissionState.isGranted)
     val cameraViewModel = remember { CameraViewModel() }
     val resultViewModel = remember { ResultViewModel(ResultUiState.idle()) }
 
-    LaunchedEffect(currentScreen) {
-        if (currentScreen == AppScreen.Camera) {
+    LaunchedEffect(appState.screen) {
+        if (appState.screen == AppScreen.Camera) {
             cameraViewModel.setScanning(true)
             cameraViewModel.setError(null)
-            hasHandledScan = false
+        } else {
+            cameraViewModel.setScanning(false)
         }
     }
 
-    LaunchedEffect(cameraPermissionState.isGranted, waitingForSettingsReturn) {
-        if (cameraPermissionState.isGranted) {
-            showPermissionMessage = false
-            if (waitingForSettingsReturn) {
-                waitingForSettingsReturn = false
-                currentScreen = AppScreen.Camera
+    LaunchedEffect(cameraPermissionState.isGranted, appState.waitingForSettingsReturn, appState.screen) {
+        appState.syncCameraPermissionState(cameraPermissionState.isGranted)
+        when {
+            cameraPermissionState.isGranted && appState.waitingForSettingsReturn -> {
+                appState.onCameraPermissionGranted()
             }
-        } else if (!cameraPermissionState.canRequestAgain) {
-            showPermissionMessage = false
-            waitingForSettingsReturn = false
+
+            !cameraPermissionState.isGranted && appState.screen == AppScreen.Camera -> {
+                appState.onBackToIntro()
+            }
         }
     }
 
-    LaunchedEffect(currentScreen, cameraPermissionState.isGranted) {
-        if (currentScreen == AppScreen.Camera && !cameraPermissionState.isGranted) {
-            currentScreen = AppScreen.Intro
+    LaunchedEffect(appState.screen, appState.pendingAnalysisRawText) {
+        val pendingRawText = appState.pendingAnalysisRawText
+        if (appState.screen == AppScreen.Result && pendingRawText != null) {
+            resultViewModel.showLoading()
+            runCatching { analyzeQr(pendingRawText) }
+                .onSuccess {
+                    resultViewModel.showResult(it)
+                    appState.onAnalysisResult()
+                }
+                .onFailure { throwable ->
+                    resultViewModel.showError(
+                        throwable.message ?: "Unable to analyze the scanned content."
+                    )
+                    appState.onAnalysisError()
+                }
         }
     }
 
@@ -76,36 +92,34 @@ fun App(
                 .background(MaterialTheme.colorScheme.background)
                 .fillMaxSize(),
         ) {
-            when (currentScreen) {
+            when (appState.screen) {
                 AppScreen.Intro -> IntroScreen(
                     onStartScanningClick = {
+                        appState.onStartScan()
                         when {
                             cameraPermissionState.isGranted -> {
-                                showPermissionMessage = false
-                                currentScreen = AppScreen.Camera
+                                appState.onCameraPermissionGranted()
                             }
 
                             cameraPermissionState.canRequestAgain -> {
                                 onRequestCameraPermission { granted ->
                                     if (granted) {
-                                        showPermissionMessage = false
-                                        currentScreen = AppScreen.Camera
+                                        appState.onCameraPermissionGranted()
                                     } else {
-                                        showPermissionMessage = true
+                                        appState.onCameraPermissionDenied()
                                     }
                                 }
                             }
 
                             else -> {
-                                showPermissionMessage = false
+                                appState.onBackToIntro()
                             }
                         }
                     },
-                    showPermissionMessage = showPermissionMessage,
+                    showPermissionMessage = appState.showPermissionMessage,
                     showPermissionSettingsCard = !cameraPermissionState.isGranted && !cameraPermissionState.canRequestAgain,
                     onOpenSettingsClick = {
-                        showPermissionMessage = false
-                        waitingForSettingsReturn = true
+                        appState.onOpenCameraSettings()
                         onOpenCameraSettings()
                     },
                 )
@@ -113,38 +127,23 @@ fun App(
                 AppScreen.Camera -> CameraScreen(
                     viewModel = cameraViewModel,
                     onCloseClick = {
-                        currentScreen = AppScreen.Intro
                         resultViewModel.reset()
                         cameraViewModel.setScanning(false)
                         cameraViewModel.setError(null)
+                        appState.onCloseCamera()
                     },
                     onScanResult = { rawText ->
-                        if (hasHandledScan) return@CameraScreen
-                        hasHandledScan = true
+                        if (!appState.onQrDetected(rawText)) return@CameraScreen
                         resultViewModel.showLoading()
-                        currentScreen = AppScreen.Result
-                        scope.launch {
-                            runCatching { analyzeQr(rawText) }
-                                .onSuccess { resultViewModel.showResult(it) }
-                                .onFailure { throwable ->
-                                    resultViewModel.showError(
-                                        throwable.message ?: "Unable to analyze the scanned content."
-                                    )
-                                }
-                        }
                     },
                 )
 
                 AppScreen.Result -> ResultScreen(
                     viewModel = resultViewModel,
-                    onOpenLinkClick = { uriHandler.openUri(it) },
+                    onOpenUrl = { uriHandler.openUri(it) },
                     onRescanClick = {
                         resultViewModel.reset()
-                        currentScreen = if (cameraPermissionState.isGranted) {
-                            AppScreen.Camera
-                        } else {
-                            AppScreen.Intro
-                        }
+                        appState.onRescan()
                     },
                 )
             }
@@ -152,23 +151,18 @@ fun App(
     }
 }
 
-private enum class AppScreen {
-    Intro,
-    Camera,
-    Result,
-}
-
 private fun demoResult(): QrAnalysisResult {
     return QrAnalysisResult(
         originalText = "https://secure-login.example.com/account",
         normalizedText = "https://secure-login.example.com/account",
-        contentType = com.lmartin.qrguardian.domain.model.QrContentType.Url,
-        overallLevel = com.lmartin.qrguardian.domain.model.SecurityLevel.Suspicious,
+        openableUrl = "https://secure-login.example.com/account",
+        contentType = QrContentType.Url,
+        overallLevel = SecurityLevel.Suspicious,
         canOpen = true,
-        localScan = com.lmartin.qrguardian.domain.model.ScanSectionResult(
+        localScan = ScanSectionResult(
             name = "Local scan",
-            level = com.lmartin.qrguardian.domain.model.SecurityLevel.Suspicious,
-            status = com.lmartin.qrguardian.domain.model.ScanStatus.Completed,
+            level = SecurityLevel.Suspicious,
+            status = ScanStatus.Completed,
             title = "Phishing-like patterns detected",
             description = "The destination looks like a login or credential collection flow.",
             reasons = listOf(
@@ -177,13 +171,13 @@ private fun demoResult(): QrAnalysisResult {
                 "The destination asks for user action.",
             ),
             metadata = listOf(
-                com.lmartin.qrguardian.domain.model.ScanMetadataItem(label = "Content", value = "URL"),
+                ScanMetadataItem(label = "Content", value = "URL"),
             ),
         ),
-        remoteReputation = com.lmartin.qrguardian.domain.model.ScanSectionResult(
+        remoteReputation = ScanSectionResult(
             name = "Remote reputation",
-            level = com.lmartin.qrguardian.domain.model.SecurityLevel.Unknown,
-            status = com.lmartin.qrguardian.domain.model.ScanStatus.Unavailable,
+            level = SecurityLevel.Unknown,
+            status = ScanStatus.Unavailable,
             title = "Reputation not available",
             description = "Remote checks are not available in this demo state.",
             reasons = listOf(
@@ -191,8 +185,8 @@ private fun demoResult(): QrAnalysisResult {
                 "The app keeps the result visible before opening the link.",
             ),
             metadata = listOf(
-                com.lmartin.qrguardian.domain.model.ScanMetadataItem(label = "Provider", value = "Not configured"),
-                com.lmartin.qrguardian.domain.model.ScanMetadataItem(label = "Last check", value = "Unavailable"),
+                ScanMetadataItem(label = "Provider", value = "Not configured"),
+                ScanMetadataItem(label = "Last check", value = "Unavailable"),
             ),
         ),
     )

@@ -43,6 +43,7 @@ Escanea códigos QR y de barras, detecta el tipo de contenido escaneado y ayuda 
 - No exponer secretos de proveedores de seguridad en el cliente móvil.
 - Ejecutar primero el análisis local y después la reputación remota solo para URLs.
 - Separar el resultado en `Local Scan` y `Remote Reputation` para la UI.
+- El wiring actual de la app funciona en modo local-only por defecto salvo que el host inyecte `RemoteReputationConfig`.
 
 ## Verificaciones de seguridad
 - El bloque local valida normalización, clasificación, reglas de URL y metadata HEAD.

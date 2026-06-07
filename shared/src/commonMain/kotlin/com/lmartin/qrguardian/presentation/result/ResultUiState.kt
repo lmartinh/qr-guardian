@@ -10,8 +10,19 @@ data class ResultUiState(
     val analysis: QrAnalysisResult? = null,
     val errorMessage: String? = null
 ) {
+    val canOpen: Boolean
+        get() = analysis?.canOpen == true
+
     val showOpenButton: Boolean
-        get() = analysis?.let { it.contentType == QrContentType.Url && it.canOpen } == true
+        get() = analysis?.let {
+            it.contentType == QrContentType.Url &&
+                canOpen &&
+                it.overallLevel != SecurityLevel.Dangerous &&
+                it.openableUrl != null
+        } == true
+
+    val openableUrl: String?
+        get() = analysis?.openableUrl
 
     val overallLevel: SecurityLevel?
         get() = analysis?.overallLevel

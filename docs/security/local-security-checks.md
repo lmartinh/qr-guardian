@@ -15,13 +15,13 @@ For optional remote reputation details, see [Remote Reputation](remote-reputatio
 - Runtime wiring is centralized in `QrGuardianHttpClientFactory` and `QrGuardianSecurityPipelineFactory`.
 
 ## Remote Reputation Readiness
-The project is prepared for future optional providers such as:
+The codebase already includes optional remote providers for:
 - Google Safe Browsing
-- VirusTotal
 - URLhaus
-- PhishTank
 
-Each developer should configure their own API keys in a future iteration.
+Future provider ideas can still be added later, but they are not part of the current implementation.
+
+Each developer should configure their own API keys when enabling remote providers.
 
 Those keys must not be committed to this repository and should not be hardcoded in a mobile client.
 

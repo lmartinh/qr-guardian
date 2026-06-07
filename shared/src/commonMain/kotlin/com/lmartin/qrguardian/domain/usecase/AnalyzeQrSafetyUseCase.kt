@@ -41,6 +41,7 @@ class AnalyzeQrSafetyUseCase(
             return QrAnalysisResult(
                 originalText = rawText,
                 normalizedText = normalizedText,
+                openableUrl = null,
                 contentType = contentType,
                 overallLevel = SecurityLevel.Dangerous,
                 canOpen = false,
@@ -59,6 +60,7 @@ class AnalyzeQrSafetyUseCase(
             return QrAnalysisResult(
                 originalText = rawText,
                 normalizedText = normalizedText,
+                openableUrl = null,
                 contentType = contentType,
                 overallLevel = baseLocalScan.level,
                 canOpen = false,
@@ -81,6 +83,7 @@ class AnalyzeQrSafetyUseCase(
             QrAnalysisResult(
                 originalText = rawText,
                 normalizedText = normalizedText,
+                openableUrl = if (overallLevel != SecurityLevel.Dangerous) networkUrl else null,
                 contentType = contentType,
                 overallLevel = overallLevel,
                 canOpen = overallLevel != SecurityLevel.Dangerous,

@@ -16,7 +16,7 @@ private fun ResultScreenPreviewSafe() {
     QrGuardianTheme {
         ResultScreen(
             viewModel = ResultViewModel.preview(ResultUiState.success(sampleUrlResult(SecurityLevel.Safe))),
-            onOpenLinkClick = {},
+            onOpenUrl = {},
             onRescanClick = {},
         )
     }
@@ -28,7 +28,7 @@ private fun ResultScreenPreviewSuspicious() {
     QrGuardianTheme {
         ResultScreen(
             viewModel = ResultViewModel.preview(ResultUiState.success(sampleUrlResult(SecurityLevel.Suspicious))),
-            onOpenLinkClick = {},
+            onOpenUrl = {},
             onRescanClick = {},
         )
     }
@@ -40,7 +40,7 @@ private fun ResultScreenPreviewNoRemote() {
     QrGuardianTheme {
         ResultScreen(
             viewModel = ResultViewModel.preview(ResultUiState.success(sampleNoRemoteResult())),
-            onOpenLinkClick = {},
+            onOpenUrl = {},
             onRescanClick = {},
         )
     }
@@ -52,7 +52,7 @@ private fun ResultScreenPreviewPdfDownload() {
     QrGuardianTheme {
         ResultScreen(
             viewModel = ResultViewModel.preview(ResultUiState.success(samplePdfDownloadResult())),
-            onOpenLinkClick = {},
+            onOpenUrl = {},
             onRescanClick = {},
         )
     }
@@ -64,7 +64,7 @@ private fun ResultScreenPreviewMail() {
     QrGuardianTheme {
         ResultScreen(
             viewModel = ResultViewModel.preview(ResultUiState.success(sampleMailResult())),
-            onOpenLinkClick = {},
+            onOpenUrl = {},
             onRescanClick = {},
         )
     }
@@ -76,7 +76,7 @@ private fun ResultScreenPreviewPlainText() {
     QrGuardianTheme {
         ResultScreen(
             viewModel = ResultViewModel.preview(ResultUiState.success(samplePlainTextResult())),
-            onOpenLinkClick = {},
+            onOpenUrl = {},
             onRescanClick = {},
         )
     }
@@ -86,6 +86,7 @@ private fun sampleUrlResult(level: SecurityLevel): QrAnalysisResult {
     return QrAnalysisResult(
         originalText = "https://secure-login.example.com/account",
         normalizedText = "https://secure-login.example.com/account",
+        openableUrl = "https://secure-login.example.com/account",
         contentType = QrContentType.Url,
         overallLevel = level,
         canOpen = true,
@@ -171,6 +172,7 @@ private fun samplePdfDownloadResult(): QrAnalysisResult {
     return QrAnalysisResult(
         originalText = "https://cdn.example.com/files/security-guide.pdf",
         normalizedText = "https://cdn.example.com/files/security-guide.pdf",
+        openableUrl = "https://cdn.example.com/files/security-guide.pdf",
         contentType = QrContentType.Url,
         overallLevel = SecurityLevel.Safe,
         canOpen = true,
@@ -206,6 +208,7 @@ private fun sampleMailResult(): QrAnalysisResult {
     return QrAnalysisResult(
         originalText = "mailto:hello@company.com?subject=Support&body=I%20need%20help",
         normalizedText = "mailto:hello@company.com?subject=Support&body=I%20need%20help",
+        openableUrl = null,
         contentType = QrContentType.Email,
         overallLevel = SecurityLevel.Suspicious,
         canOpen = true,
@@ -239,6 +242,7 @@ private fun samplePlainTextResult(): QrAnalysisResult {
     return QrAnalysisResult(
         originalText = "QR Guardian notes",
         normalizedText = "QR Guardian notes",
+        openableUrl = null,
         contentType = QrContentType.PlainText,
         overallLevel = SecurityLevel.Unknown,
         canOpen = false,
