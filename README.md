@@ -92,6 +92,8 @@ For production, use a backend or proxy instead of embedding reputation keys in t
 - RemoteReputationConfig is provided explicitly by Android and iOS hosts.
 - Local-only mode remains the default when no keys are configured.
 - Tests can override dependencies through Koin modules.
+- QrGuardianSecurityPipelineFactory is the single source of truth for security pipeline composition.
+- Koin delegates to that factory instead of duplicating pipeline assembly.
 
 ## Project structure
 - `androidApp/`: Android host app.

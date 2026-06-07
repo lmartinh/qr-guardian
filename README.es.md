@@ -50,6 +50,15 @@ Escanea códigos QR y de barras, detecta el tipo de contenido escaneado y ayuda 
 - La reputación remota es opcional y solo se ejecuta para URLs.
 - Sin API key, QR Guardian funciona en modo local-only.
 
+## Inyección de dependencias
+- QR Guardian usa Koin para la inyección de dependencias en KMP.
+- Koin solo se usa en el borde de wiring de la app.
+- El dominio sigue siendo independiente del framework.
+- `RemoteReputationConfig` lo proporcionan explícitamente los hosts Android e iOS.
+- El modo local-only sigue siendo el comportamiento por defecto.
+- `QrGuardianSecurityPipelineFactory` es la única fuente de verdad para componer el pipeline de seguridad.
+- Koin delega en esa factory en lugar de duplicar la composición.
+
 ## Configuración de reputación remota
 QR Guardian funciona sin API keys desde el primer momento.
 

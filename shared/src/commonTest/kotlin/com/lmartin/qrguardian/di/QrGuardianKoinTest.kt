@@ -1,14 +1,8 @@
 package com.lmartin.qrguardian.di
 
-import com.lmartin.qrguardian.data.reputation.NoOpUrlReputationRepository
+import com.lmartin.qrguardian.core.security.QrGuardianSecurityPipelineFactory
 import com.lmartin.qrguardian.data.reputation.RemoteReputationConfig
-import com.lmartin.qrguardian.data.reputation.UrlHausReputationRepository
-import com.lmartin.qrguardian.data.reputation.google.GoogleSafeBrowsingUrlReputationRepository
 import com.lmartin.qrguardian.domain.model.ScanStatus
-import com.lmartin.qrguardian.domain.reputation.ThreatCategory
-import com.lmartin.qrguardian.domain.reputation.UrlReputationRepository
-import com.lmartin.qrguardian.domain.reputation.UrlReputationResult
-import com.lmartin.qrguardian.domain.reputation.UrlReputationStatus
 import com.lmartin.qrguardian.domain.usecase.AnalyzeQrSafetyUseCase
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -23,98 +17,99 @@ import org.koin.dsl.module
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 class QrGuardianKoinTest {
     @Test
-    fun `empty remote config resolves local only pipeline`() = runBlocking {
+    fun `koin starts with empty remote config and resolves the use case`() = runBlocking {
         val koinApp = initKoin(
             remoteReputationConfig = RemoteReputationConfig(),
             additionalModules = listOf(localOnlyHttpClientModule())
         )
 
         try {
-            val remoteConfig = koinApp.koin.get<RemoteReputationConfig>()
+            val resolvedConfig = koinApp.koin.get<RemoteReputationConfig>()
+            val resolvedUseCase = koinApp.koin.get<AnalyzeQrSafetyUseCase>()
+            val factoryUseCase = QrGuardianSecurityPipelineFactory.create(
+                httpClient = koinApp.koin.get(),
+                remoteReputationConfig = resolvedConfig
+            )
+
+            assertEquals(RemoteReputationConfig(), resolvedConfig)
+            assertEquals(
+                factoryUseCase("example.com/report.pdf"),
+                resolvedUseCase("example.com/report.pdf")
+            )
+        } finally {
+            koinApp.close()
+        }
+    }
+
+    @Test
+    fun `koin with empty config keeps remote reputation not configured for url`() = runBlocking {
+        val koinApp = initKoin(
+            remoteReputationConfig = RemoteReputationConfig(),
+            additionalModules = listOf(localOnlyHttpClientModule())
+        )
+
+        try {
             val useCase = koinApp.koin.get<AnalyzeQrSafetyUseCase>()
-
-            assertEquals(RemoteReputationConfig(), remoteConfig)
-            assertIs<NoOpUrlReputationRepository>(koinApp.koin.get<UrlReputationRepository>())
-
             val result = useCase("example.com/report.pdf")
 
             assertEquals(ScanStatus.NotConfigured, result.remoteReputation.status)
+            assertTrue(result.localScan.metadata.any { it.label == "File type" && it.value == "PDF" })
         } finally {
             koinApp.close()
         }
     }
 
     @Test
-    fun `google key resolves google reputation repository without real network calls`() = runBlocking {
+    fun `koin resolves configured google pipeline without real network calls`() = runBlocking {
         val koinApp = initKoin(
             remoteReputationConfig = RemoteReputationConfig(googleSafeBrowsingApiKey = "google-key"),
-            additionalModules = listOf(reputationHttpClientModule())
+            additionalModules = listOf(providerHttpClientModule())
         )
 
         try {
-            val repository = koinApp.koin.get<UrlReputationRepository>()
+            val useCase = koinApp.koin.get<AnalyzeQrSafetyUseCase>()
+            val result = useCase("example.com/report.pdf")
 
-            assertIs<GoogleSafeBrowsingUrlReputationRepository>(repository)
-            assertEquals(
-                UrlReputationResult(
-                    status = UrlReputationStatus.Clean,
-                    provider = "Google Safe Browsing",
-                    categories = emptyList(),
-                    reasons = listOf("No threats were reported by Google Safe Browsing.")
-                ),
-                repository.checkUrl("https://example.com")
-            )
+            assertEquals(ScanStatus.Completed, result.remoteReputation.status)
+            assertTrue(result.remoteReputation.metadata.any { it.label == "Provider" && it.value.contains("Google Safe Browsing") })
         } finally {
             koinApp.close()
         }
     }
 
     @Test
-    fun `urlhaus key resolves urlhaus reputation repository without real network calls`() = runBlocking {
-        val koinApp = initKoin(
-            remoteReputationConfig = RemoteReputationConfig(urlHausApiKey = "urlhaus-key"),
-            additionalModules = listOf(reputationHttpClientModule())
-        )
-
-        try {
-            val repository = koinApp.koin.get<UrlReputationRepository>()
-
-            assertIs<UrlHausReputationRepository>(repository)
-            assertEquals(
-                UrlReputationResult(
-                    status = UrlReputationStatus.Clean,
-                    provider = "URLhaus",
-                    categories = emptyList(),
-                    reasons = listOf("No threats were reported by URLhaus.")
-                ),
-                repository.checkUrl("https://example.com")
-            )
-        } finally {
-            koinApp.close()
-        }
-    }
-
-    @Test
-    fun `test modules can override the url reputation repository`() = runBlocking {
+    fun `koin override behavior still works`() = runBlocking {
         val koinApp = initKoin(
             remoteReputationConfig = RemoteReputationConfig(googleSafeBrowsingApiKey = "google-key"),
             additionalModules = listOf(
-                reputationHttpClientModule(),
                 module {
-                    single<UrlReputationRepository> {
-                        object : UrlReputationRepository {
-                            override suspend fun checkUrl(url: String): UrlReputationResult {
-                                return UrlReputationResult(
-                                    status = UrlReputationStatus.Malicious,
-                                    provider = "Fake repo",
-                                    categories = listOf(ThreatCategory.Phishing),
-                                    reasons = listOf("Overridden in test.")
-                                )
+                    single<HttpClient> {
+                        HttpClient(
+                            MockEngine { request ->
+                                when (request.method) {
+                                    HttpMethod.Head -> respond(
+                                        content = "",
+                                        status = HttpStatusCode.OK,
+                                        headers = headersOf(
+                                            HttpHeaders.ContentType to listOf(ContentType.Application.Pdf.toString()),
+                                            HttpHeaders.ContentDisposition to listOf("""attachment; filename*=override.pdf""")
+                                        )
+                                    )
+
+                                    HttpMethod.Post -> respond(
+                                        content = """{"matches":[{"threatType":"MALWARE"}]}""",
+                                        status = HttpStatusCode.OK,
+                                        headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                                    )
+
+                                    else -> error("Unexpected HTTP method: ${request.method}")
+                                }
                             }
-                        }
+                        )
                     }
                 }
             )
@@ -122,14 +117,24 @@ class QrGuardianKoinTest {
 
         try {
             val useCase = koinApp.koin.get<AnalyzeQrSafetyUseCase>()
-            val result = useCase("https://example.com")
+            val result = useCase("https://override.example.com")
 
             assertEquals(ScanStatus.Completed, result.remoteReputation.status)
-            assertEquals("Fake repo", result.remoteReputation.metadata.first().value)
-            assertEquals(
-                UrlReputationStatus.Malicious,
-                koinApp.koin.get<UrlReputationRepository>().checkUrl("https://example.com").status
-            )
+            assertTrue(result.remoteReputation.metadata.any { it.label == "Provider" && it.value == "Google Safe Browsing" })
+        } finally {
+            koinApp.close()
+        }
+    }
+
+    @Test
+    fun `koin starts without api keys`() {
+        val koinApp = initKoin(
+            remoteReputationConfig = RemoteReputationConfig(),
+            additionalModules = listOf(localOnlyHttpClientModule())
+        )
+
+        try {
+            assertIs<AnalyzeQrSafetyUseCase>(koinApp.koin.get<AnalyzeQrSafetyUseCase>())
         } finally {
             koinApp.close()
         }
@@ -158,7 +163,7 @@ class QrGuardianKoinTest {
         }
     }
 
-    private fun reputationHttpClientModule() = module {
+    private fun providerHttpClientModule() = module {
         single<HttpClient> {
             HttpClient(
                 MockEngine { request ->

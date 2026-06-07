@@ -1,17 +1,7 @@
 package com.lmartin.qrguardian.di
 
-import com.lmartin.qrguardian.data.metadata.KtorUrlMetadataRepository
 import com.lmartin.qrguardian.data.reputation.RemoteReputationConfig
-import com.lmartin.qrguardian.data.reputation.UrlReputationRepositoryFactory
-import com.lmartin.qrguardian.domain.analyzer.DefaultLocalScanAnalyzer
-import com.lmartin.qrguardian.domain.analyzer.LocalScanAnalyzer
-import com.lmartin.qrguardian.domain.classifier.DefaultQrContentClassifier
-import com.lmartin.qrguardian.domain.classifier.QrContentClassifier
-import com.lmartin.qrguardian.domain.metadata.UrlMetadataRepository
-import com.lmartin.qrguardian.domain.normalizer.DefaultQrTextNormalizer
-import com.lmartin.qrguardian.domain.normalizer.QrTextNormalizer
-import com.lmartin.qrguardian.domain.reputation.UrlReputationRepository
-import com.lmartin.qrguardian.domain.usecase.AnalyzeQrSafetyUseCase
+import com.lmartin.qrguardian.core.security.QrGuardianSecurityPipelineFactory
 import org.koin.core.KoinApplication
 import org.koin.core.module.Module
 import org.koin.dsl.koinApplication
@@ -41,24 +31,13 @@ fun configurationModule(remoteReputationConfig: RemoteReputationConfig): Module 
     }
 }
 
+// Koin delegates security pipeline assembly to QrGuardianSecurityPipelineFactory so
+// the composition stays in one explicit place.
 val securityModule: Module = module {
-    single<QrTextNormalizer> { DefaultQrTextNormalizer() }
-    single<QrContentClassifier> { DefaultQrContentClassifier() }
-    single<LocalScanAnalyzer> { DefaultLocalScanAnalyzer() }
-    single<UrlMetadataRepository> { KtorUrlMetadataRepository(get()) }
-    single<UrlReputationRepository> {
-        UrlReputationRepositoryFactory.create(
-            config = get(),
-            httpClient = get(),
-        )
-    }
     single {
-        AnalyzeQrSafetyUseCase(
-            textNormalizer = get(),
-            contentClassifier = get(),
-            localScanAnalyzer = get(),
-            urlMetadataRepository = get(),
-            urlReputationRepository = get(),
+        QrGuardianSecurityPipelineFactory.create(
+            httpClient = get(),
+            remoteReputationConfig = get(),
         )
     }
 }

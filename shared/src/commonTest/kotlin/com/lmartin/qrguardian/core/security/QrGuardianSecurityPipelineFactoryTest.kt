@@ -1,5 +1,6 @@
 package com.lmartin.qrguardian.core.security
 
+import com.lmartin.qrguardian.data.reputation.RemoteReputationConfig
 import com.lmartin.qrguardian.domain.model.QrContentType
 import com.lmartin.qrguardian.domain.model.ScanStatus
 import com.lmartin.qrguardian.domain.model.SecurityLevel
@@ -19,9 +20,10 @@ import kotlin.test.assertTrue
 
 class QrGuardianSecurityPipelineFactoryTest {
     @Test
-    fun `factory wires the security pipeline`() = runBlocking {
-        val useCase = QrGuardianSecurityPipelineFactory.createAnalyzeQrSafetyUseCase(
-            httpClient = httpClient()
+    fun `factory creates analyze use case with empty config and local only behavior`() = runBlocking {
+        val useCase = QrGuardianSecurityPipelineFactory.create(
+            httpClient = localOnlyHttpClient(),
+            remoteReputationConfig = RemoteReputationConfig()
         )
 
         val result = useCase("example.com/report.pdf")
@@ -34,17 +36,103 @@ class QrGuardianSecurityPipelineFactoryTest {
         assertFalse(result.localScan.metadata.isEmpty())
     }
 
-    private fun httpClient(): HttpClient {
-        val engine = MockEngine { request ->
-            assertEquals(HttpMethod.Head, request.method)
-            respond(
-                content = "",
-                status = HttpStatusCode.OK,
-                headers = headersOf(
-                    HttpHeaders.ContentType to listOf(ContentType.Application.Pdf.toString()),
-                    HttpHeaders.ContentDisposition to listOf("""attachment; filename*=report-from-server.pdf""")
-                )
+    @Test
+    fun `factory uses google reputation when google key is configured`() = runBlocking {
+        val useCase = QrGuardianSecurityPipelineFactory.create(
+            httpClient = providerHttpClient(),
+            remoteReputationConfig = RemoteReputationConfig(googleSafeBrowsingApiKey = "google-key")
+        )
+
+        val result = useCase("example.com/report.pdf")
+
+        assertEquals(QrContentType.Url, result.contentType)
+        assertEquals(ScanStatus.Completed, result.remoteReputation.status)
+        assertTrue(
+            result.remoteReputation.metadata.any { it.label == "Provider" && it.value.contains("Google Safe Browsing") }
+        )
+        assertTrue(result.localScan.metadata.any { it.label == "File type" && it.value == "PDF" })
+    }
+
+    @Test
+    fun `factory uses urlhaus reputation when urlhaus key is configured`() = runBlocking {
+        val useCase = QrGuardianSecurityPipelineFactory.create(
+            httpClient = providerHttpClient(),
+            remoteReputationConfig = RemoteReputationConfig(urlHausApiKey = "urlhaus-key")
+        )
+
+        val result = useCase("example.com/report.pdf")
+
+        assertEquals(QrContentType.Url, result.contentType)
+        assertEquals(ScanStatus.Completed, result.remoteReputation.status)
+        assertTrue(result.remoteReputation.metadata.any { it.label == "Provider" && it.value.contains("URLhaus") })
+        assertTrue(result.localScan.metadata.any { it.label == "File type" && it.value == "PDF" })
+    }
+
+    @Test
+    fun `factory merges both providers when both keys are configured`() = runBlocking {
+        val useCase = QrGuardianSecurityPipelineFactory.create(
+            httpClient = providerHttpClient(),
+            remoteReputationConfig = RemoteReputationConfig(
+                googleSafeBrowsingApiKey = "google-key",
+                urlHausApiKey = "urlhaus-key"
             )
+        )
+
+        val result = useCase("example.com/report.pdf")
+
+        assertEquals(QrContentType.Url, result.contentType)
+        assertEquals(ScanStatus.Completed, result.remoteReputation.status)
+        assertTrue(
+            result.remoteReputation.metadata.any { it.label == "Provider" && it.value == "Google Safe Browsing, URLhaus" }
+        )
+        assertTrue(result.localScan.metadata.any { it.label == "File type" && it.value == "PDF" })
+    }
+
+    private fun localOnlyHttpClient(): HttpClient {
+        val engine = MockEngine { request ->
+            when (request.method) {
+                HttpMethod.Head -> respond(
+                    content = "",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(
+                        HttpHeaders.ContentType to listOf(ContentType.Application.Pdf.toString()),
+                        HttpHeaders.ContentDisposition to listOf("""attachment; filename*=report-from-server.pdf""")
+                    )
+                )
+
+                HttpMethod.Post -> error("Unexpected remote reputation request in local-only mode.")
+
+                else -> error("Unexpected HTTP method: ${request.method}")
+            }
+        }
+
+        return HttpClient(engine)
+    }
+
+    private fun providerHttpClient(): HttpClient {
+        val engine = MockEngine { request ->
+            when (request.method) {
+                HttpMethod.Head -> respond(
+                    content = "",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(
+                        HttpHeaders.ContentType to listOf(ContentType.Application.Pdf.toString()),
+                        HttpHeaders.ContentDisposition to listOf("""attachment; filename*=report-from-server.pdf""")
+                    )
+                )
+
+                HttpMethod.Post -> respond(
+                    content = when (request.url.host) {
+                        "safebrowsing.googleapis.com" -> """{"matches":[]}"""
+                        "urlhaus-api.abuse.ch" -> """{"query_status":"no_results"}"""
+                        else -> error("Unexpected host: ${request.url.host}")
+                    },
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                )
+
+                else -> error("Unexpected HTTP method: ${request.method}")
+            }
         }
 
         return HttpClient(engine)

@@ -2,6 +2,12 @@
 
 QR Guardian keeps local security checks enabled by default.
 
+## Dependency Injection
+- Koin is used only to wire the app at the platform boundary.
+- `QrGuardianSecurityPipelineFactory` is the single source of truth for security pipeline composition.
+- Koin delegates to that factory instead of rebuilding the pipeline in the module graph.
+- Domain classes stay framework-independent and still use constructor injection.
+
 ## Providers
 The codebase currently supports these optional remote providers for URL payloads:
 - Google Safe Browsing

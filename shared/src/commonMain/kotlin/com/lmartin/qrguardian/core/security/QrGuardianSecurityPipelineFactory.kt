@@ -13,7 +13,7 @@ import com.lmartin.qrguardian.domain.usecase.AnalyzeQrSafetyUseCase
 import io.ktor.client.HttpClient
 
 object QrGuardianSecurityPipelineFactory {
-    fun createAnalyzeQrSafetyUseCase(
+    fun create(
         httpClient: HttpClient,
         remoteReputationConfig: RemoteReputationConfig = RemoteReputationConfig(),
         textNormalizer: QrTextNormalizer = DefaultQrTextNormalizer(),
@@ -29,6 +29,26 @@ object QrGuardianSecurityPipelineFactory {
                 config = remoteReputationConfig,
                 httpClient = httpClient
             )
+        )
+    }
+
+    @Deprecated(
+        message = "Use create(httpClient, remoteReputationConfig) instead.",
+        replaceWith = ReplaceWith("create(httpClient, remoteReputationConfig, textNormalizer, contentClassifier, localScanAnalyzer)")
+    )
+    fun createAnalyzeQrSafetyUseCase(
+        httpClient: HttpClient,
+        remoteReputationConfig: RemoteReputationConfig = RemoteReputationConfig(),
+        textNormalizer: QrTextNormalizer = DefaultQrTextNormalizer(),
+        contentClassifier: QrContentClassifier = DefaultQrContentClassifier(),
+        localScanAnalyzer: LocalScanAnalyzer = DefaultLocalScanAnalyzer()
+    ): AnalyzeQrSafetyUseCase {
+        return create(
+            httpClient = httpClient,
+            remoteReputationConfig = remoteReputationConfig,
+            textNormalizer = textNormalizer,
+            contentClassifier = contentClassifier,
+            localScanAnalyzer = localScanAnalyzer
         )
     }
 }
