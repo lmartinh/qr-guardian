@@ -18,7 +18,6 @@ import com.lmartin.qrguardian.presentation.result.components.ResultHeader
 import com.lmartin.qrguardian.presentation.result.components.ResultOpenLinkButton
 import com.lmartin.qrguardian.presentation.result.components.ResultRescanButton
 import com.lmartin.qrguardian.presentation.result.components.ResultSectionCard
-import com.lmartin.qrguardian.presentation.result.components.ResultTechnicalCard
 import com.lmartin.qrguardian.presentation.theme.QrGuardianSpacing
 
 @Composable
@@ -32,6 +31,7 @@ internal fun ResultContent(
     val tone = analysis.overallLevel.toResultTone()
     val scrollState = rememberScrollState()
     val openButtonVisible = state.showOpenButton && state.openableUrl != null
+    val localScanBadge = localScanBadgeLabel(analysis.localScan, texts)
 
     Column(
         modifier = Modifier
@@ -71,20 +71,20 @@ internal fun ResultContent(
         }
 
         ResultContentCard(
-            title = texts.detailType,
-            icon = tone.icon,
-            accent = contentAccentColor(analysis.contentType),
-            items = buildContentDetails(analysis, texts),
+            title = texts.qrContentLabel,
             normalizedValue = analysis.normalizedText,
         )
 
         ResultSectionCard(
             title = texts.localScan,
-            summary = analysis.localScan.title,
-            levelLabel = analysis.localScan.level.title(),
+            summary = localScanSummary(analysis.localScan, texts),
+            levelLabel = localScanBadge,
             levelTint = tone.sectionTint(analysis.localScan.level),
             levelContentColor = tone.sectionContent(analysis.localScan.level),
             items = buildLocalAnalysisDetails(analysis, texts),
+            signalsTitle = texts.localSignals,
+            signals = buildLocalSignals(analysis.localScan),
+            maxVisibleItems = null,
         )
 
         ResultSectionCard(
@@ -94,11 +94,6 @@ internal fun ResultContent(
             levelTint = tone.sectionTint(analysis.remoteReputation.level),
             levelContentColor = tone.sectionContent(analysis.remoteReputation.level),
             items = buildRemoteAnalysisDetails(analysis.remoteReputation, texts),
-        )
-
-        ResultTechnicalCard(
-            title = texts.detailState,
-            items = buildTechnicalDetails(analysis, texts),
         )
 
         ResultRescanButton(

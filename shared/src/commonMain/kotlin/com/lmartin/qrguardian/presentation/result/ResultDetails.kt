@@ -2,6 +2,18 @@ package com.lmartin.qrguardian.presentation.result
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Launch
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Sms
+import androidx.compose.material.icons.filled.SubdirectoryArrowRight
+import androidx.compose.material.icons.filled.TextSnippet
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -18,17 +30,21 @@ internal data class ResultDetailItem(
     val color: Color,
 )
 
-internal fun buildContentDetails(
+internal fun buildLocalAnalysisDetails(
     analysis: QrAnalysisResult,
     texts: ResultTexts,
 ): List<ResultDetailItem> {
     val items = mutableListOf<ResultDetailItem>()
 
     items += detailItem(
-        icon = Icons.Filled.Warning,
+        icon = contentTypeIcon(analysis.contentType),
         label = texts.detailType,
         value = contentTypeLabel(analysis.contentType, texts),
-        color = Color.Unspecified,
+    )
+    items += detailItem(
+        icon = actionIcon(analysis.contentType),
+        label = texts.detailAction,
+        value = contentActionLabel(analysis.contentType, analysis.openableUrl, texts),
     )
 
     when (analysis.contentType) {
@@ -36,79 +52,59 @@ internal fun buildContentDetails(
             val downloadType = detectDownloadType(analysis.normalizedText, texts)
             val path = extractUrlPath(analysis.normalizedText)
             if (downloadType.isNotBlank()) {
-                items += detailItem(Icons.Filled.Warning, texts.detailFile, downloadType)
+                items += detailItem(Icons.Filled.Description, texts.detailFile, downloadType)
             }
             if (path.isNotBlank()) {
-                items += detailItem(Icons.Filled.Warning, texts.detailPath, path)
+                items += detailItem(Icons.Filled.SubdirectoryArrowRight, texts.detailPath, path)
             }
         }
         QrContentType.Email -> {
-            items += detailItem(Icons.Filled.Warning, texts.detailDestination, extractMailTarget(analysis.normalizedText, texts))
-            items += detailItem(Icons.Filled.Warning, texts.detailExtraField, extractMailExtras(analysis.normalizedText, texts))
+            items += detailItem(Icons.Filled.Email, texts.detailDestination, extractMailTarget(analysis.normalizedText, texts))
+            items += detailItem(Icons.Filled.Info, texts.detailExtraField, extractMailExtras(analysis.normalizedText, texts))
         }
         QrContentType.Phone -> {
-            items += detailItem(Icons.Filled.Warning, texts.detailNumber, extractTelephoneTarget(analysis.normalizedText, texts))
+            items += detailItem(Icons.Filled.Phone, texts.detailNumber, extractTelephoneTarget(analysis.normalizedText, texts))
         }
         QrContentType.Sms -> {
-            items += detailItem(Icons.Filled.Warning, texts.detailDestination, extractSmsTarget(analysis.normalizedText, texts))
-            items += detailItem(Icons.Filled.Warning, texts.detailMessage, extractSmsBody(analysis.normalizedText, texts))
+            items += detailItem(Icons.Filled.Sms, texts.detailDestination, extractSmsTarget(analysis.normalizedText, texts))
+            items += detailItem(Icons.Filled.Sms, texts.detailMessage, extractSmsBody(analysis.normalizedText, texts))
         }
         QrContentType.Wifi -> {
-            items += detailItem(Icons.Filled.Warning, texts.detailNetwork, extractWifiField(analysis.normalizedText, "S", texts))
-            items += detailItem(Icons.Filled.Warning, texts.detailSecurity, extractWifiField(analysis.normalizedText, "T", texts))
+            items += detailItem(Icons.Filled.Wifi, texts.detailNetwork, extractWifiField(analysis.normalizedText, "S", texts))
+            items += detailItem(Icons.Filled.Info, texts.detailSecurity, extractWifiField(analysis.normalizedText, "T", texts))
         }
         QrContentType.VCard -> {
-            items += detailItem(Icons.Filled.Warning, texts.detailContact, texts.importContactAction)
+            items += detailItem(Icons.Filled.Person, texts.detailContact, texts.importContactAction)
         }
         QrContentType.Geo -> {
-            items += detailItem(Icons.Filled.Warning, texts.detailLocation, texts.openMapAction)
+            items += detailItem(Icons.Filled.LocationOn, texts.detailLocation, texts.openMapAction)
         }
         QrContentType.Crypto -> {
-            items += detailItem(Icons.Filled.Warning, texts.detailPayment, texts.cryptoAction)
+            items += detailItem(Icons.Filled.AccountBalanceWallet, texts.detailPayment, texts.cryptoAction)
         }
         QrContentType.PlainText -> {
-            items += detailItem(Icons.Filled.Warning, texts.detailUsage, texts.notALink)
+            items += detailItem(Icons.Filled.TextSnippet, texts.detailPlainText, analysis.normalizedText)
         }
         QrContentType.Unknown -> {
-            items += detailItem(Icons.Filled.Warning, texts.detailState, texts.notClassifiedPrecisely)
+            items += detailItem(Icons.Filled.Info, texts.detailUnknown, texts.notClassifiedPrecisely)
         }
     }
 
-    return items.take(3)
+    analysis.localScan.metadata.forEach { metadata ->
+        items += detailItem(
+            icon = metadataIcon(metadata.label),
+            label = metadata.label,
+            value = metadata.value,
+        )
+    }
+
+    return items
 }
 
-internal fun buildLocalAnalysisDetails(
-    analysis: QrAnalysisResult,
-    texts: ResultTexts,
-): List<ResultDetailItem> {
-    val section = analysis.localScan
-    val items = mutableListOf<ResultDetailItem>()
-
-    items += detailItem(
-        icon = when (section.level) {
-            SecurityLevel.Safe -> Icons.Filled.CheckCircle
-            SecurityLevel.Suspicious -> Icons.Filled.Warning
-            SecurityLevel.Dangerous -> Icons.Filled.Warning
-            SecurityLevel.Unknown -> Icons.Filled.Warning
-        },
-        label = texts.detailState,
-        value = section.statusLabel(texts),
-        color = section.level.toSignalColor(),
-    )
-
-    section.reasons.take(2).forEach { reason ->
-        if (items.size < 3) {
-            items += detailItem(Icons.Filled.Warning, texts.detailUsage, reason, section.level.toSignalColor())
-        }
-    }
-
-    section.metadata.take(1).forEach { metadata ->
-        if (items.size < 3) {
-            items += detailItem(Icons.Filled.Warning, metadata.label, metadata.value)
-        }
-    }
-
-    return items.take(3)
+internal fun buildLocalSignals(
+    section: ScanSectionResult,
+): List<String> {
+    return section.reasons
 }
 
 internal fun buildRemoteAnalysisDetails(
@@ -144,22 +140,6 @@ internal fun buildRemoteAnalysisDetails(
     return items.take(3)
 }
 
-internal fun buildTechnicalDetails(
-    analysis: QrAnalysisResult,
-    texts: ResultTexts,
-): List<ResultDetailItem> {
-    val items = mutableListOf<ResultDetailItem>()
-
-    items += detailItem(Icons.Filled.Warning, texts.detailType, analysis.contentType.name)
-    items += detailItem(Icons.Filled.Warning, texts.detailDestination, analysis.openableUrl ?: texts.notALink)
-
-    if (analysis.originalText != analysis.normalizedText) {
-        items += detailItem(Icons.Filled.Warning, texts.detailUnknown, analysis.originalText)
-    }
-
-    return items.take(3)
-}
-
 internal fun SecurityLevel.toSignalColor(): Color {
     return when (this) {
         SecurityLevel.Safe -> Color(0xFF10B981)
@@ -181,6 +161,44 @@ private fun detailItem(
         value = value,
         color = color,
     )
+}
+
+private fun contentTypeIcon(contentType: QrContentType): ImageVector {
+    return when (contentType) {
+        QrContentType.Url -> Icons.Filled.TextSnippet
+        QrContentType.Email -> Icons.Filled.Email
+        QrContentType.Phone -> Icons.Filled.Phone
+        QrContentType.Sms -> Icons.Filled.Sms
+        QrContentType.Wifi -> Icons.Filled.Wifi
+        QrContentType.VCard -> Icons.Filled.Person
+        QrContentType.Geo -> Icons.Filled.LocationOn
+        QrContentType.Crypto -> Icons.Filled.AccountBalanceWallet
+        QrContentType.PlainText -> Icons.Filled.TextSnippet
+        QrContentType.Unknown -> Icons.Filled.Info
+    }
+}
+
+private fun actionIcon(contentType: QrContentType): ImageVector {
+    return when (contentType) {
+        QrContentType.Url -> Icons.Filled.Launch
+        QrContentType.Email -> Icons.Filled.Email
+        QrContentType.Phone -> Icons.Filled.Phone
+        QrContentType.Sms -> Icons.Filled.Sms
+        QrContentType.Wifi -> Icons.Filled.Wifi
+        QrContentType.VCard -> Icons.Filled.Person
+        QrContentType.Geo -> Icons.Filled.Launch
+        QrContentType.Crypto -> Icons.Filled.AccountBalanceWallet
+        QrContentType.PlainText -> Icons.Filled.TextSnippet
+        QrContentType.Unknown -> Icons.Filled.Info
+    }
+}
+
+private fun metadataIcon(label: String): ImageVector {
+    return when {
+        label == "S" -> Icons.Filled.Wifi
+        label == "T" -> Icons.Filled.Info
+        else -> Icons.Filled.Info
+    }
 }
 
 private fun ScanSectionResult.statusLabel(texts: ResultTexts): String {

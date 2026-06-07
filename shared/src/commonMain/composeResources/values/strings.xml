@@ -20,6 +20,7 @@
     <string name="camera_scanner_placeholder">Native scanner host</string>
 
     <string name="result_title">Scan result</string>
+    <string name="result_qr_content">QR Content</string>
     <string name="result_url_analyzed">Analyzed URL</string>
     <string name="result_local_scan">Local scan</string>
     <string name="result_remote_reputation">Remote reputation</string>
@@ -29,6 +30,8 @@
     <string name="result_status_review">Review</string>
     <string name="result_status_blocked">Blocked</string>
     <string name="result_status_uncertain">Uncertain</string>
+    <string name="result_local_scan_safe">Safe</string>
+    <string name="result_local_scan_careful">Careful</string>
     <string name="result_url_label">URL</string>
     <string name="result_error_title">We couldn’t show the result</string>
     <string name="result_idle_title">Result pending</string>

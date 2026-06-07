@@ -41,7 +41,10 @@ import qrguardian.shared.generated.resources.result_loading_action
 import qrguardian.shared.generated.resources.result_loading_message
 import qrguardian.shared.generated.resources.result_loading_title
 import qrguardian.shared.generated.resources.result_local_scan
+import qrguardian.shared.generated.resources.result_local_scan_careful
 import qrguardian.shared.generated.resources.result_local_signals
+import qrguardian.shared.generated.resources.result_local_scan_safe
+import qrguardian.shared.generated.resources.result_qr_content
 import qrguardian.shared.generated.resources.result_open_link
 import qrguardian.shared.generated.resources.result_remote_checks
 import qrguardian.shared.generated.resources.result_remote_not_applicable
@@ -90,6 +93,8 @@ internal fun rememberResultTexts(): ResultTexts {
         openLink = stringResource(Res.string.result_open_link),
         rescan = stringResource(Res.string.result_rescan),
         localScan = stringResource(Res.string.result_local_scan),
+        localScanSafe = stringResource(Res.string.result_local_scan_safe),
+        localScanCareful = stringResource(Res.string.result_local_scan_careful),
         remoteReputation = stringResource(Res.string.result_remote_reputation),
         localSignals = stringResource(Res.string.result_local_signals),
         remoteChecks = stringResource(Res.string.result_remote_checks),
@@ -97,6 +102,7 @@ internal fun rememberResultTexts(): ResultTexts {
         statusReview = stringResource(Res.string.result_status_review),
         statusBlocked = stringResource(Res.string.result_status_blocked),
         statusUncertain = stringResource(Res.string.result_status_uncertain),
+        qrContentLabel = stringResource(Res.string.result_qr_content),
         urlLabel = stringResource(Res.string.result_url_label),
         errorTitle = stringResource(Res.string.result_error_title),
         idleTitle = stringResource(Res.string.result_idle_title),
@@ -172,6 +178,8 @@ internal data class ResultTexts(
     val openLink: String,
     val rescan: String,
     val localScan: String,
+    val localScanSafe: String,
+    val localScanCareful: String,
     val remoteReputation: String,
     val localSignals: String,
     val remoteChecks: String,
@@ -179,6 +187,7 @@ internal data class ResultTexts(
     val statusReview: String,
     val statusBlocked: String,
     val statusUncertain: String,
+    val qrContentLabel: String,
     val urlLabel: String,
     val errorTitle: String,
     val idleTitle: String,

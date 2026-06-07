@@ -1,6 +1,8 @@
 package com.lmartin.qrguardian.presentation.result
 
 import com.lmartin.qrguardian.domain.model.QrContentType
+import com.lmartin.qrguardian.domain.model.ScanSectionResult
+import com.lmartin.qrguardian.domain.model.SecurityLevel
 import com.lmartin.qrguardian.presentation.theme.QrGuardianColors
 
 internal fun extractUrlPath(url: String): String {
@@ -74,7 +76,7 @@ internal fun extractWifiField(text: String, key: String, texts: ResultTexts): St
 internal fun contentTypeLabel(contentType: QrContentType, texts: ResultTexts): String {
     return when (contentType) {
         QrContentType.Url -> texts.urlLabel
-        QrContentType.Email -> texts.emailAction
+        QrContentType.Email -> texts.detailContact
         QrContentType.Phone -> texts.phoneType
         QrContentType.Sms -> texts.smsType
         QrContentType.Wifi -> texts.wifiType
@@ -83,6 +85,44 @@ internal fun contentTypeLabel(contentType: QrContentType, texts: ResultTexts): S
         QrContentType.Crypto -> texts.cryptoType
         QrContentType.PlainText -> texts.plainTextType
         QrContentType.Unknown -> texts.unknownType
+    }
+}
+
+internal fun contentActionLabel(
+    contentType: QrContentType,
+    openableUrl: String?,
+    texts: ResultTexts,
+): String {
+    return when (contentType) {
+        QrContentType.Url -> if (openableUrl.isNullOrBlank()) texts.notALink else texts.openLink
+        QrContentType.Email -> texts.emailAction
+        QrContentType.Phone -> texts.phoneAction
+        QrContentType.Sms -> texts.smsAction
+        QrContentType.Wifi -> texts.wifiAction
+        QrContentType.VCard -> texts.importContactAction
+        QrContentType.Geo -> texts.openMapAction
+        QrContentType.Crypto -> texts.cryptoAction
+        QrContentType.PlainText -> texts.notALink
+        QrContentType.Unknown -> texts.notClassifiedPrecisely
+    }
+}
+
+internal fun localScanSummary(
+    section: ScanSectionResult,
+    texts: ResultTexts,
+): String {
+    return section.title
+}
+
+internal fun localScanBadgeLabel(
+    section: ScanSectionResult,
+    texts: ResultTexts,
+): String {
+    return when (section.level) {
+        SecurityLevel.Safe -> texts.localScanSafe
+        SecurityLevel.Suspicious -> texts.localScanCareful
+        SecurityLevel.Dangerous -> texts.statusBlocked
+        SecurityLevel.Unknown -> texts.statusUncertain
     }
 }
 

@@ -27,6 +27,9 @@ internal fun ResultSectionCard(
     levelTint: Color,
     levelContentColor: Color,
     items: List<ResultDetailItem>,
+    signalsTitle: String? = null,
+    signals: List<String> = emptyList(),
+    maxVisibleItems: Int? = 3,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -51,10 +54,27 @@ internal fun ResultSectionCard(
 
             if (items.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(QrGuardianSpacing.S)) {
-                    items.take(3).forEach { item ->
+                    val visibleItems = maxVisibleItems?.let(items::take) ?: items
+                    visibleItems.forEach { item ->
                         Row(modifier = Modifier.fillMaxWidth()) {
                             ResultDetailRow(item = item)
                         }
+                    }
+                }
+            }
+
+            if (signals.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(QrGuardianSpacing.S)) {
+                    if (!signalsTitle.isNullOrBlank()) {
+                        Text(
+                            text = signalsTitle,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                    signals.forEach { signal ->
+                        ResultReasonRow(text = signal)
                     }
                 }
             }
@@ -65,67 +85,7 @@ internal fun ResultSectionCard(
 @Composable
 internal fun ResultContentCard(
     title: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    accent: Color,
-    items: List<ResultDetailItem>,
     normalizedValue: String,
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(QrGuardianSpacing.M),
-            verticalArrangement = Arrangement.spacedBy(QrGuardianSpacing.M),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(QrGuardianSpacing.S),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                ResultCardIcon(
-                    icon = icon,
-                    accent = accent,
-                )
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Text(
-                        text = normalizedValue,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-
-            if (items.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(QrGuardianSpacing.S)) {
-                    items.take(3).forEach { item ->
-                        Row(modifier = Modifier.fillMaxWidth()) {
-                            ResultDetailRow(item = item)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-internal fun ResultTechnicalCard(
-    title: String,
-    items: List<ResultDetailItem>,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -146,37 +106,12 @@ internal fun ResultTechnicalCard(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-
-            if (items.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(QrGuardianSpacing.S)) {
-                    items.take(3).forEach { item ->
-                        Row(modifier = Modifier.fillMaxWidth()) {
-                            ResultDetailRow(item = item)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-internal fun ResultCardIcon(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    accent: Color,
-) {
-    androidx.compose.material3.Surface(
-        shape = MaterialTheme.shapes.large,
-        color = accent.copy(alpha = 0.12f),
-    ) {
-        androidx.compose.foundation.layout.Box(
-            modifier = Modifier.padding(12.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            androidx.compose.material3.Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = accent,
+            Text(
+                text = normalizedValue,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -209,6 +144,8 @@ internal fun ResultSectionHeader(
                 text = summary,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
         ResultStatusPill(
