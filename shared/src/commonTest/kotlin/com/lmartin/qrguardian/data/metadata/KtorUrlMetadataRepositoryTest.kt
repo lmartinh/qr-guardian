@@ -65,6 +65,77 @@ class KtorUrlMetadataRepositoryTest {
     }
 
     @Test
+    fun `redirect final url exposes the resolved file metadata`() = runBlocking {
+        val repository =
+            KtorUrlMetadataRepository(
+                httpClient =
+                HttpClient(
+                    MockEngine { request ->
+                        when (request.url.toString()) {
+                            "https://example.com/download" -> {
+                                respond(
+                                    content = "",
+                                    status = HttpStatusCode.Found,
+                                    headers =
+                                    headersOf(
+                                        HttpHeaders.Location to listOf("https://cdn.example.com/files/report.pdf"),
+                                    ),
+                                )
+                            }
+
+                            "https://cdn.example.com/files/report.pdf" -> {
+                                respond(
+                                    content = "",
+                                    status = HttpStatusCode.OK,
+                                    headers =
+                                    headersOf(
+                                        HttpHeaders.ContentType to listOf(ContentType.Application.Pdf.toString()),
+                                        HttpHeaders.ContentDisposition to listOf("""attachment; filename="report.pdf""""),
+                                    ),
+                                )
+                            }
+
+                            else -> error("Unexpected request: ${request.url}")
+                        }
+                    },
+                ),
+            )
+
+        val result = repository.fetchMetadata("https://example.com/download")
+
+        assertEquals(UrlMetadataStatus.Available, result.status)
+        assertEquals("https://cdn.example.com/files/report.pdf", result.finalUrl)
+        assertEquals("report.pdf", result.fileName)
+        assertEquals("pdf", result.fileExtension)
+        assertEquals(DownloadFileType.Pdf, result.fileType)
+        assertEquals("Document", result.resourceKind.name)
+        assertTrue(result.isLikelyDownload)
+    }
+
+    @Test
+    fun `transport failure still infers file metadata from url path`() = runBlocking {
+        val repository =
+            KtorUrlMetadataRepository(
+                httpClient =
+                HttpClient(
+                    MockEngine {
+                        throw IllegalStateException("boom")
+                    },
+                ),
+            )
+
+        val result = repository.fetchMetadata("https://example.com/menu.pdf")
+
+        assertEquals(UrlMetadataStatus.Available, result.status)
+        assertEquals(null, result.finalUrl)
+        assertEquals("menu.pdf", result.fileName)
+        assertEquals("pdf", result.fileExtension)
+        assertEquals(DownloadFileType.Pdf, result.fileType)
+        assertEquals("Document", result.resourceKind.name)
+        assertFalse(result.isLikelyDownload)
+    }
+
+    @Test
     fun `non http url is normalized before head request`() = runBlocking {
         val repository =
             KtorUrlMetadataRepository(

@@ -43,6 +43,30 @@ class UrlLocalSecurityAnalyzerTest {
     }
 
     @Test
+    fun `localhost url is suspicious and not treated as safe`() {
+        val result = analyzer.analyze("http://localhost/admin")
+
+        assertEquals(SecurityLevel.Suspicious, result.level)
+        assertTrue(result.reasons.any { it.contains("HTTPS") })
+    }
+
+    @Test
+    fun `punycode url with login path is suspicious`() {
+        val result = analyzer.analyze("https://xn--pple-43d.com/login")
+
+        assertEquals(SecurityLevel.Suspicious, result.level)
+        assertTrue(result.reasons.any { it.contains("sensitive wording") })
+    }
+
+    @Test
+    fun `credentials in url is suspicious because the real host is hidden after at symbol`() {
+        val result = analyzer.analyze("https://google.com:password@example.com/login")
+
+        assertEquals(SecurityLevel.Suspicious, result.level)
+        assertTrue(result.reasons.any { it.contains("@ symbol") })
+    }
+
+    @Test
     fun `url with shortener is suspicious`() {
         val result = analyzer.analyze("https://bit.ly/test")
 

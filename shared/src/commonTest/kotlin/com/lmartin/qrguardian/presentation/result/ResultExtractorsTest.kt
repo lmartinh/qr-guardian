@@ -119,6 +119,26 @@ class ResultExtractorsTest {
     }
 
     @Test
+    fun `blocked scheme shows blocked unknown content without open link row`() {
+        val analysis = analysis(
+            contentType = QrContentType.Unknown,
+            normalizedText = "javascript:alert(1)",
+            openableUrl = null,
+            overallLevel = SecurityLevel.Dangerous,
+            canOpen = false,
+            localReasons = listOf("""The scanned content uses the blocked scheme "javascript"."""),
+        )
+
+        val details = buildLocalAnalysisDetails(analysis, fakeTexts())
+        val localSignals = buildLocalSignals(analysis.localScan)
+
+        assertEquals("Unknown", details[0].value)
+        assertEquals("Could not be classified precisely", details[1].value)
+        assertTrue(details.none { it.label == "Action" && it.value == "Open link" })
+        assertTrue(localSignals.any { it.contains("blocked scheme") })
+    }
+
+    @Test
     fun `sms details show a message preview without exposing the raw query`() {
         val analysis = analysis(
             contentType = QrContentType.Sms,
@@ -153,21 +173,25 @@ class ResultExtractorsTest {
     private fun analysis(
         contentType: QrContentType,
         normalizedText: String,
+        openableUrl: String? = normalizedText,
+        overallLevel: SecurityLevel = SecurityLevel.Safe,
+        canOpen: Boolean = true,
+        localReasons: List<String> = emptyList(),
         metadata: List<ScanMetadataItem> = emptyList(),
     ): QrAnalysisResult = QrAnalysisResult(
         originalText = normalizedText,
         normalizedText = normalizedText,
-        openableUrl = normalizedText,
+        openableUrl = openableUrl,
         contentType = contentType,
-        overallLevel = SecurityLevel.Safe,
-        canOpen = true,
+        overallLevel = overallLevel,
+        canOpen = canOpen,
         localScan = ScanSectionResult(
             name = "Local Scan",
-            level = SecurityLevel.Safe,
+            level = overallLevel,
             status = ScanStatus.Completed,
-            title = SecurityLevel.Safe.title(),
-            description = SecurityLevel.Safe.description(),
-            reasons = emptyList(),
+            title = overallLevel.title(),
+            description = overallLevel.description(),
+            reasons = localReasons,
             metadata = metadata,
         ),
         remoteReputation = ScanSectionResult(

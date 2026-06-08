@@ -105,6 +105,22 @@ class UrlHausReputationRepositoryTest {
         assertFalse(result.reasons.isEmpty())
     }
 
+    @Test
+    fun `malformed payload returns error without false confidence`() = runBlocking {
+        val repository =
+            UrlHausReputationRepository(
+                httpClient = httpClientWithResponse("{\"query_status\":\""),
+                apiKey = "test-key",
+            )
+
+        val result = repository.checkUrl("https://example.com")
+
+        assertEquals(UrlReputationStatus.Error, result.status)
+        assertEquals("URLhaus", result.provider)
+        assertTrue(result.categories.isEmpty())
+        assertTrue(result.reasons.contains("URLhaus check is currently unavailable."))
+    }
+
     private fun httpClientWithResponse(responseBody: String): HttpClient {
         val engine =
             MockEngine {

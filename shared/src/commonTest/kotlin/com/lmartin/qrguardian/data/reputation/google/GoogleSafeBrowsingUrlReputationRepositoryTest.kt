@@ -125,6 +125,23 @@ class GoogleSafeBrowsingUrlReputationRepositoryTest {
         assertFalse(result.reasons.isEmpty())
     }
 
+    @Test
+    fun `malformed payload returns error without false confidence`() = runBlocking {
+        val repository =
+            GoogleSafeBrowsingUrlReputationRepository(
+                httpClient =
+                httpClientWithResponse("{\"matches\":[{\"threatType\":\""),
+                apiKey = "test-key",
+            )
+
+        val result = repository.checkUrl("https://example.com")
+
+        assertEquals(UrlReputationStatus.Error, result.status)
+        assertEquals("Google Safe Browsing", result.provider)
+        assertTrue(result.categories.isEmpty())
+        assertTrue(result.reasons.contains("Google Safe Browsing check is currently unavailable."))
+    }
+
     private fun httpClientWithResponse(responseBody: String): HttpClient {
         val engine =
             MockEngine {

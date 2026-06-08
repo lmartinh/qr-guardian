@@ -17,6 +17,7 @@ import com.lmartin.qrguardian.domain.reputation.ThreatCategory
 import com.lmartin.qrguardian.domain.reputation.UrlReputationRepository
 import com.lmartin.qrguardian.domain.reputation.UrlReputationResult
 import com.lmartin.qrguardian.domain.reputation.UrlReputationStatus
+import com.lmartin.qrguardian.presentation.result.ResultUiState
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -188,6 +189,35 @@ class AnalyzeQrSafetyUseCaseTest {
         assertTrue(result.localScan.metadata.any { it.label == "File name" && it.value == "LENAMADRID_BRUNCH.pdf" })
         assertTrue(result.localScan.metadata.any { it.label == "File type" && it.value == "PDF" })
         assertFalse(result.localScan.metadata.any { it.label == "Path" })
+    }
+
+    @Test
+    fun `metadata transport failure does not invent file details for a web page`() = runBlocking {
+        val useCase =
+            AnalyzeQrSafetyUseCase(
+                urlMetadataRepository =
+                KtorUrlMetadataRepository(
+                    httpClient =
+                    HttpClient(
+                        MockEngine {
+                            throw IllegalStateException("boom")
+                        },
+                    ),
+                ),
+                urlReputationRepository = NoOpUrlReputationRepository(),
+            )
+
+        val result = useCase("https://example.com")
+
+        assertEquals(QrContentType.Url, result.contentType)
+        assertEquals(SecurityLevel.Safe, result.overallLevel)
+        assertTrue(result.canOpen)
+        assertEquals("https://example.com", result.openableUrl)
+        assertTrue(result.localScan.metadata.any { it.label == "Host" && it.value == "example.com" })
+        assertTrue(result.localScan.metadata.any { it.label == "Connection" && it.value == "HTTPS" })
+        assertFalse(result.localScan.metadata.any { it.label == "File name" })
+        assertFalse(result.localScan.metadata.any { it.label == "File type" })
+        assertFalse(result.localScan.metadata.any { it.label == "Download" })
     }
 
     @Test
@@ -508,6 +538,12 @@ class AnalyzeQrSafetyUseCaseTest {
                 scanSection(
                     level = SecurityLevel.Safe,
                     reasons = emptyList(),
+                    metadata =
+                    listOf(
+                        com.lmartin.qrguardian.domain.model.ScanMetadataItem(label = "Host", value = "example.com"),
+                        com.lmartin.qrguardian.domain.model.ScanMetadataItem(label = "Connection", value = "HTTPS"),
+                        com.lmartin.qrguardian.domain.model.ScanMetadataItem(label = "Content", value = "Web page"),
+                    ),
                 ),
             )
         val metadataRepository =
@@ -546,12 +582,19 @@ class AnalyzeQrSafetyUseCaseTest {
             )
 
         val result = useCase("https://example.com")
+        val uiState = ResultUiState.success(result)
 
         assertEquals(SecurityLevel.Dangerous, result.overallLevel)
         assertFalse(result.canOpen)
         assertEquals(null, result.openableUrl)
         assertEquals(ScanStatus.Completed, result.localScan.status)
+        assertEquals(SecurityLevel.Safe, result.localScan.level)
         assertEquals(ScanStatus.Completed, result.remoteReputation.status)
+        assertFalse(uiState.showOpenButton)
+        assertTrue(result.localScan.metadata.any { it.label == "Host" && it.value == "example.com" })
+        assertTrue(result.localScan.metadata.any { it.label == "Connection" && it.value == "HTTPS" })
+        assertTrue(result.localScan.metadata.any { it.label == "Content" && it.value == "Web page" })
+        assertTrue(result.remoteReputation.reasons.any { it.contains("Threat reported by the external reputation service.") })
         assertTrue(result.remoteReputation.metadata.any { it.label == "Categories" && it.value == "Phishing" })
     }
 
@@ -593,6 +636,53 @@ class AnalyzeQrSafetyUseCaseTest {
         assertEquals(QrContentType.Unknown, result.contentType)
         assertEquals(SecurityLevel.Dangerous, result.overallLevel)
         assertFalse(result.canOpen)
+        assertEquals(null, result.openableUrl)
+        assertEquals(0, localAnalyzer.callCount)
+        assertEquals(0, metadataRepository.callCount)
+        assertEquals(0, reputationRepository.callCount)
+        assertEquals(ScanStatus.NotApplicable, result.remoteReputation.status)
+    }
+
+    @Test
+    fun `mixed case javascript scheme is blocked before url work starts`() = runBlocking {
+        val localAnalyzer =
+            RecordingLocalScanAnalyzer(
+                result =
+                scanSection(
+                    level = SecurityLevel.Safe,
+                    reasons = emptyList(),
+                ),
+            )
+        val metadataRepository =
+            RecordingUrlMetadataRepository(
+                result = unavailableMetadataResult(),
+                gate = CompletableDeferred<Unit>().apply { complete(Unit) },
+            )
+        val reputationRepository =
+            RecordingUrlReputationRepository(
+                result =
+                UrlReputationResult(
+                    status = UrlReputationStatus.Clean,
+                    provider = "Dummy",
+                    categories = emptyList(),
+                    reasons = emptyList(),
+                ),
+                gate = CompletableDeferred<Unit>().apply { complete(Unit) },
+            )
+        val useCase =
+            AnalyzeQrSafetyUseCase(
+                localScanAnalyzer = localAnalyzer,
+                urlMetadataRepository = metadataRepository,
+                urlReputationRepository = reputationRepository,
+            )
+
+        val result = useCase("JaVaScRiPt:alert(1)")
+        val uiState = ResultUiState.success(result)
+
+        assertEquals(QrContentType.Unknown, result.contentType)
+        assertEquals(SecurityLevel.Dangerous, result.overallLevel)
+        assertFalse(result.canOpen)
+        assertFalse(uiState.showOpenButton)
         assertEquals(null, result.openableUrl)
         assertEquals(0, localAnalyzer.callCount)
         assertEquals(0, metadataRepository.callCount)

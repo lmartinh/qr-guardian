@@ -60,6 +60,17 @@ class QrSampleDatasetRegressionTest {
 
     private class SampleUrlMetadataRepository : UrlMetadataRepository {
         override suspend fun fetchMetadata(url: String): UrlMetadataResult = when {
+            url.endsWith("/download") -> {
+                metadata(
+                    contentType = "application/pdf",
+                    finalUrl = "https://cdn.example.com/files/report.pdf",
+                    fileName = "report.pdf",
+                    fileExtension = "pdf",
+                    fileType = DownloadFileType.Pdf,
+                    isLikelyDownload = false,
+                )
+            }
+
             url.endsWith("/menu.pdf") -> {
                 metadata(
                     contentType = "application/pdf",
@@ -107,6 +118,7 @@ class QrSampleDatasetRegressionTest {
 
         private fun metadata(
             contentType: String?,
+            finalUrl: String? = null,
             fileName: String?,
             fileExtension: String?,
             fileType: DownloadFileType,
@@ -136,7 +148,7 @@ class QrSampleDatasetRegressionTest {
             },
         ): UrlMetadataResult = UrlMetadataResult(
             status = UrlMetadataStatus.Available,
-            finalUrl = null,
+            finalUrl = finalUrl,
             contentType = contentType,
             contentDisposition = null,
             contentLength = null,
