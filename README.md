@@ -38,7 +38,7 @@ QR Guardian is a Kotlin Multiplatform mobile app for Android and iOS that scans 
 QR Guardian includes a small synthetic dataset for manual testing and demos.
 It covers safe URLs, suspicious URLs, downloads, WiFi, SMS, email, plain text, crypto, vCard and geo payloads.
 
-Use it to validate Local Scan, HEAD metadata checks and result rendering. Remote Reputation depends on provider configuration and live lookup results.
+Use it to validate local scan heuristics, HEAD metadata checks and result rendering. Remote Reputation depends on provider configuration and live lookup results.
 
 The underlying text payloads are also covered by shared regression tests, so the sample images remain manual QA assets rather than automated decoding fixtures.
 
@@ -61,8 +61,10 @@ The app always shows the result before the user opens anything. The open action 
 
 - Always enabled.
 - Runs without API keys.
-- Uses local QR and content checks.
-- Performs HEAD metadata inspection for URLs when the server supports it.
+- Uses local QR and content checks to classify payloads.
+- Blocks dangerous schemes such as `javascript:`, `file:`, `data:`, and `intent:`.
+- Checks HTTP vs HTTPS, suspicious URL shapes, and IP/local-looking destinations.
+- Performs HEAD metadata inspection for URLs when the server supports it, then falls back to path-based inference when needed.
 - Detects download-like content such as PDF/menu links as file metadata.
 - Treats executable or script downloads as high risk.
 - Does not call external reputation services.
@@ -72,6 +74,8 @@ The app always shows the result before the user opens anything. The open action 
 - Optional and URL-only.
 - Uses Google Safe Browsing and URLhaus when configured.
 - Shows `Not configured` when no keys are provided.
+- Handles provider failures safely and keeps the local result visible.
+- A clean remote result is not a guarantee of safety.
 - Never stores keys in the repository.
 
 PDF and menu URLs are shown as file metadata first. They are not automatically treated as dangerous just because they point to a downloadable file.
@@ -149,20 +153,26 @@ Dependency injection is handled with Koin, but only at the app wiring boundary. 
 
 ## Tests and validation
 
-Main validation commands:
+Recently validated with:
+
+```bash
+./gradlew :shared:allTests
+./gradlew check
+git diff --check
+```
+
+Optional local checks that are also valid for this repository:
 
 ```bash
 ./gradlew spotlessCheck
 ./gradlew spotlessApply
-./gradlew :shared:allTests
 ./gradlew :androidApp:assembleDebug
 ./gradlew :shared:testAndroidHostTest
 ./gradlew :shared:iosSimulatorArm64Test
 ./gradlew :shared:koverHtmlReport
-git diff --check
 ```
 
-Formatting uses Spotless with ktlint for Kotlin sources and Gradle Kotlin scripts. Run `spotlessApply` locally before committing if `spotlessCheck` reports formatting issues.
+Formatting uses Spotless with ktlint for Kotlin sources and Gradle Kotlin scripts. Run `spotlessApply` locally before committing if `spotlessCheck` reports formatting issues. Shared regression tests cover normalization, local URL heuristics, metadata parsing, file/download inference, remote reputation composition, and result open-button gating.
 
 ## Troubleshooting
 
@@ -174,7 +184,6 @@ Formatting uses Spotless with ktlint for Kotlin sources and Gradle Kotlin script
 ## Documentation
 
 - [Overview](docs/00-overview.md)
-- [Roadmap](docs/01-roadmap.md)
 - [Functional Specification](docs/02-functional-specification.md)
 - [Architecture](docs/03-architecture.md)
 - [UI Flow](docs/04-ui-flow.md)
@@ -182,7 +191,6 @@ Formatting uses Spotless with ktlint for Kotlin sources and Gradle Kotlin script
 - [Local Security Checks](docs/security/local-security-checks.md)
 - [Remote Reputation](docs/security/remote-reputation.md)
 - [Testing Strategy](docs/06-testing-strategy.md)
-- [Agent Tasks](docs/07-agent-tasks.md)
 - [Agent Guidelines](AGENTS.md)
 
 ## Known limitations
@@ -191,4 +199,4 @@ Formatting uses Spotless with ktlint for Kotlin sources and Gradle Kotlin script
 - Mobile API keys are not fully secret when shipped in an app binary.
 - HEAD metadata depends on server support, so some URLs may not expose file details.
 - Remote providers can return false negatives, so a clean reputation result is not a guarantee of safety.
-- QR Guardian is a portfolio and demo project, not a replacement for enterprise security tooling.
+- QR Guardian is a portfolio and demo project, not a replacement for dedicated security tooling.

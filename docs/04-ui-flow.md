@@ -1,91 +1,87 @@
 # UI Flow
 
-## Overview
-
-QR Guardian follows a simple security-first flow:
+QR Guardian follows a short security-first journey:
 
 Intro
-→ Camera
-→ QR/barcode detected
-→ Local Scan
-→ Remote Reputation, optional
-→ Result
+-> Camera
+-> QR/barcode detected
+-> Local Scan
+-> Remote Reputation, optional
+-> Result
 
-The app never opens scanned content automatically. The user always sees the result first, and the open action is only available for URL results that are not classified as dangerous.
+The app never opens scanned content automatically. The user always reviews the result first.
 
 ## Intro Screen
 
 Purpose:
-- Explain the product value quickly.
-- Reinforce the safety-first promise.
-- Offer a clear entry point into scanning.
+- Present QR Guardian clearly.
+- Explain the scan-first safety flow in a compact way.
+- Provide the primary action to start scanning.
+- Handle denied camera permission by offering a route to platform settings.
 
 Main elements:
 - App name and tagline.
-- Short explanatory text.
-- Primary call to action to start scanning.
-
-Navigation target:
-- Camera screen.
+- Short explanatory copy.
+- Start-scanning call to action.
+- Permission messaging when needed.
 
 ## Camera Screen
 
 Purpose:
 - Capture QR and barcode content.
-- Guide the user with a clear scan frame.
+- Keep the scan interaction simple and direct.
 
 Main states:
 - Permission request or denied state.
 - Live camera preview.
-- Centered scan frame.
-- Short helper text.
+- Scan frame and helper text.
 - Brief analyzing state after detection.
 - Error state for camera unavailability or scan failure.
 
-Navigation target:
-- Result screen after the scan has been processed.
+Navigation:
+- Successful scan detection sends the payload through shared analysis.
+- The app navigates to the result screen after analysis completes.
 
 ## Result Screen
 
 Purpose:
-- Show the scanned content.
-- Show the local safety result.
-- Show optional remote reputation state for URLs.
-- Let the user decide whether to open the URL.
+- Show what was scanned.
+- Show the detected content type.
+- Show Local Scan findings.
+- Show Remote Reputation state for URL payloads.
+- Make the open action explicit and gated by the final result.
 
 Main content:
-- Raw scanned content.
-- Detected content type.
+- Result header with safe, suspicious, dangerous, or unknown tone.
+- Scanned content details.
 - Local Scan section.
 - Remote Reputation section.
-- Recommended action card.
+- Action area for opening when allowed and scanning again.
 
-Main actions:
-- Open link when allowed.
-- Copy content.
-- Share content.
-- Scan again.
+## Result States
 
-## Safety States
+- Safe: calm positive presentation for results without warning signals.
+- Suspicious: warning presentation for results with caution signals that may still be openable.
+- Dangerous: strong caution presentation for blocked/high-risk results.
+- Unknown: neutral presentation when content cannot be evaluated precisely.
 
-- Safe: calm positive state.
-- Suspicious: warning state.
-- Dangerous: strong caution state.
-- Unknown: uncertain state.
+## Open Button Behavior
 
-## URL Flow
+The result screen renders the open-button decision from `ResultUiState.showOpenButton`.
 
-URL detected
-→ Normalize
-→ Run local checks
-→ Inspect HEAD metadata when available
-→ Run remote reputation only if configured
-→ Present result
-→ User chooses whether to open it
+- Dangerous URL results are not openable.
+- Non-URL payloads do not show an open-link action.
+- Safe and suspicious URL results can show the open action when the shared analysis exposes an openable URL.
 
-## Implementation Notes
+The composable does not recalculate security rules. It renders the result state produced by shared analysis.
 
-- Local Scan is always enabled.
-- Remote Reputation is optional.
-- PDF and menu links can appear as file metadata in the result.
-- Executable and script downloads should be treated as high risk.
+## Visual Direction
+
+QR Guardian uses a clean mobile portfolio style with:
+- shared Compose Multiplatform UI
+- bright surfaces
+- Outfit typography
+- clear safety colors for safe, suspicious, dangerous, and unknown states
+- restrained use of the lavender brand accent
+
+Dangerous actions should never become the dominant CTA.

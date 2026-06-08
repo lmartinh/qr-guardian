@@ -1,40 +1,88 @@
 # Local Security Checks
 
-QR Guardian runs with local security checks enabled by default.
+Local Scan is always enabled. It runs without API keys, without a backend, and before the user can open scanned content.
 
-For optional remote reputation details, see [Remote Reputation](remote-reputation.md).
+These checks are heuristics. They help identify suspicious content but do not guarantee safety.
 
-## Current Behavior
+## Content Classification
 
-- The app normalizes and classifies scanned text locally.
-- Local checks evaluate URLs and sensitive QR payloads without any backend.
-- URLs also get a HEAD metadata check so the app can show destination details before opening anything.
-- Download-like links can be identified as file metadata, including PDF and menu URLs.
-- Executable and script downloads are treated as high risk.
-- Remote reputation checks are optional and apply only to URLs.
-- Non-URL payloads do not trigger HEAD or remote reputation checks.
-- No API keys are required to run the project.
-- No backend is required to run the project.
-- Runtime wiring is centralized in Koin, but security pipeline composition stays in `QrGuardianSecurityPipelineFactory`.
-- Android and iOS provide `RemoteReputationConfig` explicitly before initializing Koin.
+The shared classifier identifies common payload families:
+- URL
+- plain text
+- email
+- phone
+- SMS
+- WiFi
+- vCard/contact
+- geo/location
+- crypto/payment URI
+- unknown content
 
-You can test these rules manually with the sample QR dataset:
-[Sample QR dataset](../assets/sample-qrs/README.md)
+Barcode scanner payloads are analyzed by their text content. The current shared content model does not expose a dedicated product-code type.
 
-## Current Repository Contract
+Non-URL payloads do not trigger URL metadata or Remote Reputation checks.
 
-The remote reputation layer is represented by a repository contract and a no-op implementation:
-- `UrlReputationRepository`
-- `NoOpUrlReputationRepository`
+## Dangerous Schemes
 
-The remote section uses `NotApplicable` for non-URL payloads and `NotConfigured` when no provider is enabled.
+Dangerous schemes are rejected before URL metadata or reputation work starts:
+- `javascript:`
+- `file:`
+- `data:`
+- `intent:`
 
-## Practical Notes
+Mixed-case dangerous schemes are covered by regression tests.
 
-- PDF and menu URLs are surfaced as file metadata, not automatically blocked as dangerous.
-- Executable and script downloads deserve stronger warnings because they can lead to malware.
-- HEAD responses depend on server support, so some URLs may not expose complete metadata.
+## URL Shape Heuristics
 
-## Future Integration
+Local URL analysis checks warning signals such as:
+- HTTP instead of HTTPS
+- known shorteners
+- credentials or `@` in the URL
+- IPv4 hosts
+- local-looking destinations covered by current tests, such as `localhost`
+- many query parameters
+- many subdomains
+- suspicious wording
+- brand impersonation patterns
+- punycode-style/lookalike signals covered by current tests
 
-When a real provider is added, the use case should merge local and remote signals without letting remote clean results override local suspicious findings.
+These rules are intentionally conservative warning signals. They should not be presented as proof that a URL is malicious.
+
+## File And Download Signals
+
+Local checks flag or describe file-like destinations using:
+- suspicious file extensions
+- URL path inference
+- HEAD metadata
+- `Content-Type`
+- `Content-Disposition`
+- final URL after redirect
+- inferred file name and file type
+
+PDF and menu URLs can be shown as file metadata without being automatically marked dangerous. Executable, installer, and script-like downloads are treated as high risk.
+
+## HEAD Metadata Behavior
+
+For URL payloads, the app attempts HEAD metadata inspection when possible.
+
+If metadata is available, the result can show:
+- host
+- connection type
+- path
+- content type
+- file name
+- file type
+- download disposition
+- resolved destination
+
+If HEAD is unavailable, rejected, or fails during transport, the app falls back to path-based inference and keeps the scan result usable.
+
+## Result Impact
+
+Local Scan can produce:
+- Safe
+- Suspicious
+- Dangerous
+- Unknown
+
+Dangerous local findings block opening. Suspicious URL findings can still be openable when the final result policy allows it, but the UI shows warning context first.

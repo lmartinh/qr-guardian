@@ -38,7 +38,9 @@ QR Guardian es una app móvil Kotlin Multiplatform para Android e iOS que escane
 QR Guardian incluye un pequeño dataset sintético para pruebas manuales y demos.
 Cubre URLs seguras, URLs sospechosas, descargas, WiFi, SMS, email, texto plano, crypto, vCard y geo.
 
-Sirve para validar Local Scan, las comprobaciones HEAD y el renderizado de resultados. Remote Reputation depende de la configuración de proveedores y del resultado de la consulta en vivo.
+Sirve para validar los heurísticos del análisis local, las comprobaciones HEAD y el renderizado de resultados. Remote Reputation depende de la configuración de proveedores y del resultado de la consulta en vivo.
+
+Los payloads de texto subyacentes también están cubiertos por tests de regresión compartidos, así que las imágenes de ejemplo se mantienen como assets de QA manual y no como fixtures automatizadas de decodificación.
 
 Dataset: [docs/assets/sample-qrs/README.md](docs/assets/sample-qrs/README.md)
 
@@ -59,8 +61,10 @@ La app siempre muestra el resultado antes de abrir cualquier cosa. La acción de
 
 - Siempre activo.
 - Funciona sin API keys.
-- Usa comprobaciones locales de QR y contenido.
-- Hace inspección de metadata con HEAD para URLs cuando el servidor lo permite.
+- Usa comprobaciones locales de QR y contenido para clasificar el payload.
+- Bloquea esquemas peligrosos como `javascript:`, `file:`, `data:` e `intent:`.
+- Comprueba HTTP frente a HTTPS, formas sospechosas de URL y destinos con IP o aspecto local.
+- Hace inspección de metadata con HEAD para URLs cuando el servidor lo permite y, si hace falta, recurre a inferencias basadas en la ruta.
 - Detecta contenido descargable, como enlaces a PDF o menús, como metadata de archivo.
 - Trata descargas de ejecutables o scripts como alto riesgo.
 - No llama a servicios externos de reputación.
@@ -70,6 +74,8 @@ La app siempre muestra el resultado antes de abrir cualquier cosa. La acción de
 - Opcional y solo para URLs.
 - Usa Google Safe Browsing y URLhaus cuando está configurado.
 - Muestra `Not configured` cuando no hay keys.
+- Maneja los fallos de los proveedores de forma segura y mantiene visible el resultado local.
+- Un resultado limpio de reputación remota no garantiza que la URL sea segura.
 - No guarda claves en el repositorio.
 
 Los enlaces a PDF y menús se muestran primero como metadata de archivo. No se tratan automáticamente como peligrosos solo por apuntar a un archivo descargable.
@@ -147,20 +153,26 @@ La inyección de dependencias se maneja con Koin, pero solo en el borde de wirin
 
 ## Tests y validación
 
-Comandos principales de validación:
+Validado recientemente con:
+
+```bash
+./gradlew :shared:allTests
+./gradlew check
+git diff --check
+```
+
+Comandos locales opcionales que también son válidos para este repositorio:
 
 ```bash
 ./gradlew spotlessCheck
 ./gradlew spotlessApply
-./gradlew :shared:allTests
 ./gradlew :androidApp:assembleDebug
 ./gradlew :shared:testAndroidHostTest
 ./gradlew :shared:iosSimulatorArm64Test
 ./gradlew :shared:koverHtmlReport
-git diff --check
 ```
 
-El formato usa Spotless con ktlint para archivos Kotlin y scripts Gradle Kotlin. Ejecuta `spotlessApply` en local antes de hacer commit si `spotlessCheck` detecta problemas de formato.
+El formato usa Spotless con ktlint para archivos Kotlin y scripts Gradle Kotlin. Ejecuta `spotlessApply` en local antes de hacer commit si `spotlessCheck` detecta problemas de formato. Los tests compartidos cubren normalización, heurísticos locales de URL, análisis de metadata, inferencia de archivos/descargas, composición de reputación remota y bloqueo del botón de abrir.
 
 ## Resolución de problemas
 
@@ -172,7 +184,6 @@ El formato usa Spotless con ktlint para archivos Kotlin y scripts Gradle Kotlin.
 ## Documentación
 
 - [Overview](docs/00-overview.md)
-- [Roadmap](docs/01-roadmap.md)
 - [Functional Specification](docs/02-functional-specification.md)
 - [Architecture](docs/03-architecture.md)
 - [UI Flow](docs/04-ui-flow.md)
@@ -180,7 +191,6 @@ El formato usa Spotless con ktlint para archivos Kotlin y scripts Gradle Kotlin.
 - [Local Security Checks](docs/security/local-security-checks.md)
 - [Remote Reputation](docs/security/remote-reputation.md)
 - [Testing Strategy](docs/06-testing-strategy.md)
-- [Agent Tasks](docs/07-agent-tasks.md)
 - [Agent Guidelines](AGENTS.md)
 
 ## Limitaciones conocidas
@@ -189,4 +199,4 @@ El formato usa Spotless con ktlint para archivos Kotlin y scripts Gradle Kotlin.
 - Las API keys móviles no son totalmente secretas dentro de un binario de app.
 - HEAD depende del soporte del servidor, así que algunos enlaces no expondrán detalles de archivo.
 - Los proveedores remotos pueden devolver falsos negativos, así que una reputación limpia no garantiza seguridad.
-- QR Guardian es un proyecto de portfolio y demo, no un sustituto de herramientas de seguridad empresariales.
+- QR Guardian es un proyecto de portfolio y demo, no un sustituto de herramientas de seguridad dedicadas.

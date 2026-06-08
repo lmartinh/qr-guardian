@@ -1,30 +1,23 @@
-# QR Guardian sample QR dataset
+# QR Guardian Sample QR Dataset
 
-This dataset is synthetic. It is meant for manual testing, demos and documentation.
+This dataset is synthetic. It is intended for manual QA, demos, screenshots, and portfolio walkthroughs.
 
-Do not treat these samples as real threats. The payloads are deliberately safe demo values that exercise Local Scan, HEAD metadata checks, and optional Remote Reputation behavior.
+The QR image files are not automated decoding fixtures. Automated regression tests validate the underlying text payloads in shared Kotlin tests, especially `QrSampleDatasetRegressionTest` and `QrSampleCases`.
 
-The same text payloads are also mirrored in shared regression tests so the security pipeline can be validated without decoding the QR images.
+Do not replace these samples with real malicious domains. The current payloads are controlled demo values that exercise Local Scan, metadata inference, result rendering, and optional Remote Reputation behavior.
+
+Remote Reputation results may vary depending on provider configuration and live provider responses. The table below describes the expected local behavior.
 
 ## Preview
 
 ![QR Guardian sample QR contact sheet](./contact-sheet.png)
 
-## What it covers
-
-- Safe and suspicious URLs.
-- Dangerous download and unsafe scheme samples.
-- File-like URLs such as PDF and ZIP.
-- WiFi, SMS, mailto, plain text, crypto, vCard and geo payloads.
-
-Remote Reputation results can vary depending on which providers are configured and whether the lookup succeeds. The table below describes the expected local behavior.
-
 ## Samples
 
-| File | Stored content | Purpose | Expected result |
+| File | Stored content | Purpose | Expected local result |
 |---|---|---|---|
 | `qrs/01_safe_https.png` | `https://example.com` | Safe HTTPS URL | Safe |
-| `qrs/02_bare_domain.png` | `example.com` | Bare domain normalization | Safe |
+| `qrs/02_bare_domain.png` | `example.com` | Bare domain normalization | Suspicious |
 | `qrs/03_http_url.png` | `http://example.com` | Non-HTTPS URL | Suspicious |
 | `qrs/04_at_symbol_url.png` | `https://google.com@evil.example/login` | Obfuscated destination with `@` | Suspicious |
 | `qrs/05_ip_host.png` | `http://192.168.1.20/login` | IP-host URL | Suspicious |
@@ -46,11 +39,12 @@ Remote Reputation results can vary depending on which providers are configured a
 | `qrs/21_crypto.png` | `bitcoin:bc1qexampleaddress000000000000000000000000000?amount=0.01` | Crypto payment URI | Suspicious |
 | `qrs/22_vcard.png` | `BEGIN:VCARD ... END:VCARD` | Contact card payload | Suspicious |
 | `qrs/23_geo.png` | `geo:40.4168,-3.7038` | Location payload | Suspicious |
-| `qrs/24_google_safe_browsing_test_malware.png` | `http://malware.testing.google.test/testing/malware/` | Google Safe Browsing malware test URL | Suspicious locally, malicious with Google Safe Browsing |
+| `qrs/24_google_safe_browsing_test_malware.png` | `http://malware.testing.google.test/testing/malware/` | Google Safe Browsing malware test URL | Suspicious locally; malicious when Google Safe Browsing is configured and reports it |
 
 ## Notes
 
 - Local Scan always runs.
-- Remote Reputation is optional and only applies to URLs.
-- Non-URL payloads are `NotApplicable` for Remote Reputation.
-- Use this dataset to validate classification, warning states, file detection and result rendering.
+- Remote Reputation is optional and URL-only.
+- Non-URL payloads show `NotApplicable` for Remote Reputation.
+- Automated tests validate the text payload behavior, not QR image decoding.
+- Keep sample names and table entries aligned with files in `qrs/`.
