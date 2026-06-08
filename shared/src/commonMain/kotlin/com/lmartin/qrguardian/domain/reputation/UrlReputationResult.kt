@@ -4,5 +4,5 @@ data class UrlReputationResult(
     val status: UrlReputationStatus,
     val provider: String,
     val categories: List<ThreatCategory>,
-    val reasons: List<String>
+    val reasons: List<String>,
 )

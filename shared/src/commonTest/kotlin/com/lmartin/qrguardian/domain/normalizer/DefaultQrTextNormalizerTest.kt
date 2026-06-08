@@ -23,11 +23,12 @@ class DefaultQrTextNormalizerTest {
 
     @Test
     fun `preserves long text`() {
-        val text = buildString {
-            repeat(5000) {
-                append('a')
+        val text =
+            buildString {
+                repeat(5000) {
+                    append('a')
+                }
             }
-        }
 
         assertEquals(text, normalizer.normalize(text))
     }

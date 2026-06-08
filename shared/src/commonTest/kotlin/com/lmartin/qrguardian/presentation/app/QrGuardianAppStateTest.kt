@@ -134,22 +134,23 @@ class QrGuardianAppStateTest {
         var pendingAnalysisRawText: String? = null
         var isCameraPermissionGranted = initialPermissionGranted
 
-        val state = QrGuardianAppState(
-            screenState = { screen },
-            setScreenState = { screen = it },
-            showPermissionMessageState = { showPermissionMessage },
-            setShowPermissionMessageState = { showPermissionMessage = it },
-            waitingForSettingsReturnState = { waitingForSettingsReturn },
-            setWaitingForSettingsReturnState = { waitingForSettingsReturn = it },
-            isProcessingScanState = { isProcessingScan },
-            setIsProcessingScanState = { isProcessingScan = it },
-            hasAcceptedScanState = { hasAcceptedScan },
-            setHasAcceptedScanState = { hasAcceptedScan = it },
-            pendingAnalysisRawTextState = { pendingAnalysisRawText },
-            setPendingAnalysisRawTextState = { pendingAnalysisRawText = it },
-            isCameraPermissionGrantedState = { isCameraPermissionGranted },
-            setCameraPermissionGrantedState = { isCameraPermissionGranted = it },
-        )
+        val state =
+            QrGuardianAppState(
+                screenState = { screen },
+                setScreenState = { screen = it },
+                showPermissionMessageState = { showPermissionMessage },
+                setShowPermissionMessageState = { showPermissionMessage = it },
+                waitingForSettingsReturnState = { waitingForSettingsReturn },
+                setWaitingForSettingsReturnState = { waitingForSettingsReturn = it },
+                isProcessingScanState = { isProcessingScan },
+                setIsProcessingScanState = { isProcessingScan = it },
+                hasAcceptedScanState = { hasAcceptedScan },
+                setHasAcceptedScanState = { hasAcceptedScan = it },
+                pendingAnalysisRawTextState = { pendingAnalysisRawText },
+                setPendingAnalysisRawTextState = { pendingAnalysisRawText = it },
+                isCameraPermissionGrantedState = { isCameraPermissionGranted },
+                setCameraPermissionGrantedState = { isCameraPermissionGranted = it },
+            )
 
         return Harness(
             state = state,

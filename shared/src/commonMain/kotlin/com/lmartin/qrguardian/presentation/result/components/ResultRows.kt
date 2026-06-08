@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -79,22 +80,21 @@ internal fun ResultDetailRow(
 @Composable
 internal fun ResultReasonRow(
     text: String,
+    tintColor: Color,
+    level: ImageVector,
 ) {
     Row(
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(QrGuardianSpacing.S),
         verticalAlignment = Alignment.Top,
     ) {
-        Text(
-            text = "•",
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(top = 1.dp),
-        )
+        ResultReasonIcon(levelTint = tintColor, levelIcon = level)
         Text(
             text = text,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.fillMaxWidth(0.88f),
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -118,5 +118,25 @@ internal fun ResultStatusPill(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+    }
+}
+
+@Composable
+internal fun ResultReasonIcon(levelTint: Color, levelIcon: ImageVector) {
+    Surface(
+        shape = CircleShape,
+        color = levelTint.copy(alpha = 0.14f),
+    ) {
+        Box(
+            modifier = Modifier.size(24.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = levelIcon,
+                contentDescription = null,
+                tint = levelTint,
+                modifier = Modifier.size(14.dp),
+            )
+        }
     }
 }

@@ -8,39 +8,39 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitView
+import kotlinx.cinterop.readValue
+import platform.AVFoundation.AVAuthorizationStatusAuthorized
+import platform.AVFoundation.AVAuthorizationStatusDenied
+import platform.AVFoundation.AVAuthorizationStatusNotDetermined
+import platform.AVFoundation.AVAuthorizationStatusRestricted
 import platform.AVFoundation.AVCaptureDevice
 import platform.AVFoundation.AVCaptureDeviceInput
 import platform.AVFoundation.AVCaptureMetadataOutput
 import platform.AVFoundation.AVCaptureMetadataOutputObjectsDelegateProtocol
 import platform.AVFoundation.AVCaptureSession
 import platform.AVFoundation.AVCaptureVideoPreviewLayer
+import platform.AVFoundation.AVLayerVideoGravityResizeAspectFill
 import platform.AVFoundation.AVMediaTypeVideo
 import platform.AVFoundation.AVMetadataMachineReadableCodeObject
-import platform.AVFoundation.AVMetadataObjectTypeQRCode
-import platform.AVFoundation.AVMetadataObjectTypeEAN13Code
-import platform.AVFoundation.AVMetadataObjectTypeEAN8Code
-import platform.AVFoundation.AVMetadataObjectTypeUPCECode
-import platform.AVFoundation.AVMetadataObjectTypePDF417Code
 import platform.AVFoundation.AVMetadataObjectTypeAztecCode
 import platform.AVFoundation.AVMetadataObjectTypeCode128Code
 import platform.AVFoundation.AVMetadataObjectTypeCode39Code
 import platform.AVFoundation.AVMetadataObjectTypeCode93Code
 import platform.AVFoundation.AVMetadataObjectTypeDataMatrixCode
-import platform.AVFoundation.AVMetadataObjectTypeInterleaved2of5Code
+import platform.AVFoundation.AVMetadataObjectTypeEAN13Code
+import platform.AVFoundation.AVMetadataObjectTypeEAN8Code
 import platform.AVFoundation.AVMetadataObjectTypeITF14Code
-import platform.AVFoundation.AVAuthorizationStatusAuthorized
-import platform.AVFoundation.AVAuthorizationStatusDenied
-import platform.AVFoundation.AVAuthorizationStatusNotDetermined
-import platform.AVFoundation.AVAuthorizationStatusRestricted
-import platform.AVFoundation.AVLayerVideoGravityResizeAspectFill
+import platform.AVFoundation.AVMetadataObjectTypeInterleaved2of5Code
+import platform.AVFoundation.AVMetadataObjectTypePDF417Code
+import platform.AVFoundation.AVMetadataObjectTypeQRCode
+import platform.AVFoundation.AVMetadataObjectTypeUPCECode
 import platform.AVFoundation.authorizationStatusForMediaType
 import platform.AVFoundation.requestAccessForMediaType
 import platform.CoreGraphics.CGRectZero
+import platform.UIKit.UIColor
+import platform.UIKit.UIView
 import platform.darwin.NSObject
 import platform.darwin.dispatch_get_main_queue
-import platform.UIKit.UIView
-import platform.UIKit.UIColor
-import kotlinx.cinterop.readValue
 
 @Composable
 actual fun PlatformQrScanner(
@@ -127,9 +127,11 @@ private class QrScannerView : UIView(frame = CGRectZero.readValue()) {
 
         when (AVCaptureDevice.authorizationStatusForMediaType(AVMediaTypeVideo)) {
             AVAuthorizationStatusAuthorized -> Unit
+
             AVAuthorizationStatusDenied,
             AVAuthorizationStatusRestricted,
-            AVAuthorizationStatusNotDetermined -> {
+            AVAuthorizationStatusNotDetermined,
+            -> {
                 onScannerError?.invoke("Camera permission is required.")
                 return
             }
@@ -207,7 +209,8 @@ private class QrScannerView : UIView(frame = CGRectZero.readValue()) {
 private class QrMetadataDelegate(
     private val onScanResult: (String) -> Unit,
     private val onError: (String) -> Unit,
-) : NSObject(), AVCaptureMetadataOutputObjectsDelegateProtocol {
+) : NSObject(),
+    AVCaptureMetadataOutputObjectsDelegateProtocol {
     override fun captureOutput(
         output: platform.AVFoundation.AVCaptureOutput,
         didOutputMetadataObjects: List<*>,

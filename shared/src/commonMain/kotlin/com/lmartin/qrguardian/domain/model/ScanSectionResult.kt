@@ -7,5 +7,5 @@ data class ScanSectionResult(
     val title: String,
     val description: String,
     val reasons: List<String>,
-    val metadata: List<ScanMetadataItem> = emptyList()
+    val metadata: List<ScanMetadataItem> = emptyList(),
 )

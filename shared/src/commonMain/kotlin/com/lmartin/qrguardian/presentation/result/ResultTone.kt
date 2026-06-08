@@ -1,8 +1,9 @@
 package com.lmartin.qrguardian.presentation.result
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -21,9 +22,9 @@ internal data class ResultTone(
     val actionContentColor: Color,
 )
 
-internal fun SecurityLevel.toResultTone(): ResultTone {
-    return when (this) {
-        SecurityLevel.Safe -> ResultTone(
+internal fun SecurityLevel.toResultTone(): ResultTone = when (this) {
+    SecurityLevel.Safe -> {
+        ResultTone(
             icon = Icons.Filled.CheckCircle,
             badgeContainerColor = QrGuardianColors.SafeContainerLight,
             badgeContentColor = QrGuardianColors.Safe,
@@ -34,7 +35,10 @@ internal fun SecurityLevel.toResultTone(): ResultTone {
             actionContainerColor = QrGuardianColors.PrimaryDark,
             actionContentColor = Color.White,
         )
-        SecurityLevel.Suspicious -> ResultTone(
+    }
+
+    SecurityLevel.Suspicious -> {
+        ResultTone(
             icon = Icons.Filled.Warning,
             badgeContainerColor = QrGuardianColors.WarningContainerLight,
             badgeContentColor = Color(0xFF9A6B00),
@@ -45,7 +49,10 @@ internal fun SecurityLevel.toResultTone(): ResultTone {
             actionContainerColor = QrGuardianColors.PrimaryDark.copy(alpha = 0.92f),
             actionContentColor = Color.White,
         )
-        SecurityLevel.Dangerous -> ResultTone(
+    }
+
+    SecurityLevel.Dangerous -> {
+        ResultTone(
             icon = Icons.Filled.Error,
             badgeContainerColor = QrGuardianColors.DangerContainerLight,
             badgeContentColor = Color(0xFFB42318),
@@ -56,8 +63,11 @@ internal fun SecurityLevel.toResultTone(): ResultTone {
             actionContainerColor = QrGuardianColors.Danger.copy(alpha = 0.20f),
             actionContentColor = Color(0xFFB42318),
         )
-        SecurityLevel.Unknown -> ResultTone(
-            icon = Icons.Filled.Warning,
+    }
+
+    SecurityLevel.Unknown -> {
+        ResultTone(
+            icon = Icons.AutoMirrored.Filled.HelpOutline,
             badgeContainerColor = QrGuardianColors.Secondary.copy(alpha = 0.24f),
             badgeContentColor = QrGuardianColors.PrimaryDark,
             accentColor = QrGuardianColors.Neutral,
@@ -70,20 +80,23 @@ internal fun SecurityLevel.toResultTone(): ResultTone {
     }
 }
 
-internal fun ResultTone.sectionTint(level: SecurityLevel): Color {
-    return when (level) {
-        SecurityLevel.Safe -> QrGuardianColors.SafeContainerLight
-        SecurityLevel.Suspicious -> QrGuardianColors.WarningContainerLight
-        SecurityLevel.Dangerous -> QrGuardianColors.DangerContainerLight
-        SecurityLevel.Unknown -> QrGuardianColors.Secondary.copy(alpha = 0.16f)
-    }
+internal fun SecurityLevel.toStatusIcon(): ImageVector = when (this) {
+    SecurityLevel.Safe -> Icons.Filled.CheckCircle
+    SecurityLevel.Suspicious -> Icons.Filled.Warning
+    SecurityLevel.Dangerous -> Icons.Filled.Error
+    SecurityLevel.Unknown -> Icons.AutoMirrored.Filled.HelpOutline
 }
 
-internal fun ResultTone.sectionContent(level: SecurityLevel): Color {
-    return when (level) {
-        SecurityLevel.Safe -> QrGuardianColors.Safe
-        SecurityLevel.Suspicious -> Color(0xFF9A6B00)
-        SecurityLevel.Dangerous -> Color(0xFFB42318)
-        SecurityLevel.Unknown -> QrGuardianColors.PrimaryDark
-    }
+internal fun ResultTone.sectionTint(level: SecurityLevel): Color = when (level) {
+    SecurityLevel.Safe -> QrGuardianColors.SafeContainerLight
+    SecurityLevel.Suspicious -> QrGuardianColors.WarningContainerLight
+    SecurityLevel.Dangerous -> QrGuardianColors.DangerContainerLight
+    SecurityLevel.Unknown -> QrGuardianColors.Secondary.copy(alpha = 0.16f)
+}
+
+internal fun ResultTone.sectionContent(level: SecurityLevel): Color = when (level) {
+    SecurityLevel.Safe -> QrGuardianColors.Safe
+    SecurityLevel.Suspicious -> Color(0xFF9A6B00)
+    SecurityLevel.Dangerous -> Color(0xFFB42318)
+    SecurityLevel.Unknown -> QrGuardianColors.PrimaryDark
 }

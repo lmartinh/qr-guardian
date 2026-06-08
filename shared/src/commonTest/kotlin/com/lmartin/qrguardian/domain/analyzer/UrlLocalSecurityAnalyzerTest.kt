@@ -68,12 +68,13 @@ class UrlLocalSecurityAnalyzerTest {
 
     @Test
     fun `very long url is suspicious`() {
-        val longUrl = buildString {
-            append("https://example.com/")
-            repeat(301) {
-                append('a')
+        val longUrl =
+            buildString {
+                append("https://example.com/")
+                repeat(301) {
+                    append('a')
+                }
             }
-        }
 
         val result = analyzer.analyze(longUrl)
 
@@ -83,18 +84,19 @@ class UrlLocalSecurityAnalyzerTest {
 
     @Test
     fun `url with many query params is suspicious`() {
-        val url = buildString {
-            append("https://example.com?")
-            repeat(9) { index ->
-                append("p")
-                append(index)
-                append("=")
-                append(index)
-                if (index < 8) {
-                    append("&")
+        val url =
+            buildString {
+                append("https://example.com?")
+                repeat(9) { index ->
+                    append("p")
+                    append(index)
+                    append("=")
+                    append(index)
+                    if (index < 8) {
+                        append("&")
+                    }
                 }
             }
-        }
 
         val result = analyzer.analyze(url)
 

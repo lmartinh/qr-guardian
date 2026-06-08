@@ -11,17 +11,18 @@ import kotlin.test.assertEquals
 class QrGuardianHttpClientFactoryTest {
     @Test
     fun `factory creates working client`() = runBlocking {
-        val client = QrGuardianHttpClientFactory.create(
-            engineFactory = MockEngine,
-            engineConfig = {
-                addHandler {
-                    respond(
-                        content = "",
-                        status = HttpStatusCode.OK
-                    )
-                }
-            }
-        )
+        val client =
+            QrGuardianHttpClientFactory.create(
+                engineFactory = MockEngine,
+                engineConfig = {
+                    addHandler {
+                        respond(
+                            content = "",
+                            status = HttpStatusCode.OK,
+                        )
+                    }
+                },
+            )
 
         val response = client.head("https://example.com/health")
 

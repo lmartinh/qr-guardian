@@ -66,6 +66,7 @@ That coverage already exercises the main shared behavior at the right level:
 The main commands documented for this project are:
 
 ```bash
+./gradlew spotlessCheck
 ./gradlew :shared:allTests
 ./gradlew :androidApp:assembleDebug
 ./gradlew :shared:testAndroidHostTest
@@ -73,6 +74,8 @@ The main commands documented for this project are:
 ./gradlew :shared:koverHtmlReport
 git diff --check
 ```
+
+Spotless enforces Kotlin formatting with ktlint. Run `./gradlew spotlessApply` locally before committing if formatting needs to be fixed.
 
 ## Guidance
 

@@ -10,29 +10,31 @@ class DefaultLocalScanAnalyzer(
     private val urlSecurityAnalyzer: UrlLocalSecurityAnalyzer = UrlLocalSecurityAnalyzer(),
     private val wifiSecurityAnalyzer: WifiLocalSecurityAnalyzer = WifiLocalSecurityAnalyzer(),
     private val sensitiveActionAnalyzer: SensitiveActionAnalyzer = SensitiveActionAnalyzer(),
-    private val plainTextSecurityAnalyzer: PlainTextSecurityAnalyzer = PlainTextSecurityAnalyzer()
+    private val plainTextSecurityAnalyzer: PlainTextSecurityAnalyzer = PlainTextSecurityAnalyzer(),
 ) : LocalScanAnalyzer {
     override fun analyze(
         rawText: String,
         normalizedText: String,
-        contentType: QrContentType
+        contentType: QrContentType,
     ): ScanSectionResult {
         val normalizationCheck = analyzeNormalization(rawText, normalizedText)
-        val contentCheck = if (normalizedText.isBlank()) {
-            LocalSecurityCheck(
-                level = SecurityLevel.Unknown,
-                reasons = emptyList()
-            )
-        } else {
-            analyzeContent(contentType, normalizedText)
-        }
+        val contentCheck =
+            if (normalizedText.isBlank()) {
+                LocalSecurityCheck(
+                    level = SecurityLevel.Unknown,
+                    reasons = emptyList(),
+                )
+            } else {
+                analyzeContent(contentType, normalizedText)
+            }
 
         val reasons = distinctReasons(normalizationCheck.reasons + contentCheck.reasons)
-        val finalLevel = resolveFinalLevel(
-            contentType = contentType,
-            normalizationLevel = normalizationCheck.level,
-            contentLevel = contentCheck.level
-        )
+        val finalLevel =
+            resolveFinalLevel(
+                contentType = contentType,
+                normalizationLevel = normalizationCheck.level,
+                contentLevel = contentCheck.level,
+            )
 
         return ScanSectionResult(
             name = "Local Scan",
@@ -40,29 +42,62 @@ class DefaultLocalScanAnalyzer(
             status = ScanStatus.Completed,
             title = finalLevel.title(),
             description = finalLevel.description(),
-            reasons = reasons
+            reasons = reasons,
         )
     }
 
-    private fun analyzeContent(contentType: QrContentType, normalizedText: String): LocalSecurityCheck {
-        return when (contentType) {
-            QrContentType.Url -> urlSecurityAnalyzer.analyze(normalizedText)
-            QrContentType.Email -> sensitiveActionAnalyzer.analyzeEmail(normalizedText)
-            QrContentType.Phone -> sensitiveActionAnalyzer.analyzePhone(normalizedText)
-            QrContentType.Sms -> sensitiveActionAnalyzer.analyzeSms(normalizedText)
-            QrContentType.Wifi -> wifiSecurityAnalyzer.analyze(normalizedText)
-            QrContentType.VCard -> sensitiveActionAnalyzer.analyzeVCard(normalizedText)
-            QrContentType.Geo -> sensitiveActionAnalyzer.analyzeGeo(normalizedText)
-            QrContentType.Crypto -> sensitiveActionAnalyzer.analyzeCrypto(normalizedText)
-            QrContentType.PlainText -> plainTextSecurityAnalyzer.analyze(normalizedText)
-            QrContentType.Unknown -> LocalSecurityCheck(
+    private fun analyzeContent(
+        contentType: QrContentType,
+        normalizedText: String,
+    ): LocalSecurityCheck = when (contentType) {
+        QrContentType.Url -> {
+            urlSecurityAnalyzer.analyze(normalizedText)
+        }
+
+        QrContentType.Email -> {
+            sensitiveActionAnalyzer.analyzeEmail(normalizedText)
+        }
+
+        QrContentType.Phone -> {
+            sensitiveActionAnalyzer.analyzePhone(normalizedText)
+        }
+
+        QrContentType.Sms -> {
+            sensitiveActionAnalyzer.analyzeSms(normalizedText)
+        }
+
+        QrContentType.Wifi -> {
+            wifiSecurityAnalyzer.analyze(normalizedText)
+        }
+
+        QrContentType.VCard -> {
+            sensitiveActionAnalyzer.analyzeVCard(normalizedText)
+        }
+
+        QrContentType.Geo -> {
+            sensitiveActionAnalyzer.analyzeGeo(normalizedText)
+        }
+
+        QrContentType.Crypto -> {
+            sensitiveActionAnalyzer.analyzeCrypto(normalizedText)
+        }
+
+        QrContentType.PlainText -> {
+            plainTextSecurityAnalyzer.analyze(normalizedText)
+        }
+
+        QrContentType.Unknown -> {
+            LocalSecurityCheck(
                 level = SecurityLevel.Unknown,
-                reasons = listOf("The QR code could not be fully evaluated locally.")
+                reasons = listOf("The QR code could not be fully evaluated locally."),
             )
         }
     }
 
-    private fun analyzeNormalization(rawText: String, normalizedText: String): LocalSecurityCheck {
+    private fun analyzeNormalization(
+        rawText: String,
+        normalizedText: String,
+    ): LocalSecurityCheck {
         val reasons = mutableListOf<String>()
 
         if (normalizedText.isBlank()) {
@@ -81,22 +116,23 @@ class DefaultLocalScanAnalyzer(
             reasons += "The scanned text is longer than the local safety threshold."
         }
 
-        val level = when {
-            normalizedText.isBlank() -> SecurityLevel.Unknown
-            reasons.isEmpty() -> SecurityLevel.Safe
-            else -> SecurityLevel.Suspicious
-        }
+        val level =
+            when {
+                normalizedText.isBlank() -> SecurityLevel.Unknown
+                reasons.isEmpty() -> SecurityLevel.Safe
+                else -> SecurityLevel.Suspicious
+            }
 
         return LocalSecurityCheck(
             level = level,
-            reasons = reasons
+            reasons = reasons,
         )
     }
 
     private fun resolveFinalLevel(
         contentType: QrContentType,
         normalizationLevel: SecurityLevel,
-        contentLevel: SecurityLevel
+        contentLevel: SecurityLevel,
     ): SecurityLevel {
         if (normalizationLevel == SecurityLevel.Dangerous || contentLevel == SecurityLevel.Dangerous) {
             return SecurityLevel.Dangerous
@@ -118,11 +154,9 @@ class DefaultLocalScanAnalyzer(
         return reasons.filter { seenReasons.add(it) }
     }
 
-    private fun containsSuspiciousControlCharacters(text: String): Boolean {
-        return text.any { character ->
-            (character.code < 32 && character !in setOf('\t', '\n', '\r', '\u0000')) ||
-                character.code == 127
-        }
+    private fun containsSuspiciousControlCharacters(text: String): Boolean = text.any { character ->
+        (character.code < 32 && character !in setOf('\t', '\n', '\r', '\u0000')) ||
+            character.code == 127
     }
 
     private companion object {

@@ -12,11 +12,11 @@ import com.lmartin.qrguardian.di.initKoin
 import com.lmartin.qrguardian.domain.usecase.AnalyzeQrSafetyUseCase
 import com.lmartin.qrguardian.presentation.permissions.CameraPermissionState
 import kotlinx.coroutines.launch
-import platform.AVFoundation.AVCaptureDevice
 import platform.AVFoundation.AVAuthorizationStatusAuthorized
 import platform.AVFoundation.AVAuthorizationStatusDenied
 import platform.AVFoundation.AVAuthorizationStatusNotDetermined
 import platform.AVFoundation.AVAuthorizationStatusRestricted
+import platform.AVFoundation.AVCaptureDevice
 import platform.AVFoundation.AVMediaTypeVideo
 import platform.AVFoundation.authorizationStatusForMediaType
 import platform.AVFoundation.requestAccessForMediaType
@@ -86,26 +86,32 @@ fun IosApp() {
     )
 }
 
-private fun resolveCameraPermissionState(): CameraPermissionState {
-    return when (AVCaptureDevice.authorizationStatusForMediaType(AVMediaTypeVideo)) {
-        AVAuthorizationStatusAuthorized -> CameraPermissionState.granted()
-        AVAuthorizationStatusDenied,
-        AVAuthorizationStatusRestricted -> CameraPermissionState.denied(canRequestAgain = false)
-        AVAuthorizationStatusNotDetermined -> CameraPermissionState.denied(canRequestAgain = true)
-        else -> CameraPermissionState.denied(canRequestAgain = false)
-    }
+private fun resolveCameraPermissionState(): CameraPermissionState = when (AVCaptureDevice.authorizationStatusForMediaType(AVMediaTypeVideo)) {
+    AVAuthorizationStatusAuthorized -> CameraPermissionState.granted()
+
+    AVAuthorizationStatusDenied,
+    AVAuthorizationStatusRestricted,
+    -> CameraPermissionState.denied(canRequestAgain = false)
+
+    AVAuthorizationStatusNotDetermined -> CameraPermissionState.denied(canRequestAgain = true)
+
+    else -> CameraPermissionState.denied(canRequestAgain = false)
 }
 
 private fun requestCameraPermission(onResult: (Boolean) -> Unit) {
     when (AVCaptureDevice.authorizationStatusForMediaType(AVMediaTypeVideo)) {
         AVAuthorizationStatusAuthorized -> onResult(true)
+
         AVAuthorizationStatusDenied,
-        AVAuthorizationStatusRestricted -> onResult(false)
+        AVAuthorizationStatusRestricted,
+        -> onResult(false)
+
         AVAuthorizationStatusNotDetermined -> {
             AVCaptureDevice.requestAccessForMediaType(AVMediaTypeVideo) { granted ->
                 onResult(granted)
             }
         }
+
         else -> onResult(false)
     }
 }

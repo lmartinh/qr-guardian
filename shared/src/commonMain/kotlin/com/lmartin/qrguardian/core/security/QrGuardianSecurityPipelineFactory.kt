@@ -18,37 +18,16 @@ object QrGuardianSecurityPipelineFactory {
         remoteReputationConfig: RemoteReputationConfig = RemoteReputationConfig(),
         textNormalizer: QrTextNormalizer = DefaultQrTextNormalizer(),
         contentClassifier: QrContentClassifier = DefaultQrContentClassifier(),
-        localScanAnalyzer: LocalScanAnalyzer = DefaultLocalScanAnalyzer()
-    ): AnalyzeQrSafetyUseCase {
-        return AnalyzeQrSafetyUseCase(
-            textNormalizer = textNormalizer,
-            contentClassifier = contentClassifier,
-            localScanAnalyzer = localScanAnalyzer,
-            urlMetadataRepository = KtorUrlMetadataRepository(httpClient),
-            urlReputationRepository = UrlReputationRepositoryFactory.create(
-                config = remoteReputationConfig,
-                httpClient = httpClient
-            )
-        )
-    }
-
-    @Deprecated(
-        message = "Use create(httpClient, remoteReputationConfig) instead.",
-        replaceWith = ReplaceWith("create(httpClient, remoteReputationConfig, textNormalizer, contentClassifier, localScanAnalyzer)")
-    )
-    fun createAnalyzeQrSafetyUseCase(
-        httpClient: HttpClient,
-        remoteReputationConfig: RemoteReputationConfig = RemoteReputationConfig(),
-        textNormalizer: QrTextNormalizer = DefaultQrTextNormalizer(),
-        contentClassifier: QrContentClassifier = DefaultQrContentClassifier(),
-        localScanAnalyzer: LocalScanAnalyzer = DefaultLocalScanAnalyzer()
-    ): AnalyzeQrSafetyUseCase {
-        return create(
+        localScanAnalyzer: LocalScanAnalyzer = DefaultLocalScanAnalyzer(),
+    ): AnalyzeQrSafetyUseCase = AnalyzeQrSafetyUseCase(
+        textNormalizer = textNormalizer,
+        contentClassifier = contentClassifier,
+        localScanAnalyzer = localScanAnalyzer,
+        urlMetadataRepository = KtorUrlMetadataRepository(httpClient),
+        urlReputationRepository =
+        UrlReputationRepositoryFactory.create(
+            config = remoteReputationConfig,
             httpClient = httpClient,
-            remoteReputationConfig = remoteReputationConfig,
-            textNormalizer = textNormalizer,
-            contentClassifier = contentClassifier,
-            localScanAnalyzer = localScanAnalyzer
-        )
-    }
+        ),
+    )
 }

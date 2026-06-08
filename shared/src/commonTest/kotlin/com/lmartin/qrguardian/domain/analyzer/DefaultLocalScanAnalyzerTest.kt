@@ -1,8 +1,8 @@
 package com.lmartin.qrguardian.domain.analyzer
 
-import com.lmartin.qrguardian.domain.usecase.AnalyzeQrSafetyUseCase
 import com.lmartin.qrguardian.domain.model.QrContentType
 import com.lmartin.qrguardian.domain.model.SecurityLevel
+import com.lmartin.qrguardian.domain.usecase.AnalyzeQrSafetyUseCase
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -11,11 +11,12 @@ class DefaultLocalScanAnalyzerTest {
 
     @Test
     fun `safe https url stays safe`() {
-        val result = analyzer.analyze(
-            rawText = "https://example.com",
-            normalizedText = "https://example.com",
-            contentType = QrContentType.Url
-        )
+        val result =
+            analyzer.analyze(
+                rawText = "https://example.com",
+                normalizedText = "https://example.com",
+                contentType = QrContentType.Url,
+            )
 
         assertEquals(SecurityLevel.Safe, result.level)
         assertEquals("Looks safe", result.title)
@@ -23,47 +24,52 @@ class DefaultLocalScanAnalyzerTest {
 
     @Test
     fun `http url is suspicious`() {
-        val result = analyzer.analyze(
-            rawText = "http://example.com",
-            normalizedText = "http://example.com",
-            contentType = QrContentType.Url
-        )
+        val result =
+            analyzer.analyze(
+                rawText = "http://example.com",
+                normalizedText = "http://example.com",
+                contentType = QrContentType.Url,
+            )
 
         assertEquals(SecurityLevel.Suspicious, result.level)
     }
 
     @Test
     fun `dangerous file url is dangerous`() {
-        val result = analyzer.analyze(
-            rawText = "https://example.com/file.apk",
-            normalizedText = "https://example.com/file.apk",
-            contentType = QrContentType.Url
-        )
+        val result =
+            analyzer.analyze(
+                rawText = "https://example.com/file.apk",
+                normalizedText = "https://example.com/file.apk",
+                contentType = QrContentType.Url,
+            )
 
         assertEquals(SecurityLevel.Dangerous, result.level)
     }
 
     @Test
     fun `plain text stays unknown`() {
-        val result = analyzer.analyze(
-            rawText = "hello world",
-            normalizedText = "hello world",
-            contentType = QrContentType.PlainText
-        )
+        val result =
+            analyzer.analyze(
+                rawText = "hello world",
+                normalizedText = "hello world",
+                contentType = QrContentType.PlainText,
+            )
 
         assertEquals(SecurityLevel.Unknown, result.level)
     }
 
     @Test
     fun `dangerous scheme is blocked as dangerous`() {
-        val useCase = AnalyzeQrSafetyUseCase(
-            urlMetadataRepository = NoOpUrlMetadataRepository(),
-            urlReputationRepository = NoOpUrlReputationRepository()
-        )
+        val useCase =
+            AnalyzeQrSafetyUseCase(
+                urlMetadataRepository = NoOpUrlMetadataRepository(),
+                urlReputationRepository = NoOpUrlReputationRepository(),
+            )
 
-        val result = kotlinx.coroutines.runBlocking {
-            useCase("javascript:alert(1)")
-        }
+        val result =
+            kotlinx.coroutines.runBlocking {
+                useCase("javascript:alert(1)")
+            }
 
         assertEquals(QrContentType.Unknown, result.contentType)
         assertEquals(SecurityLevel.Dangerous, result.overallLevel)
@@ -82,7 +88,7 @@ class DefaultLocalScanAnalyzerTest {
             fileExtension = null,
             fileType = com.lmartin.qrguardian.domain.metadata.DownloadFileType.Unknown,
             isLikelyDownload = false,
-            reasons = emptyList()
+            reasons = emptyList(),
         )
     }
 
@@ -91,7 +97,7 @@ class DefaultLocalScanAnalyzerTest {
             status = com.lmartin.qrguardian.domain.reputation.UrlReputationStatus.NotConfigured,
             provider = "None",
             categories = emptyList(),
-            reasons = emptyList()
+            reasons = emptyList(),
         )
     }
 }

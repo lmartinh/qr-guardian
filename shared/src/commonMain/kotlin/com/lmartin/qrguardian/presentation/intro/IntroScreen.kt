@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -24,9 +27,6 @@ import androidx.compose.ui.unit.dp
 import com.lmartin.qrguardian.presentation.components.QRGuardianPrimaryButton
 import com.lmartin.qrguardian.presentation.theme.QrGuardianColors.PrimaryDark
 import com.lmartin.qrguardian.presentation.theme.QrGuardianSpacing
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.outlined.QrCodeScanner
 
 @Composable
 fun IntroScreen(

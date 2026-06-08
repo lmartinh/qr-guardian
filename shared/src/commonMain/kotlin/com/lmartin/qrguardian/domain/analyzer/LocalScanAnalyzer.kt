@@ -7,6 +7,6 @@ interface LocalScanAnalyzer {
     fun analyze(
         rawText: String,
         normalizedText: String,
-        contentType: QrContentType
+        contentType: QrContentType,
     ): ScanSectionResult
 }

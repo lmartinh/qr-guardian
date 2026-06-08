@@ -6,7 +6,7 @@ internal data class ParsedUrl(
     val host: String,
     val path: String,
     val query: String,
-    val fragment: String?
+    val fragment: String?,
 )
 
 internal fun parseUrl(value: String): ParsedUrl {
@@ -53,7 +53,7 @@ internal fun parseUrl(value: String): ParsedUrl {
         host = host,
         path = path,
         query = query,
-        fragment = fragment
+        fragment = fragment,
     )
 }
 

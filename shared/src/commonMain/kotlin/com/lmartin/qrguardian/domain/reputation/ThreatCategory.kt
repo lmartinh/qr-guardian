@@ -5,7 +5,7 @@ enum class ThreatCategory {
     Phishing,
     SocialEngineering,
     UnwantedSoftware,
-    Unknown
+    Unknown,
 }
 
 fun ThreatCategory.displayName(): String = when (this) {

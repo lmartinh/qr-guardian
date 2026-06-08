@@ -26,16 +26,17 @@ class AnalyzeQrSafetyUseCase(
     private val contentClassifier: QrContentClassifier = DefaultQrContentClassifier(),
     private val localScanAnalyzer: LocalScanAnalyzer = DefaultLocalScanAnalyzer(),
     private val urlMetadataRepository: UrlMetadataRepository,
-    private val urlReputationRepository: UrlReputationRepository
+    private val urlReputationRepository: UrlReputationRepository,
 ) {
     suspend operator fun invoke(rawText: String): QrAnalysisResult {
         val normalizedText = textNormalizer.normalize(rawText)
         val dangerousScheme = DangerousSchemeDetector.detect(normalizedText)
-        val contentType = if (dangerousScheme != null || normalizedText.isBlank()) {
-            QrContentType.Unknown
-        } else {
-            contentClassifier.classify(normalizedText)
-        }
+        val contentType =
+            if (dangerousScheme != null || normalizedText.isBlank()) {
+                QrContentType.Unknown
+            } else {
+                contentClassifier.classify(normalizedText)
+            }
 
         if (dangerousScheme != null) {
             return QrAnalysisResult(
@@ -46,15 +47,16 @@ class AnalyzeQrSafetyUseCase(
                 overallLevel = SecurityLevel.Dangerous,
                 canOpen = false,
                 localScan = QrSafetyAnalysisAssembler.buildDangerousSchemeSection(dangerousScheme),
-                remoteReputation = QrSafetyAnalysisAssembler.buildNotApplicableRemoteSection()
+                remoteReputation = QrSafetyAnalysisAssembler.buildNotApplicableRemoteSection(),
             )
         }
 
-        val baseLocalScan = localScanAnalyzer.analyze(
-            rawText = rawText,
-            normalizedText = normalizedText,
-            contentType = contentType
-        )
+        val baseLocalScan =
+            localScanAnalyzer.analyze(
+                rawText = rawText,
+                normalizedText = normalizedText,
+                contentType = contentType,
+            )
 
         if (contentType != QrContentType.Url) {
             return QrAnalysisResult(
@@ -65,7 +67,7 @@ class AnalyzeQrSafetyUseCase(
                 overallLevel = baseLocalScan.level,
                 canOpen = false,
                 localScan = baseLocalScan,
-                remoteReputation = QrSafetyAnalysisAssembler.buildNotApplicableRemoteSection()
+                remoteReputation = QrSafetyAnalysisAssembler.buildNotApplicableRemoteSection(),
             )
         }
 
@@ -76,7 +78,7 @@ class AnalyzeQrSafetyUseCase(
 
             val metadataResult = metadataDeferred.await()
             val reputationResult = reputationDeferred.await()
-            val localSection = QrSafetyAnalysisAssembler.buildLocalSection(baseLocalScan, metadataResult)
+            val localSection = QrSafetyAnalysisAssembler.buildLocalSection(baseLocalScan, metadataResult, networkUrl)
             val remoteSection = QrSafetyAnalysisAssembler.buildRemoteSection(reputationResult)
             val overallLevel = QrSafetyAnalysisAssembler.combineLevels(localSection.level, remoteSection.level)
 
@@ -88,44 +90,40 @@ class AnalyzeQrSafetyUseCase(
                 overallLevel = overallLevel,
                 canOpen = overallLevel != SecurityLevel.Dangerous,
                 localScan = localSection,
-                remoteReputation = remoteSection
+                remoteReputation = remoteSection,
             )
         }
     }
 
-    private suspend fun loadMetadataSafely(url: String): UrlMetadataResult {
-        return try {
-            urlMetadataRepository.fetchMetadata(url)
-        } catch (cancellationException: CancellationException) {
-            throw cancellationException
-        } catch (exception: Throwable) {
-            UrlMetadataResult(
-                status = UrlMetadataStatus.Unavailable,
-                finalUrl = null,
-                contentType = null,
-                contentDisposition = null,
-                contentLength = null,
-                fileName = null,
-                fileExtension = null,
-                fileType = DownloadFileType.Unknown,
-                isLikelyDownload = false,
-                reasons = emptyList()
-            )
-        }
+    private suspend fun loadMetadataSafely(url: String): UrlMetadataResult = try {
+        urlMetadataRepository.fetchMetadata(url)
+    } catch (cancellationException: CancellationException) {
+        throw cancellationException
+    } catch (exception: Throwable) {
+        UrlMetadataResult(
+            status = UrlMetadataStatus.Unavailable,
+            finalUrl = null,
+            contentType = null,
+            contentDisposition = null,
+            contentLength = null,
+            fileName = null,
+            fileExtension = null,
+            fileType = DownloadFileType.Unknown,
+            isLikelyDownload = false,
+            reasons = emptyList(),
+        )
     }
 
-    private suspend fun checkReputationSafely(url: String): UrlReputationResult {
-        return try {
-            urlReputationRepository.checkUrl(url)
-        } catch (cancellationException: CancellationException) {
-            throw cancellationException
-        } catch (exception: Throwable) {
-            UrlReputationResult(
-                status = UrlReputationStatus.Error,
-                provider = "None",
-                categories = emptyList(),
-                reasons = listOf("Remote reputation check is currently unavailable.")
-            )
-        }
+    private suspend fun checkReputationSafely(url: String): UrlReputationResult = try {
+        urlReputationRepository.checkUrl(url)
+    } catch (cancellationException: CancellationException) {
+        throw cancellationException
+    } catch (exception: Throwable) {
+        UrlReputationResult(
+            status = UrlReputationStatus.Error,
+            provider = "None",
+            categories = emptyList(),
+            reasons = listOf("Remote reputation check is currently unavailable."),
+        )
     }
 }

@@ -152,6 +152,8 @@ Dependency injection is handled with Koin, but only at the app wiring boundary. 
 Main validation commands:
 
 ```bash
+./gradlew spotlessCheck
+./gradlew spotlessApply
 ./gradlew :shared:allTests
 ./gradlew :androidApp:assembleDebug
 ./gradlew :shared:testAndroidHostTest
@@ -159,6 +161,8 @@ Main validation commands:
 ./gradlew :shared:koverHtmlReport
 git diff --check
 ```
+
+Formatting uses Spotless with ktlint for Kotlin sources and Gradle Kotlin scripts. Run `spotlessApply` locally before committing if `spotlessCheck` reports formatting issues.
 
 ## Troubleshooting
 

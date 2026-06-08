@@ -13,7 +13,7 @@ enum class DownloadFileType {
     AppleDiskImage,
     WindowsExecutable,
     Script,
-    Unknown
+    Unknown,
 }
 
 fun DownloadFileType.displayName(): String = when (this) {

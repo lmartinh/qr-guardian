@@ -25,17 +25,20 @@ fun ResultScreen(
     ) {
         when {
             state.isLoading -> ResultLoadingContent(texts)
+
             state.errorMessage != null -> ResultErrorContent(
                 message = state.errorMessage,
                 onRescanClick = onRescanClick,
                 texts = texts,
             )
+
             state.analysis != null -> ResultContent(
                 state = state,
                 onOpenUrl = onOpenUrl,
                 onRescanClick = onRescanClick,
                 texts = texts,
             )
+
             else -> ResultEmptyContent(
                 onRescanClick = onRescanClick,
                 texts = texts,

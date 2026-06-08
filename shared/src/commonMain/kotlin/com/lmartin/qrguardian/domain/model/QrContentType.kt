@@ -10,5 +10,5 @@ enum class QrContentType {
     Geo,
     Crypto,
     PlainText,
-    Unknown
+    Unknown,
 }

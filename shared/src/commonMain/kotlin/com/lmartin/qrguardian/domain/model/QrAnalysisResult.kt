@@ -8,5 +8,5 @@ data class QrAnalysisResult(
     val overallLevel: SecurityLevel,
     val canOpen: Boolean,
     val localScan: ScanSectionResult,
-    val remoteReputation: ScanSectionResult
+    val remoteReputation: ScanSectionResult,
 )

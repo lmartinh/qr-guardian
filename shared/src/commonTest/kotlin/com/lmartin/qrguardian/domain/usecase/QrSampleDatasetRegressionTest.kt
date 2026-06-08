@@ -15,10 +15,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class QrSampleDatasetRegressionTest {
-    private val useCase = AnalyzeQrSafetyUseCase(
-        urlMetadataRepository = SampleUrlMetadataRepository(),
-        urlReputationRepository = NoOpUrlReputationRepository()
-    )
+    private val useCase =
+        AnalyzeQrSafetyUseCase(
+            urlMetadataRepository = SampleUrlMetadataRepository(),
+            urlReputationRepository = NoOpUrlReputationRepository(),
+        )
 
     @Test
     fun `sample qr payloads keep their expected security behavior`() = runBlocking {
@@ -38,7 +39,7 @@ class QrSampleDatasetRegressionTest {
                 sampleCase.expectedLocalReasonsContain.all { expectedReason ->
                     result.localScan.reasons.any { actualReason -> actualReason.contains(expectedReason) }
                 },
-                sampleCase.name + " local reasons were " + result.localScan.reasons.joinToString()
+                sampleCase.name + " local reasons were " + result.localScan.reasons.joinToString(),
             )
             assertTrue(
                 sampleCase.expectedLocalMetadataContain.all { (expectedLabel, expectedValue) ->
@@ -46,51 +47,61 @@ class QrSampleDatasetRegressionTest {
                         metadata.label == expectedLabel && metadata.value == expectedValue
                     }
                 },
-                sampleCase.name + " local metadata were " + result.localScan.metadata.joinToString()
+                sampleCase.name + " local metadata were " + result.localScan.metadata.joinToString(),
             )
         }
     }
 
-    private fun expectedRemoteStatus(contentType: QrContentType): ScanStatus {
-        return if (contentType == QrContentType.Url) {
-            ScanStatus.NotConfigured
-        } else {
-            ScanStatus.NotApplicable
-        }
+    private fun expectedRemoteStatus(contentType: QrContentType): ScanStatus = if (contentType == QrContentType.Url) {
+        ScanStatus.NotConfigured
+    } else {
+        ScanStatus.NotApplicable
     }
 
     private class SampleUrlMetadataRepository : UrlMetadataRepository {
-        override suspend fun fetchMetadata(url: String): UrlMetadataResult {
-            return when {
-                url.endsWith("/menu.pdf") -> metadata(
+        override suspend fun fetchMetadata(url: String): UrlMetadataResult = when {
+            url.endsWith("/menu.pdf") -> {
+                metadata(
                     contentType = "application/pdf",
                     fileName = "menu.pdf",
                     fileExtension = "pdf",
                     fileType = DownloadFileType.Pdf,
-                    isLikelyDownload = true
+                    isLikelyDownload = true,
                 )
-                url.endsWith("/archive.zip") -> metadata(
+            }
+
+            url.endsWith("/archive.zip") -> {
+                metadata(
                     contentType = "application/zip",
                     fileName = "archive.zip",
                     fileExtension = "zip",
                     fileType = DownloadFileType.Archive,
-                    isLikelyDownload = true
+                    isLikelyDownload = true,
                 )
-                url.endsWith("/download/app.apk") -> metadata(
+            }
+
+            url.endsWith("/download/app.apk") -> {
+                metadata(
                     contentType = "application/vnd.android.package-archive",
                     fileName = "app.apk",
                     fileExtension = "apk",
                     fileType = DownloadFileType.AndroidApp,
-                    isLikelyDownload = true
+                    isLikelyDownload = true,
                 )
-                url.endsWith("/setup.exe") -> metadata(
+            }
+
+            url.endsWith("/setup.exe") -> {
+                metadata(
                     contentType = "application/octet-stream",
                     fileName = "setup.exe",
                     fileExtension = "exe",
                     fileType = DownloadFileType.WindowsExecutable,
-                    isLikelyDownload = true
+                    isLikelyDownload = true,
                 )
-                else -> unavailableMetadata()
+            }
+
+            else -> {
+                unavailableMetadata()
             }
         }
 
@@ -99,35 +110,31 @@ class QrSampleDatasetRegressionTest {
             fileName: String?,
             fileExtension: String?,
             fileType: DownloadFileType,
-            isLikelyDownload: Boolean
-        ): UrlMetadataResult {
-            return UrlMetadataResult(
-                status = UrlMetadataStatus.Available,
-                finalUrl = null,
-                contentType = contentType,
-                contentDisposition = null,
-                contentLength = null,
-                fileName = fileName,
-                fileExtension = fileExtension,
-                fileType = fileType,
-                isLikelyDownload = isLikelyDownload,
-                reasons = emptyList()
-            )
-        }
+            isLikelyDownload: Boolean,
+        ): UrlMetadataResult = UrlMetadataResult(
+            status = UrlMetadataStatus.Available,
+            finalUrl = null,
+            contentType = contentType,
+            contentDisposition = null,
+            contentLength = null,
+            fileName = fileName,
+            fileExtension = fileExtension,
+            fileType = fileType,
+            isLikelyDownload = isLikelyDownload,
+            reasons = emptyList(),
+        )
 
-        private fun unavailableMetadata(): UrlMetadataResult {
-            return UrlMetadataResult(
-                status = UrlMetadataStatus.Unavailable,
-                finalUrl = null,
-                contentType = null,
-                contentDisposition = null,
-                contentLength = null,
-                fileName = null,
-                fileExtension = null,
-                fileType = DownloadFileType.Unknown,
-                isLikelyDownload = false,
-                reasons = emptyList()
-            )
-        }
+        private fun unavailableMetadata(): UrlMetadataResult = UrlMetadataResult(
+            status = UrlMetadataStatus.Unavailable,
+            finalUrl = null,
+            contentType = null,
+            contentDisposition = null,
+            contentLength = null,
+            fileName = null,
+            fileExtension = null,
+            fileType = DownloadFileType.Unknown,
+            isLikelyDownload = false,
+            reasons = emptyList(),
+        )
     }
 }

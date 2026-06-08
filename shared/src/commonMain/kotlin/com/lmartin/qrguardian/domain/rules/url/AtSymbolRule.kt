@@ -10,7 +10,7 @@ class AtSymbolRule : SecurityRule {
         return SecurityRuleResult(
             triggered = triggered,
             level = if (triggered) SecurityLevel.Suspicious else SecurityLevel.Safe,
-            reason = if (triggered) "The URL contains an @ symbol, which can hide the real destination." else null
+            reason = if (triggered) "The URL contains an @ symbol, which can hide the real destination." else null,
         )
     }
 }

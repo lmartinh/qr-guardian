@@ -6,9 +6,10 @@ import com.lmartin.qrguardian.domain.model.SecurityLevel
 class WifiLocalSecurityAnalyzer {
     fun analyze(wifiText: String): LocalSecurityCheck {
         val fields = parseFields(wifiText)
-        val reasons = mutableListOf(
-            "WiFi QR codes configure a network, which is a sensitive action."
-        )
+        val reasons =
+            mutableListOf(
+                "WiFi QR codes configure a network, which is a sensitive action.",
+            )
 
         val securityType = fields["T"]?.lowercase()
         if (securityType == "nopass") {
@@ -21,7 +22,7 @@ class WifiLocalSecurityAnalyzer {
 
         return LocalSecurityCheck(
             level = SecurityLevel.Suspicious,
-            reasons = reasons
+            reasons = reasons,
         )
     }
 
@@ -29,7 +30,8 @@ class WifiLocalSecurityAnalyzer {
         val payload = wifiText.removePrefix("WIFI:")
         val result = mutableMapOf<String, String>()
 
-        payload.split(';')
+        payload
+            .split(';')
             .asSequence()
             .filter { it.isNotBlank() }
             .forEach { entry ->

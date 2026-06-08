@@ -16,50 +16,59 @@ import qrguardian.shared.generated.resources.Res
 
 @Composable
 fun qrGuardianTypography(): Typography {
-    val outfitFontFamily = FontFamily(
-        Font(Res.font.OutfitRegular, FontWeight.Normal),
-        Font(Res.font.OutfitMedium, FontWeight.Medium),
-        Font(Res.font.OutfitSemiBold, FontWeight.SemiBold),
-        Font(Res.font.OutfitBold, FontWeight.Bold),
-    )
+    val outfitFontFamily =
+        FontFamily(
+            Font(Res.font.OutfitRegular, FontWeight.Normal),
+            Font(Res.font.OutfitMedium, FontWeight.Medium),
+            Font(Res.font.OutfitSemiBold, FontWeight.SemiBold),
+            Font(Res.font.OutfitBold, FontWeight.Bold),
+        )
 
     return Typography(
-        displayLarge = TextStyle(
+        displayLarge =
+        TextStyle(
             fontFamily = outfitFontFamily,
             fontSize = 28.sp,
             fontWeight = FontWeight.SemiBold,
         ),
-        displayMedium = TextStyle(
+        displayMedium =
+        TextStyle(
             fontFamily = outfitFontFamily,
             fontSize = 22.sp,
             fontWeight = FontWeight.SemiBold,
         ),
-        displaySmall = TextStyle(
+        displaySmall =
+        TextStyle(
             fontFamily = outfitFontFamily,
             fontSize = 18.sp,
             fontWeight = FontWeight.SemiBold,
         ),
-        bodyLarge = TextStyle(
+        bodyLarge =
+        TextStyle(
             fontFamily = outfitFontFamily,
             fontSize = 16.sp,
             fontWeight = FontWeight.Normal,
         ),
-        bodyMedium = TextStyle(
+        bodyMedium =
+        TextStyle(
             fontFamily = outfitFontFamily,
             fontSize = 14.sp,
             fontWeight = FontWeight.Normal,
         ),
-        bodySmall = TextStyle(
+        bodySmall =
+        TextStyle(
             fontFamily = outfitFontFamily,
             fontSize = 12.sp,
             fontWeight = FontWeight.Normal,
         ),
-        labelLarge = TextStyle(
+        labelLarge =
+        TextStyle(
             fontFamily = outfitFontFamily,
             fontSize = 15.sp,
             fontWeight = FontWeight.Medium,
         ),
-        labelSmall = TextStyle(
+        labelSmall =
+        TextStyle(
             fontFamily = outfitFontFamily,
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium,

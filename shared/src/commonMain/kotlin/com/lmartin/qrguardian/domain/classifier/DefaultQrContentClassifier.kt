@@ -24,27 +24,26 @@ class DefaultQrContentClassifier : QrContentClassifier {
         }
     }
 
-    private fun isCryptoUri(lowerCaseText: String): Boolean {
-        return lowerCaseText.startsWith("bitcoin:") ||
-            lowerCaseText.startsWith("ethereum:") ||
-            lowerCaseText.startsWith("litecoin:") ||
-            lowerCaseText.startsWith("dogecoin:") ||
-            lowerCaseText.startsWith("monero:") ||
-            lowerCaseText.startsWith("solana:") ||
-            lowerCaseText.startsWith("cardano:") ||
-            lowerCaseText.startsWith("ripple:")
-    }
+    private fun isCryptoUri(lowerCaseText: String): Boolean = lowerCaseText.startsWith("bitcoin:") ||
+        lowerCaseText.startsWith("ethereum:") ||
+        lowerCaseText.startsWith("litecoin:") ||
+        lowerCaseText.startsWith("dogecoin:") ||
+        lowerCaseText.startsWith("monero:") ||
+        lowerCaseText.startsWith("solana:") ||
+        lowerCaseText.startsWith("cardano:") ||
+        lowerCaseText.startsWith("ripple:")
 
     private fun looksLikeUrlWithoutScheme(text: String): Boolean {
         if (text.any { it.isWhitespace() }) {
             return false
         }
 
-        val candidate = text
-            .substringBefore('/')
-            .substringBefore('?')
-            .substringBefore('#')
-            .substringBefore(':')
+        val candidate =
+            text
+                .substringBefore('/')
+                .substringBefore('?')
+                .substringBefore('#')
+                .substringBefore(':')
 
         if (!candidate.contains('.')) {
             return false

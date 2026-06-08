@@ -79,7 +79,7 @@ fun App(
                 }
                 .onFailure { throwable ->
                     resultViewModel.showError(
-                        throwable.message ?: "Unable to analyze the scanned content."
+                        throwable.message ?: "Unable to analyze the scanned content.",
                     )
                     appState.onAnalysisError()
                 }
@@ -151,43 +151,41 @@ fun App(
     }
 }
 
-private fun demoResult(): QrAnalysisResult {
-    return QrAnalysisResult(
-        originalText = "https://secure-login.example.com/account",
-        normalizedText = "https://secure-login.example.com/account",
-        openableUrl = "https://secure-login.example.com/account",
-        contentType = QrContentType.Url,
-        overallLevel = SecurityLevel.Suspicious,
-        canOpen = true,
-        localScan = ScanSectionResult(
-            name = "Local scan",
-            level = SecurityLevel.Suspicious,
-            status = ScanStatus.Completed,
-            title = "Phishing-like patterns detected",
-            description = "The destination looks like a login or credential collection flow.",
-            reasons = listOf(
-                "The domain mirrors a login pattern.",
-                "The path suggests a sign-in flow.",
-                "The destination asks for user action.",
-            ),
-            metadata = listOf(
-                ScanMetadataItem(label = "Content", value = "URL"),
-            ),
+private fun demoResult(): QrAnalysisResult = QrAnalysisResult(
+    originalText = "https://secure-login.example.com/account",
+    normalizedText = "https://secure-login.example.com/account",
+    openableUrl = "https://secure-login.example.com/account",
+    contentType = QrContentType.Url,
+    overallLevel = SecurityLevel.Suspicious,
+    canOpen = true,
+    localScan = ScanSectionResult(
+        name = "Local scan",
+        level = SecurityLevel.Suspicious,
+        status = ScanStatus.Completed,
+        title = "Phishing-like patterns detected",
+        description = "The destination looks like a login or credential collection flow.",
+        reasons = listOf(
+            "The domain mirrors a login pattern.",
+            "The path suggests a sign-in flow.",
+            "The destination asks for user action.",
         ),
-        remoteReputation = ScanSectionResult(
-            name = "Remote reputation",
-            level = SecurityLevel.Unknown,
-            status = ScanStatus.Unavailable,
-            title = "Reputation not available",
-            description = "Remote checks are not available in this demo state.",
-            reasons = listOf(
-                "No backend reputation provider is configured.",
-                "The app keeps the result visible before opening the link.",
-            ),
-            metadata = listOf(
-                ScanMetadataItem(label = "Provider", value = "Not configured"),
-                ScanMetadataItem(label = "Last check", value = "Unavailable"),
-            ),
+        metadata = listOf(
+            ScanMetadataItem(label = "Content", value = "URL"),
         ),
-    )
-}
+    ),
+    remoteReputation = ScanSectionResult(
+        name = "Remote reputation",
+        level = SecurityLevel.Unknown,
+        status = ScanStatus.Unavailable,
+        title = "Reputation not available",
+        description = "Remote checks are not available in this demo state.",
+        reasons = listOf(
+            "No backend reputation provider is configured.",
+            "The app keeps the result visible before opening the link.",
+        ),
+        metadata = listOf(
+            ScanMetadataItem(label = "Provider", value = "Not configured"),
+            ScanMetadataItem(label = "Last check", value = "Unavailable"),
+        ),
+    ),
+)

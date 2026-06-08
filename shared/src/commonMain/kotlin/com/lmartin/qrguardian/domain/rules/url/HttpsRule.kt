@@ -10,7 +10,7 @@ class HttpsRule : SecurityRule {
         return SecurityRuleResult(
             triggered = triggered,
             level = if (triggered) SecurityLevel.Suspicious else SecurityLevel.Safe,
-            reason = if (triggered) "The URL does not use HTTPS." else null
+            reason = if (triggered) "The URL does not use HTTPS." else null,
         )
     }
 }

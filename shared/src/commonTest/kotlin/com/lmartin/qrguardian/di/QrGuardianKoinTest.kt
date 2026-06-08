@@ -24,7 +24,7 @@ class QrGuardianKoinTest {
     fun `koin starts with empty remote config and resolves the use case`() = runBlocking {
         val koinApp = initKoin(
             remoteReputationConfig = RemoteReputationConfig(),
-            additionalModules = listOf(localOnlyHttpClientModule())
+            additionalModules = listOf(localOnlyHttpClientModule()),
         )
 
         try {
@@ -32,13 +32,13 @@ class QrGuardianKoinTest {
             val resolvedUseCase = koinApp.koin.get<AnalyzeQrSafetyUseCase>()
             val factoryUseCase = QrGuardianSecurityPipelineFactory.create(
                 httpClient = koinApp.koin.get(),
-                remoteReputationConfig = resolvedConfig
+                remoteReputationConfig = resolvedConfig,
             )
 
             assertEquals(RemoteReputationConfig(), resolvedConfig)
             assertEquals(
                 factoryUseCase("example.com/report.pdf"),
-                resolvedUseCase("example.com/report.pdf")
+                resolvedUseCase("example.com/report.pdf"),
             )
         } finally {
             koinApp.close()
@@ -49,7 +49,7 @@ class QrGuardianKoinTest {
     fun `koin with empty config keeps remote reputation not configured for url`() = runBlocking {
         val koinApp = initKoin(
             remoteReputationConfig = RemoteReputationConfig(),
-            additionalModules = listOf(localOnlyHttpClientModule())
+            additionalModules = listOf(localOnlyHttpClientModule()),
         )
 
         try {
@@ -67,7 +67,7 @@ class QrGuardianKoinTest {
     fun `koin resolves configured google pipeline without real network calls`() = runBlocking {
         val koinApp = initKoin(
             remoteReputationConfig = RemoteReputationConfig(googleSafeBrowsingApiKey = "google-key"),
-            additionalModules = listOf(providerHttpClientModule())
+            additionalModules = listOf(providerHttpClientModule()),
         )
 
         try {
@@ -96,23 +96,23 @@ class QrGuardianKoinTest {
                                         status = HttpStatusCode.OK,
                                         headers = headersOf(
                                             HttpHeaders.ContentType to listOf(ContentType.Application.Pdf.toString()),
-                                            HttpHeaders.ContentDisposition to listOf("""attachment; filename*=override.pdf""")
-                                        )
+                                            HttpHeaders.ContentDisposition to listOf("""attachment; filename*=override.pdf"""),
+                                        ),
                                     )
 
                                     HttpMethod.Post -> respond(
                                         content = """{"matches":[{"threatType":"MALWARE"}]}""",
                                         status = HttpStatusCode.OK,
-                                        headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                                        headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
                                     )
 
                                     else -> error("Unexpected HTTP method: ${request.method}")
                                 }
-                            }
+                            },
                         )
                     }
-                }
-            )
+                },
+            ),
         )
 
         try {
@@ -130,7 +130,7 @@ class QrGuardianKoinTest {
     fun `koin starts without api keys`() {
         val koinApp = initKoin(
             remoteReputationConfig = RemoteReputationConfig(),
-            additionalModules = listOf(localOnlyHttpClientModule())
+            additionalModules = listOf(localOnlyHttpClientModule()),
         )
 
         try {
@@ -150,15 +150,15 @@ class QrGuardianKoinTest {
                             status = HttpStatusCode.OK,
                             headers = headersOf(
                                 HttpHeaders.ContentType to listOf(ContentType.Application.Pdf.toString()),
-                                HttpHeaders.ContentDisposition to listOf("""attachment; filename*=report.pdf""")
-                            )
+                                HttpHeaders.ContentDisposition to listOf("""attachment; filename*=report.pdf"""),
+                            ),
                         )
 
                         HttpMethod.Post -> error("Unexpected remote reputation request in local-only mode.")
 
                         else -> error("Unexpected HTTP method: ${request.method}")
                     }
-                }
+                },
             )
         }
     }
@@ -173,8 +173,8 @@ class QrGuardianKoinTest {
                             status = HttpStatusCode.OK,
                             headers = headersOf(
                                 HttpHeaders.ContentType to listOf(ContentType.Application.Pdf.toString()),
-                                HttpHeaders.ContentDisposition to listOf("""attachment; filename*=report.pdf""")
-                            )
+                                HttpHeaders.ContentDisposition to listOf("""attachment; filename*=report.pdf"""),
+                            ),
                         )
 
                         HttpMethod.Post -> respond(
@@ -184,12 +184,12 @@ class QrGuardianKoinTest {
                                 else -> error("Unexpected host: ${request.url.host}")
                             },
                             status = HttpStatusCode.OK,
-                            headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                            headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
                         )
 
                         else -> error("Unexpected HTTP method: ${request.method}")
                     }
-                }
+                },
             )
         }
     }

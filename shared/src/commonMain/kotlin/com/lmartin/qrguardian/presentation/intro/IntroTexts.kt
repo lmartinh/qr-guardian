@@ -14,19 +14,17 @@ import qrguardian.shared.generated.resources.intro_title_highlight
 import qrguardian.shared.generated.resources.intro_title_main
 
 @Composable
-internal fun rememberIntroTexts(): IntroTexts {
-    return IntroTexts(
-        badge = stringResource(Res.string.intro_badge),
-        titleMain = stringResource(Res.string.intro_title_main),
-        titleHighlight = stringResource(Res.string.intro_title_highlight),
-        description = stringResource(Res.string.intro_description),
-        startScanning = stringResource(Res.string.intro_start_scanning),
-        permissionMessage = stringResource(Res.string.intro_permission_message),
-        permissionCardTitle = stringResource(Res.string.intro_permission_card_title),
-        permissionCardMessage = stringResource(Res.string.intro_permission_card_message),
-        permissionCardAction = stringResource(Res.string.intro_permission_open_settings),
-    )
-}
+internal fun rememberIntroTexts(): IntroTexts = IntroTexts(
+    badge = stringResource(Res.string.intro_badge),
+    titleMain = stringResource(Res.string.intro_title_main),
+    titleHighlight = stringResource(Res.string.intro_title_highlight),
+    description = stringResource(Res.string.intro_description),
+    startScanning = stringResource(Res.string.intro_start_scanning),
+    permissionMessage = stringResource(Res.string.intro_permission_message),
+    permissionCardTitle = stringResource(Res.string.intro_permission_card_title),
+    permissionCardMessage = stringResource(Res.string.intro_permission_card_message),
+    permissionCardAction = stringResource(Res.string.intro_permission_open_settings),
+)
 
 internal data class IntroTexts(
     val badge: String,

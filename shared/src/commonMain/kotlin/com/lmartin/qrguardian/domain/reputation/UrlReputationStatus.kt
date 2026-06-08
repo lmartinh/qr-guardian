@@ -6,5 +6,5 @@ enum class UrlReputationStatus {
     Malicious,
     Unknown,
     NotConfigured,
-    Error
+    Error,
 }

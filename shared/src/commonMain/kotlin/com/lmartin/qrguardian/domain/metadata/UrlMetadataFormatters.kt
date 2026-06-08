@@ -1,8 +1,8 @@
 package com.lmartin.qrguardian.domain.metadata
 
 import kotlin.math.ln
-import kotlin.math.round
 import kotlin.math.pow
+import kotlin.math.round
 
 fun formatFileSize(bytes: Long): String {
     if (bytes < 0) {
@@ -17,10 +17,11 @@ fun formatFileSize(bytes: Long): String {
     val unitIndex = (digitGroups - 1).coerceAtMost(units.lastIndex)
     val value = bytes / 1024.0.pow(unitIndex + 1)
     val rounded = round(value * 10) / 10
-    val formattedValue = if (rounded == rounded.toLong().toDouble()) {
-        rounded.toLong().toString()
-    } else {
-        rounded.toString()
-    }
+    val formattedValue =
+        if (rounded == rounded.toLong().toDouble()) {
+            rounded.toLong().toString()
+        } else {
+            rounded.toString()
+        }
     return "$formattedValue ${units[unitIndex]}"
 }

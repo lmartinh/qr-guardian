@@ -5,8 +5,8 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 
 @Stable
 class QrGuardianAppState internal constructor(
@@ -115,9 +115,7 @@ class QrGuardianAppState internal constructor(
 }
 
 @Composable
-fun rememberQrGuardianAppState(
-    initialCameraPermissionGranted: Boolean,
-): QrGuardianAppState {
+fun rememberQrGuardianAppState(initialCameraPermissionGranted: Boolean): QrGuardianAppState {
     var screen by rememberSaveable { mutableStateOf(AppScreen.Intro) }
     var showPermissionMessage by rememberSaveable { mutableStateOf(false) }
     var waitingForSettingsReturn by rememberSaveable { mutableStateOf(false) }

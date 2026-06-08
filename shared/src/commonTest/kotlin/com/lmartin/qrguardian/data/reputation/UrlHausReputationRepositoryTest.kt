@@ -19,10 +19,11 @@ import kotlin.test.assertTrue
 class UrlHausReputationRepositoryTest {
     @Test
     fun `api key empty returns not configured`() = runBlocking {
-        val repository = UrlHausReputationRepository(
-            httpClient = httpClientWithResponse("{}"),
-            apiKey = ""
-        )
+        val repository =
+            UrlHausReputationRepository(
+                httpClient = httpClientWithResponse("{}"),
+                apiKey = "",
+            )
 
         val result = repository.checkUrl("https://example.com")
 
@@ -33,10 +34,11 @@ class UrlHausReputationRepositoryTest {
 
     @Test
     fun `no results response is clean`() = runBlocking {
-        val repository = UrlHausReputationRepository(
-            httpClient = httpClientWithResponse("""{"query_status":"no_results"}"""),
-            apiKey = "test-key"
-        )
+        val repository =
+            UrlHausReputationRepository(
+                httpClient = httpClientWithResponse("""{"query_status":"no_results"}"""),
+                apiKey = "test-key",
+            )
 
         val result = repository.checkUrl("https://example.com")
 
@@ -47,10 +49,11 @@ class UrlHausReputationRepositoryTest {
 
     @Test
     fun `malware response is malicious`() = runBlocking {
-        val repository = UrlHausReputationRepository(
-            httpClient = httpClientWithResponse("""{"query_status":"ok","url_status":"online"}"""),
-            apiKey = "test-key"
-        )
+        val repository =
+            UrlHausReputationRepository(
+                httpClient = httpClientWithResponse("""{"query_status":"ok","url_status":"online"}"""),
+                apiKey = "test-key",
+            )
 
         val result = repository.checkUrl("https://example.com")
 
@@ -61,10 +64,11 @@ class UrlHausReputationRepositoryTest {
 
     @Test
     fun `unknown response is unknown`() = runBlocking {
-        val repository = UrlHausReputationRepository(
-            httpClient = httpClientWithResponse("""{"query_status":"ok","url_status":"unknown"}"""),
-            apiKey = "test-key"
-        )
+        val repository =
+            UrlHausReputationRepository(
+                httpClient = httpClientWithResponse("""{"query_status":"ok","url_status":"unknown"}"""),
+                apiKey = "test-key",
+            )
 
         val result = repository.checkUrl("https://example.com")
 
@@ -75,10 +79,11 @@ class UrlHausReputationRepositoryTest {
 
     @Test
     fun `http error returns error`() = runBlocking {
-        val repository = UrlHausReputationRepository(
-            httpClient = httpClientWithError(),
-            apiKey = "test-key"
-        )
+        val repository =
+            UrlHausReputationRepository(
+                httpClient = httpClientWithError(),
+                apiKey = "test-key",
+            )
 
         val result = repository.checkUrl("https://example.com")
 
@@ -88,10 +93,11 @@ class UrlHausReputationRepositoryTest {
 
     @Test
     fun `exception returns error without throwing`() = runBlocking {
-        val repository = UrlHausReputationRepository(
-            httpClient = HttpClient(MockEngine { throw IllegalStateException("boom") }),
-            apiKey = "test-key"
-        )
+        val repository =
+            UrlHausReputationRepository(
+                httpClient = HttpClient(MockEngine { throw IllegalStateException("boom") }),
+                apiKey = "test-key",
+            )
 
         val result = repository.checkUrl("https://example.com")
 
@@ -100,21 +106,23 @@ class UrlHausReputationRepositoryTest {
     }
 
     private fun httpClientWithResponse(responseBody: String): HttpClient {
-        val engine = MockEngine {
-            respond(
-                content = responseBody,
-                status = HttpStatusCode.OK,
-                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-            )
-        }
+        val engine =
+            MockEngine {
+                respond(
+                    content = responseBody,
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                )
+            }
 
         return HttpClient(engine)
     }
 
     private fun httpClientWithError(): HttpClient {
-        val engine = MockEngine {
-            respondError(HttpStatusCode.InternalServerError)
-        }
+        val engine =
+            MockEngine {
+                respondError(HttpStatusCode.InternalServerError)
+            }
 
         return HttpClient(engine)
     }

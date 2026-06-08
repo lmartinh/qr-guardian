@@ -15,37 +15,39 @@ import com.lmartin.qrguardian.domain.rules.url.SuspiciousWordsRule
 import com.lmartin.qrguardian.domain.rules.url.TooManySubdomainsRule
 
 class UrlLocalSecurityAnalyzer(
-    private val rules: List<SecurityRule> = listOf(
-        HttpsRule(),
-        AtSymbolRule(),
-        IpHostRule(),
-        LinkShortenerRule(),
-        DangerousFileExtensionRule(),
-        SuspiciousWordsRule(),
-        LongUrlRule(),
-        QueryParamsRule(),
-        TooManySubdomainsRule(),
-        BrandImpersonationRule()
-    )
+    private val rules: List<SecurityRule> =
+        listOf(
+            HttpsRule(),
+            AtSymbolRule(),
+            IpHostRule(),
+            LinkShortenerRule(),
+            DangerousFileExtensionRule(),
+            SuspiciousWordsRule(),
+            LongUrlRule(),
+            QueryParamsRule(),
+            TooManySubdomainsRule(),
+            BrandImpersonationRule(),
+        ),
 ) {
     fun analyze(url: String): LocalSecurityCheck {
         val triggeredResults = rules.map { it.evaluate(url) }.filter { it.triggered }
         if (triggeredResults.isEmpty()) {
             return LocalSecurityCheck(
                 level = SecurityLevel.Safe,
-                reasons = emptyList()
+                reasons = emptyList(),
             )
         }
 
-        val level = when {
-            triggeredResults.any { it.level == SecurityLevel.Dangerous } -> SecurityLevel.Dangerous
-            triggeredResults.any { it.level == SecurityLevel.Suspicious } -> SecurityLevel.Suspicious
-            else -> SecurityLevel.Safe
-        }
+        val level =
+            when {
+                triggeredResults.any { it.level == SecurityLevel.Dangerous } -> SecurityLevel.Dangerous
+                triggeredResults.any { it.level == SecurityLevel.Suspicious } -> SecurityLevel.Suspicious
+                else -> SecurityLevel.Safe
+            }
 
         return LocalSecurityCheck(
             level = level,
-            reasons = triggeredResults.mapNotNull { it.reason }
+            reasons = triggeredResults.mapNotNull { it.reason },
         )
     }
 }

@@ -150,6 +150,8 @@ La inyección de dependencias se maneja con Koin, pero solo en el borde de wirin
 Comandos principales de validación:
 
 ```bash
+./gradlew spotlessCheck
+./gradlew spotlessApply
 ./gradlew :shared:allTests
 ./gradlew :androidApp:assembleDebug
 ./gradlew :shared:testAndroidHostTest
@@ -157,6 +159,8 @@ Comandos principales de validación:
 ./gradlew :shared:koverHtmlReport
 git diff --check
 ```
+
+El formato usa Spotless con ktlint para archivos Kotlin y scripts Gradle Kotlin. Ejecuta `spotlessApply` en local antes de hacer commit si `spotlessCheck` detecta problemas de formato.
 
 ## Resolución de problemas
 

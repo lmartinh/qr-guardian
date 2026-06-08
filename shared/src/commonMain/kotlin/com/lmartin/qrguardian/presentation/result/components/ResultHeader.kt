@@ -1,6 +1,7 @@
 package com.lmartin.qrguardian.presentation.result.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,8 +9,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -18,8 +19,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.lmartin.qrguardian.presentation.result.ResultTone
 import com.lmartin.qrguardian.presentation.theme.QrGuardianSpacing
@@ -32,99 +36,113 @@ internal fun ResultHeader(
     contentTypeLabel: String,
     statusLabel: String,
 ) {
-    Column(
+    val isDarkSurface = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val headerBackgroundColor = if (isDarkSurface) {
+        tone.badgeContainerColor.copy(alpha = 0.22f)
+    } else {
+        tone.badgeContainerColor.copy(alpha = 0.52f)
+    }
+    val headerGlowColor = if (isDarkSurface) {
+        tone.accentColor.copy(alpha = 0.14f)
+    } else {
+        tone.accentColor.copy(alpha = 0.24f)
+    }
+
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(QrGuardianSpacing.M),
+        shape = MaterialTheme.shapes.extraLarge,
+        color = headerBackgroundColor,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = tone.accentColor.copy(alpha = 0.18f),
+        ),
     ) {
-        Box(
+        Column(
             modifier = Modifier
-                .size(120.dp)
+                .fillMaxWidth()
                 .background(
-                    brush = Brush.radialGradient(
+                    brush = Brush.verticalGradient(
                         colors = listOf(
-                            tone.accentColor.copy(alpha = 0.26f),
-                            MaterialTheme.colorScheme.surface.copy(alpha = 0.0f),
-)
+                            if (isDarkSurface) headerBackgroundColor.copy(alpha = 0.92f) else tone.badgeContainerColor.copy(alpha = 0.72f),
+                            Color.Transparent,
+                        ),
                     ),
-                    shape = MaterialTheme.shapes.extraLarge,
-                ),
-            contentAlignment = Alignment.Center,
+                )
+                .padding(horizontal = QrGuardianSpacing.M, vertical = QrGuardianSpacing.L),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(QrGuardianSpacing.M),
         ) {
             Box(
                 modifier = Modifier
-                    .size(84.dp)
+                    .size(126.dp)
                     .background(
-                        color = tone.badgeContainerColor,
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                headerGlowColor,
+                                Color.Transparent,
+                            ),
+                        ),
                         shape = MaterialTheme.shapes.extraLarge,
                     ),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    imageVector = tone.icon,
-                    contentDescription = null,
-                    tint = tone.badgeContentColor,
-                    modifier = Modifier.size(46.dp),
+                Box(
+                    modifier = Modifier
+                        .size(92.dp)
+                        .border(
+                            width = 1.dp,
+                            color = tone.accentColor.copy(alpha = 0.16f),
+                            shape = CircleShape,
+                        )
+                        .background(
+                            color = tone.badgeContainerColor,
+                            shape = CircleShape,
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = tone.icon,
+                        contentDescription = null,
+                        tint = tone.badgeContentColor,
+                        modifier = Modifier.size(48.dp),
+                    )
+                }
+            }
+
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(QrGuardianSpacing.S),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                ResultStatusPill(
+                    label = contentTypeLabel,
+                    backgroundColor = tone.pillContainerColor,
+                    contentColor = tone.pillContentColor,
+                )
+                ResultStatusPill(
+                    label = statusLabel,
+                    backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-        }
-
-        Text(
-            text = title,
-            style = MaterialTheme.typography.displaySmall,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center,
-        )
-
-        Text(
-            text = description,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(QrGuardianSpacing.S),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            ResultStatusPill(
-                label = contentTypeLabel,
-                backgroundColor = tone.pillContainerColor,
-                contentColor = tone.pillContentColor,
-            )
-            ResultStatusPill(
-                label = statusLabel,
-                backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
-                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-internal fun ResultCallout(
-    text: String,
-) {
-    Surface(
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(QrGuardianSpacing.S),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Warning,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
     }
 }

@@ -19,10 +19,11 @@ import kotlin.test.assertTrue
 class GoogleSafeBrowsingUrlReputationRepositoryTest {
     @Test
     fun `api key empty returns not configured`() = runBlocking {
-        val repository = GoogleSafeBrowsingUrlReputationRepository(
-            httpClient = httpClientWithResponse("{}"),
-            apiKey = ""
-        )
+        val repository =
+            GoogleSafeBrowsingUrlReputationRepository(
+                httpClient = httpClientWithResponse("{}"),
+                apiKey = "",
+            )
 
         val result = repository.checkUrl("https://example.com")
 
@@ -33,10 +34,11 @@ class GoogleSafeBrowsingUrlReputationRepositoryTest {
 
     @Test
     fun `empty response is clean`() = runBlocking {
-        val repository = GoogleSafeBrowsingUrlReputationRepository(
-            httpClient = httpClientWithResponse("{}"),
-            apiKey = "test-key"
-        )
+        val repository =
+            GoogleSafeBrowsingUrlReputationRepository(
+                httpClient = httpClientWithResponse("{}"),
+                apiKey = "test-key",
+            )
 
         val result = repository.checkUrl("https://example.com")
 
@@ -48,12 +50,14 @@ class GoogleSafeBrowsingUrlReputationRepositoryTest {
 
     @Test
     fun `social engineering response is malicious`() = runBlocking {
-        val repository = GoogleSafeBrowsingUrlReputationRepository(
-            httpClient = httpClientWithResponse(
-                """{"matches":[{"threatType":"SOCIAL_ENGINEERING"}]}"""
-            ),
-            apiKey = "test-key"
-        )
+        val repository =
+            GoogleSafeBrowsingUrlReputationRepository(
+                httpClient =
+                httpClientWithResponse(
+                    """{"matches":[{"threatType":"SOCIAL_ENGINEERING"}]}""",
+                ),
+                apiKey = "test-key",
+            )
 
         val result = repository.checkUrl("https://example.com")
 
@@ -64,10 +68,11 @@ class GoogleSafeBrowsingUrlReputationRepositoryTest {
 
     @Test
     fun `malware response is malicious`() = runBlocking {
-        val repository = GoogleSafeBrowsingUrlReputationRepository(
-            httpClient = httpClientWithResponse("""{"matches":[{"threatType":"MALWARE"}]}"""),
-            apiKey = "test-key"
-        )
+        val repository =
+            GoogleSafeBrowsingUrlReputationRepository(
+                httpClient = httpClientWithResponse("""{"matches":[{"threatType":"MALWARE"}]}"""),
+                apiKey = "test-key",
+            )
 
         val result = repository.checkUrl("https://example.com")
 
@@ -78,10 +83,11 @@ class GoogleSafeBrowsingUrlReputationRepositoryTest {
 
     @Test
     fun `google malware test url is malicious`() = runBlocking {
-        val repository = GoogleSafeBrowsingUrlReputationRepository(
-            httpClient = httpClientWithResponse("""{"matches":[{"threatType":"MALWARE"}]}"""),
-            apiKey = "test-key"
-        )
+        val repository =
+            GoogleSafeBrowsingUrlReputationRepository(
+                httpClient = httpClientWithResponse("""{"matches":[{"threatType":"MALWARE"}]}"""),
+                apiKey = "test-key",
+            )
 
         val result = repository.checkUrl("http://malware.testing.google.test/testing/malware/")
 
@@ -92,10 +98,11 @@ class GoogleSafeBrowsingUrlReputationRepositoryTest {
 
     @Test
     fun `http error returns error`() = runBlocking {
-        val repository = GoogleSafeBrowsingUrlReputationRepository(
-            httpClient = httpClientWithError(),
-            apiKey = "test-key"
-        )
+        val repository =
+            GoogleSafeBrowsingUrlReputationRepository(
+                httpClient = httpClientWithError(),
+                apiKey = "test-key",
+            )
 
         val result = repository.checkUrl("https://example.com")
 
@@ -106,10 +113,11 @@ class GoogleSafeBrowsingUrlReputationRepositoryTest {
 
     @Test
     fun `exception returns error without throwing`() = runBlocking {
-        val repository = GoogleSafeBrowsingUrlReputationRepository(
-            httpClient = HttpClient(MockEngine { throw IllegalStateException("boom") }),
-            apiKey = "test-key"
-        )
+        val repository =
+            GoogleSafeBrowsingUrlReputationRepository(
+                httpClient = HttpClient(MockEngine { throw IllegalStateException("boom") }),
+                apiKey = "test-key",
+            )
 
         val result = repository.checkUrl("https://example.com")
 
@@ -118,21 +126,23 @@ class GoogleSafeBrowsingUrlReputationRepositoryTest {
     }
 
     private fun httpClientWithResponse(responseBody: String): HttpClient {
-        val engine = MockEngine {
-            respond(
-                content = responseBody,
-                status = HttpStatusCode.OK,
-                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-            )
-        }
+        val engine =
+            MockEngine {
+                respond(
+                    content = responseBody,
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                )
+            }
 
         return HttpClient(engine)
     }
 
     private fun httpClientWithError(): HttpClient {
-        val engine = MockEngine {
-            respondError(HttpStatusCode.InternalServerError)
-        }
+        val engine =
+            MockEngine {
+                respondError(HttpStatusCode.InternalServerError)
+            }
 
         return HttpClient(engine)
     }

@@ -11,7 +11,7 @@ class IpHostRule : SecurityRule {
         return SecurityRuleResult(
             triggered = triggered,
             level = if (triggered) SecurityLevel.Suspicious else SecurityLevel.Safe,
-            reason = if (triggered) "The URL uses an IPv4 address as host." else null
+            reason = if (triggered) "The URL uses an IPv4 address as host." else null,
         )
     }
 }

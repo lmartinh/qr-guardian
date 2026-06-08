@@ -67,7 +67,7 @@ fun AndroidAppRoot() {
     val remoteReputationConfig = remember {
         createRemoteReputationConfig(
             googleSafeBrowsingApiKey = BuildConfig.GOOGLE_SAFE_BROWSING_API_KEY,
-            urlHausApiKey = BuildConfig.URLHAUS_API_KEY
+            urlHausApiKey = BuildConfig.URLHAUS_API_KEY,
         )
     }
     val koinApplication = remember(remoteReputationConfig) {
@@ -141,7 +141,7 @@ private fun resolveCameraPermissionState(
                 Manifest.permission.CAMERA,
             )
         } == true
-    )
+        )
 
     return CameraPermissionState(
         isGranted = isGranted,
@@ -149,9 +149,7 @@ private fun resolveCameraPermissionState(
     )
 }
 
-private fun hasCameraPermission(context: android.content.Context): Boolean {
-    return ContextCompat.checkSelfPermission(
-        context,
-        Manifest.permission.CAMERA,
-    ) == PackageManager.PERMISSION_GRANTED
-}
+private fun hasCameraPermission(context: android.content.Context): Boolean = ContextCompat.checkSelfPermission(
+    context,
+    Manifest.permission.CAMERA,
+) == PackageManager.PERMISSION_GRANTED

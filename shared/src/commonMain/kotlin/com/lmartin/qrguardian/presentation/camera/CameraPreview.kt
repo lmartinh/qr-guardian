@@ -14,7 +14,7 @@ private fun CameraScreenPreview() {
                     isScanning = true,
                     isTorchAvailable = true,
                     isTorchEnabled = false,
-                )
+                ),
             ),
             onCloseClick = {},
             onScanResult = {},

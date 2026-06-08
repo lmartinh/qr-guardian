@@ -22,26 +22,27 @@ class CompositeUrlReputationRepositoryTest {
 
     @Test
     fun `clean plus clean returns clean`() = runBlocking {
-        val repository = CompositeUrlReputationRepository(
-            listOf(
-                FakeUrlReputationRepository(
-                    UrlReputationResult(
-                        status = UrlReputationStatus.Clean,
-                        provider = "Google Safe Browsing",
-                        categories = emptyList(),
-                        reasons = listOf("No threats were reported by Google Safe Browsing.")
-                    )
+        val repository =
+            CompositeUrlReputationRepository(
+                listOf(
+                    FakeUrlReputationRepository(
+                        UrlReputationResult(
+                            status = UrlReputationStatus.Clean,
+                            provider = "Google Safe Browsing",
+                            categories = emptyList(),
+                            reasons = listOf("No threats were reported by Google Safe Browsing."),
+                        ),
+                    ),
+                    FakeUrlReputationRepository(
+                        UrlReputationResult(
+                            status = UrlReputationStatus.Clean,
+                            provider = "URLhaus",
+                            categories = emptyList(),
+                            reasons = listOf("No threats were reported by URLhaus."),
+                        ),
+                    ),
                 ),
-                FakeUrlReputationRepository(
-                    UrlReputationResult(
-                        status = UrlReputationStatus.Clean,
-                        provider = "URLhaus",
-                        categories = emptyList(),
-                        reasons = listOf("No threats were reported by URLhaus.")
-                    )
-                )
             )
-        )
 
         val result = repository.checkUrl("https://example.com")
 
@@ -50,26 +51,27 @@ class CompositeUrlReputationRepositoryTest {
 
     @Test
     fun `clean plus malicious returns malicious`() = runBlocking {
-        val repository = CompositeUrlReputationRepository(
-            listOf(
-                FakeUrlReputationRepository(
-                    UrlReputationResult(
-                        status = UrlReputationStatus.Clean,
-                        provider = "Google Safe Browsing",
-                        categories = emptyList(),
-                        reasons = listOf("No threats were reported by Google Safe Browsing.")
-                    )
+        val repository =
+            CompositeUrlReputationRepository(
+                listOf(
+                    FakeUrlReputationRepository(
+                        UrlReputationResult(
+                            status = UrlReputationStatus.Clean,
+                            provider = "Google Safe Browsing",
+                            categories = emptyList(),
+                            reasons = listOf("No threats were reported by Google Safe Browsing."),
+                        ),
+                    ),
+                    FakeUrlReputationRepository(
+                        UrlReputationResult(
+                            status = UrlReputationStatus.Malicious,
+                            provider = "URLhaus",
+                            categories = listOf(ThreatCategory.Malware),
+                            reasons = listOf("URLhaus reported this URL as malware-related."),
+                        ),
+                    ),
                 ),
-                FakeUrlReputationRepository(
-                    UrlReputationResult(
-                        status = UrlReputationStatus.Malicious,
-                        provider = "URLhaus",
-                        categories = listOf(ThreatCategory.Malware),
-                        reasons = listOf("URLhaus reported this URL as malware-related.")
-                    )
-                )
             )
-        )
 
         val result = repository.checkUrl("https://example.com")
 
@@ -79,26 +81,27 @@ class CompositeUrlReputationRepositoryTest {
 
     @Test
     fun `suspicious plus clean returns suspicious`() = runBlocking {
-        val repository = CompositeUrlReputationRepository(
-            listOf(
-                FakeUrlReputationRepository(
-                    UrlReputationResult(
-                        status = UrlReputationStatus.Suspicious,
-                        provider = "Google Safe Browsing",
-                        categories = listOf(ThreatCategory.Phishing),
-                        reasons = listOf("Potential concern reported by Google Safe Browsing.")
-                    )
+        val repository =
+            CompositeUrlReputationRepository(
+                listOf(
+                    FakeUrlReputationRepository(
+                        UrlReputationResult(
+                            status = UrlReputationStatus.Suspicious,
+                            provider = "Google Safe Browsing",
+                            categories = listOf(ThreatCategory.Phishing),
+                            reasons = listOf("Potential concern reported by Google Safe Browsing."),
+                        ),
+                    ),
+                    FakeUrlReputationRepository(
+                        UrlReputationResult(
+                            status = UrlReputationStatus.Clean,
+                            provider = "URLhaus",
+                            categories = emptyList(),
+                            reasons = listOf("No threats were reported by URLhaus."),
+                        ),
+                    ),
                 ),
-                FakeUrlReputationRepository(
-                    UrlReputationResult(
-                        status = UrlReputationStatus.Clean,
-                        provider = "URLhaus",
-                        categories = emptyList(),
-                        reasons = listOf("No threats were reported by URLhaus.")
-                    )
-                )
             )
-        )
 
         val result = repository.checkUrl("https://example.com")
 
@@ -107,26 +110,27 @@ class CompositeUrlReputationRepositoryTest {
 
     @Test
     fun `error plus clean returns clean with error reason`() = runBlocking {
-        val repository = CompositeUrlReputationRepository(
-            listOf(
-                FakeUrlReputationRepository(
-                    UrlReputationResult(
-                        status = UrlReputationStatus.Error,
-                        provider = "Google Safe Browsing",
-                        categories = emptyList(),
-                        reasons = listOf("Google Safe Browsing check is currently unavailable.")
-                    )
+        val repository =
+            CompositeUrlReputationRepository(
+                listOf(
+                    FakeUrlReputationRepository(
+                        UrlReputationResult(
+                            status = UrlReputationStatus.Error,
+                            provider = "Google Safe Browsing",
+                            categories = emptyList(),
+                            reasons = listOf("Google Safe Browsing check is currently unavailable."),
+                        ),
+                    ),
+                    FakeUrlReputationRepository(
+                        UrlReputationResult(
+                            status = UrlReputationStatus.Clean,
+                            provider = "URLhaus",
+                            categories = emptyList(),
+                            reasons = listOf("No threats were reported by URLhaus."),
+                        ),
+                    ),
                 ),
-                FakeUrlReputationRepository(
-                    UrlReputationResult(
-                        status = UrlReputationStatus.Clean,
-                        provider = "URLhaus",
-                        categories = emptyList(),
-                        reasons = listOf("No threats were reported by URLhaus.")
-                    )
-                )
             )
-        )
 
         val result = repository.checkUrl("https://example.com")
 
@@ -136,26 +140,27 @@ class CompositeUrlReputationRepositoryTest {
 
     @Test
     fun `error plus error returns error`() = runBlocking {
-        val repository = CompositeUrlReputationRepository(
-            listOf(
-                FakeUrlReputationRepository(
-                    UrlReputationResult(
-                        status = UrlReputationStatus.Error,
-                        provider = "Google Safe Browsing",
-                        categories = emptyList(),
-                        reasons = listOf("Google Safe Browsing check is currently unavailable.")
-                    )
+        val repository =
+            CompositeUrlReputationRepository(
+                listOf(
+                    FakeUrlReputationRepository(
+                        UrlReputationResult(
+                            status = UrlReputationStatus.Error,
+                            provider = "Google Safe Browsing",
+                            categories = emptyList(),
+                            reasons = listOf("Google Safe Browsing check is currently unavailable."),
+                        ),
+                    ),
+                    FakeUrlReputationRepository(
+                        UrlReputationResult(
+                            status = UrlReputationStatus.Error,
+                            provider = "URLhaus",
+                            categories = emptyList(),
+                            reasons = listOf("URLhaus check is currently unavailable."),
+                        ),
+                    ),
                 ),
-                FakeUrlReputationRepository(
-                    UrlReputationResult(
-                        status = UrlReputationStatus.Error,
-                        provider = "URLhaus",
-                        categories = emptyList(),
-                        reasons = listOf("URLhaus check is currently unavailable.")
-                    )
-                )
             )
-        )
 
         val result = repository.checkUrl("https://example.com")
 
@@ -164,26 +169,27 @@ class CompositeUrlReputationRepositoryTest {
 
     @Test
     fun `not configured plus clean returns clean`() = runBlocking {
-        val repository = CompositeUrlReputationRepository(
-            listOf(
-                FakeUrlReputationRepository(
-                    UrlReputationResult(
-                        status = UrlReputationStatus.NotConfigured,
-                        provider = "None",
-                        categories = emptyList(),
-                        reasons = listOf("Remote reputation checks are not configured.")
-                    )
+        val repository =
+            CompositeUrlReputationRepository(
+                listOf(
+                    FakeUrlReputationRepository(
+                        UrlReputationResult(
+                            status = UrlReputationStatus.NotConfigured,
+                            provider = "None",
+                            categories = emptyList(),
+                            reasons = listOf("Remote reputation checks are not configured."),
+                        ),
+                    ),
+                    FakeUrlReputationRepository(
+                        UrlReputationResult(
+                            status = UrlReputationStatus.Clean,
+                            provider = "URLhaus",
+                            categories = emptyList(),
+                            reasons = listOf("No threats were reported by URLhaus."),
+                        ),
+                    ),
                 ),
-                FakeUrlReputationRepository(
-                    UrlReputationResult(
-                        status = UrlReputationStatus.Clean,
-                        provider = "URLhaus",
-                        categories = emptyList(),
-                        reasons = listOf("No threats were reported by URLhaus.")
-                    )
-                )
             )
-        )
 
         val result = repository.checkUrl("https://example.com")
 
@@ -192,26 +198,27 @@ class CompositeUrlReputationRepositoryTest {
 
     @Test
     fun `does not duplicate reasons or categories`() = runBlocking {
-        val repository = CompositeUrlReputationRepository(
-            listOf(
-                FakeUrlReputationRepository(
-                    UrlReputationResult(
-                        status = UrlReputationStatus.Malicious,
-                        provider = "Google Safe Browsing",
-                        categories = listOf(ThreatCategory.Malware),
-                        reasons = listOf("Shared reason", "Shared reason")
-                    )
+        val repository =
+            CompositeUrlReputationRepository(
+                listOf(
+                    FakeUrlReputationRepository(
+                        UrlReputationResult(
+                            status = UrlReputationStatus.Malicious,
+                            provider = "Google Safe Browsing",
+                            categories = listOf(ThreatCategory.Malware),
+                            reasons = listOf("Shared reason", "Shared reason"),
+                        ),
+                    ),
+                    FakeUrlReputationRepository(
+                        UrlReputationResult(
+                            status = UrlReputationStatus.Malicious,
+                            provider = "URLhaus",
+                            categories = listOf(ThreatCategory.Malware),
+                            reasons = listOf("Shared reason"),
+                        ),
+                    ),
                 ),
-                FakeUrlReputationRepository(
-                    UrlReputationResult(
-                        status = UrlReputationStatus.Malicious,
-                        provider = "URLhaus",
-                        categories = listOf(ThreatCategory.Malware),
-                        reasons = listOf("Shared reason")
-                    )
-                )
             )
-        )
 
         val result = repository.checkUrl("https://example.com")
 
@@ -220,7 +227,7 @@ class CompositeUrlReputationRepositoryTest {
     }
 
     private class FakeUrlReputationRepository(
-        private val result: UrlReputationResult
+        private val result: UrlReputationResult,
     ) : UrlReputationRepository {
         override suspend fun checkUrl(url: String): UrlReputationResult = result
     }

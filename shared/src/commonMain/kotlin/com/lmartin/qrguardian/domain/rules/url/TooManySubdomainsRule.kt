@@ -5,7 +5,7 @@ import com.lmartin.qrguardian.domain.model.SecurityRuleResult
 import com.lmartin.qrguardian.domain.rules.SecurityRule
 
 class TooManySubdomainsRule(
-    private val maxHostParts: Int = 4
+    private val maxHostParts: Int = 4,
 ) : SecurityRule {
     override fun evaluate(value: String): SecurityRuleResult {
         val parsedUrl = parseUrl(value)
@@ -13,7 +13,7 @@ class TooManySubdomainsRule(
         return SecurityRuleResult(
             triggered = triggered,
             level = if (triggered) SecurityLevel.Suspicious else SecurityLevel.Safe,
-            reason = if (triggered) "The host contains too many subdomains." else null
+            reason = if (triggered) "The host contains too many subdomains." else null,
         )
     }
 }

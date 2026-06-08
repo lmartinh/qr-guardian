@@ -13,18 +13,16 @@ import qrguardian.shared.generated.resources.camera_torch_off
 import qrguardian.shared.generated.resources.camera_torch_on
 
 @Composable
-internal fun rememberCameraTexts(): CameraTexts {
-    return CameraTexts(
-        title = stringResource(Res.string.camera_title),
-        subtitle = stringResource(Res.string.camera_subtitle),
-        hint = stringResource(Res.string.camera_hint),
-        torchOn = stringResource(Res.string.camera_torch_on),
-        torchOff = stringResource(Res.string.camera_torch_off),
-        close = stringResource(Res.string.camera_close),
-        scanning = stringResource(Res.string.camera_scanning),
-        scannerPlaceholder = stringResource(Res.string.camera_scanner_placeholder),
-    )
-}
+internal fun rememberCameraTexts(): CameraTexts = CameraTexts(
+    title = stringResource(Res.string.camera_title),
+    subtitle = stringResource(Res.string.camera_subtitle),
+    hint = stringResource(Res.string.camera_hint),
+    torchOn = stringResource(Res.string.camera_torch_on),
+    torchOff = stringResource(Res.string.camera_torch_off),
+    close = stringResource(Res.string.camera_close),
+    scanning = stringResource(Res.string.camera_scanning),
+    scannerPlaceholder = stringResource(Res.string.camera_scanner_placeholder),
+)
 
 internal data class CameraTexts(
     val title: String,

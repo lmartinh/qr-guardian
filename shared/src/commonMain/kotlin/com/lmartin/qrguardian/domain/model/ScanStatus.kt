@@ -4,5 +4,5 @@ enum class ScanStatus {
     Completed,
     NotConfigured,
     NotApplicable,
-    Unavailable
+    Unavailable,
 }

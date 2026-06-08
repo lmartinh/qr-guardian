@@ -6,8 +6,9 @@ import io.ktor.client.engine.okhttp.OkHttp
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
-actual val networkModule: Module = module {
-    single<HttpClient> {
-        QrGuardianHttpClientFactory.create(OkHttp)
+actual val networkModule: Module =
+    module {
+        single<HttpClient> {
+            QrGuardianHttpClientFactory.create(OkHttp)
+        }
     }
-}
