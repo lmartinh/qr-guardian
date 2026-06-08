@@ -11,4 +11,5 @@ data class UrlMetadataResult(
     val fileType: DownloadFileType,
     val isLikelyDownload: Boolean,
     val reasons: List<String>,
+    val resourceKind: UrlResourceKind = UrlResourceKind.Unknown,
 )

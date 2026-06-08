@@ -66,7 +66,7 @@ class QrSampleDatasetRegressionTest {
                     fileName = "menu.pdf",
                     fileExtension = "pdf",
                     fileType = DownloadFileType.Pdf,
-                    isLikelyDownload = true,
+                    isLikelyDownload = false,
                 )
             }
 
@@ -111,6 +111,27 @@ class QrSampleDatasetRegressionTest {
             fileExtension: String?,
             fileType: DownloadFileType,
             isLikelyDownload: Boolean,
+            resourceKind: com.lmartin.qrguardian.domain.metadata.UrlResourceKind = when (fileType) {
+                DownloadFileType.Pdf,
+                DownloadFileType.Document,
+                DownloadFileType.Spreadsheet,
+                DownloadFileType.Presentation,
+                -> com.lmartin.qrguardian.domain.metadata.UrlResourceKind.Document
+
+                DownloadFileType.Image -> com.lmartin.qrguardian.domain.metadata.UrlResourceKind.Image
+                DownloadFileType.Audio,
+                DownloadFileType.Video,
+                -> com.lmartin.qrguardian.domain.metadata.UrlResourceKind.Media
+
+                DownloadFileType.Archive -> com.lmartin.qrguardian.domain.metadata.UrlResourceKind.Archive
+                DownloadFileType.AndroidApp,
+                DownloadFileType.AppleDiskImage,
+                DownloadFileType.WindowsExecutable,
+                DownloadFileType.Script,
+                -> com.lmartin.qrguardian.domain.metadata.UrlResourceKind.InstallerOrExecutable
+
+                DownloadFileType.Unknown -> com.lmartin.qrguardian.domain.metadata.UrlResourceKind.Unknown
+            },
         ): UrlMetadataResult = UrlMetadataResult(
             status = UrlMetadataStatus.Available,
             finalUrl = null,
@@ -122,6 +143,7 @@ class QrSampleDatasetRegressionTest {
             fileType = fileType,
             isLikelyDownload = isLikelyDownload,
             reasons = emptyList(),
+            resourceKind = resourceKind,
         )
 
         private fun unavailableMetadata(): UrlMetadataResult = UrlMetadataResult(

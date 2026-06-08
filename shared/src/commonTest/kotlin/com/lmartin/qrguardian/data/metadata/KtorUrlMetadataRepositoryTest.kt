@@ -44,6 +44,7 @@ class KtorUrlMetadataRepositoryTest {
         assertEquals("apk", result.fileExtension)
         assertEquals(DownloadFileType.AndroidApp, result.fileType)
         assertTrue(result.isLikelyDownload)
+        assertEquals("InstallerOrExecutable", result.resourceKind.name)
     }
 
     @Test
@@ -105,6 +106,31 @@ class KtorUrlMetadataRepositoryTest {
     }
 
     @Test
+    fun `attachment disposition produces download metadata`() = runBlocking {
+        val repository =
+            KtorUrlMetadataRepository(
+                httpClient =
+                httpClient(
+                    status = HttpStatusCode.OK,
+                    headers =
+                    listOf(
+                        HttpHeaders.ContentType to listOf(ContentType.Application.Pdf.toString()),
+                        HttpHeaders.ContentDisposition to listOf("""attachment; filename="menu.pdf""""),
+                    ),
+                ),
+            )
+
+        val result = repository.fetchMetadata("https://example.com/download")
+
+        assertEquals(UrlMetadataStatus.Available, result.status)
+        assertEquals("menu.pdf", result.fileName)
+        assertEquals("pdf", result.fileExtension)
+        assertEquals(DownloadFileType.Pdf, result.fileType)
+        assertTrue(result.isLikelyDownload)
+        assertEquals("Document", result.resourceKind.name)
+    }
+
+    @Test
     fun `octet stream keeps unknown file type but marks download as likely`() = runBlocking {
         val repository =
             KtorUrlMetadataRepository(
@@ -123,6 +149,7 @@ class KtorUrlMetadataRepositoryTest {
         assertEquals(UrlMetadataStatus.Available, result.status)
         assertEquals(DownloadFileType.Unknown, result.fileType)
         assertTrue(result.isLikelyDownload)
+        assertEquals("UnknownBinary", result.resourceKind.name)
     }
 
     @Test
@@ -188,23 +215,24 @@ class KtorUrlMetadataRepositoryTest {
     }
 
     @Test
-    fun `pdf content type produces download metadata`() = runBlocking {
+    fun `pdf path is inferred as a document when head is empty`() = runBlocking {
         val repository =
             KtorUrlMetadataRepository(
                 httpClient =
                 httpClient(
                     status = HttpStatusCode.OK,
-                    headers = listOf(HttpHeaders.ContentType to listOf(ContentType.Application.Pdf.toString())),
+                    headers = emptyList(),
                 ),
             )
 
-        val result = repository.fetchMetadata("https://example.com/report.pdf")
+        val result = repository.fetchMetadata("https://example.com/menu.pdf")
 
         assertEquals(UrlMetadataStatus.Available, result.status)
-        assertEquals("report.pdf", result.fileName)
+        assertEquals("menu.pdf", result.fileName)
         assertEquals("pdf", result.fileExtension)
         assertEquals(DownloadFileType.Pdf, result.fileType)
-        assertTrue(result.isLikelyDownload)
+        assertEquals("Document", result.resourceKind.name)
+        assertFalse(result.isLikelyDownload)
     }
 
     @Test
@@ -225,6 +253,7 @@ class KtorUrlMetadataRepositoryTest {
         assertEquals("apk", result.fileExtension)
         assertEquals(DownloadFileType.AndroidApp, result.fileType)
         assertTrue(result.isLikelyDownload)
+        assertEquals("InstallerOrExecutable", result.resourceKind.name)
     }
 
     private fun httpClient(

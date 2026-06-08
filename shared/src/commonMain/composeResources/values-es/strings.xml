@@ -47,7 +47,14 @@
     <string name="result_loading_title">Analizando…</string>
     <string name="result_loading_message">Preparando la evaluación del enlace.</string>
     <string name="result_loading_action">Espera un momento</string>
+    <string name="result_open_document">Abrir documento</string>
+    <string name="result_open_image">Abrir imagen</string>
+    <string name="result_open_media">Abrir audio/vídeo</string>
     <string name="result_open_link">Abrir enlace</string>
+    <string name="result_open_file">Abrir archivo</string>
+    <string name="result_download_file">Descargar archivo</string>
+    <string name="result_download_file_caution">Descargar archivo con precaución</string>
+    <string name="result_download_app_file_caution">Descargar aplicación o archivo con precaución</string>
     <string name="result_rescan">Escanear de nuevo</string>
     <string name="result_detail_type">Tipo</string>
     <string name="result_detail_action">Acción</string>
@@ -105,7 +112,7 @@
     <string name="result_value_archive">Archivo comprimido</string>
     <string name="result_value_file">Archivo</string>
     <string name="result_value_unknown_binary_file">Binario desconocido</string>
-    <string name="result_value_downloadable_file">Enlace de archivo detectado</string>
+    <string name="result_value_downloadable_file">Enlace directo a archivo detectado</string>
     <string name="result_value_server_suggests_file_download">El servidor sugiere una descarga de archivo</string>
     <string name="result_value_redirected_to">Destino resuelto</string>
     <string name="result_value_open_network">Red abierta</string>

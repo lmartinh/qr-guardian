@@ -137,7 +137,6 @@ val qrSampleCases: List<QrSampleCase> =
             listOf(
                 "Content" to "PDF document",
                 "File type" to "PDF",
-                "Download" to "Downloadable file",
             ),
         ),
         QrSampleCase(

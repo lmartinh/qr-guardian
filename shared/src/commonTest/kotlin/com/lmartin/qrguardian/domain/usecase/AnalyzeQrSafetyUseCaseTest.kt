@@ -96,8 +96,9 @@ class AnalyzeQrSafetyUseCaseTest {
                     fileName = "report.pdf",
                     fileExtension = "pdf",
                     fileType = DownloadFileType.Pdf,
-                    isLikelyDownload = true,
+                    isLikelyDownload = false,
                     reasons = emptyList(),
+                    resourceKind = com.lmartin.qrguardian.domain.metadata.UrlResourceKind.Document,
                 ),
                 gate = metadataGate,
             )
@@ -148,6 +149,7 @@ class AnalyzeQrSafetyUseCaseTest {
         assertTrue(analysisResult.localScan.metadata.any { it.label == "Connection" && it.value == "HTTPS" })
         assertTrue(analysisResult.localScan.metadata.any { it.label == "Content" && it.value == "PDF document" })
         assertTrue(analysisResult.localScan.metadata.any { it.label == "File type" && it.value == "PDF" })
+        assertFalse(analysisResult.localScan.metadata.any { it.label == "Download" })
         assertEquals(ScanStatus.Completed, analysisResult.remoteReputation.status)
     }
 
@@ -371,6 +373,7 @@ class AnalyzeQrSafetyUseCaseTest {
                     fileType = DownloadFileType.Unknown,
                     isLikelyDownload = true,
                     reasons = emptyList(),
+                    resourceKind = com.lmartin.qrguardian.domain.metadata.UrlResourceKind.UnknownBinary,
                 ),
                 gate = CompletableDeferred<Unit>().apply { complete(Unit) },
             )
@@ -427,6 +430,7 @@ class AnalyzeQrSafetyUseCaseTest {
                     fileType = DownloadFileType.WindowsExecutable,
                     isLikelyDownload = true,
                     reasons = emptyList(),
+                    resourceKind = com.lmartin.qrguardian.domain.metadata.UrlResourceKind.InstallerOrExecutable,
                 ),
                 gate = CompletableDeferred<Unit>().apply { complete(Unit) },
             )
@@ -453,7 +457,7 @@ class AnalyzeQrSafetyUseCaseTest {
         assertEquals(SecurityLevel.Dangerous, result.overallLevel)
         assertFalse(result.canOpen)
         assertEquals(null, result.openableUrl)
-        assertTrue(result.localScan.metadata.any { it.label == "Content" && it.value == "Unknown binary file" })
+        assertTrue(result.localScan.metadata.any { it.label == "Content" && it.value == "Windows executable" })
         assertTrue(result.localScan.metadata.any { it.label == "Download" && it.value == "Server suggests a file download" })
         assertTrue(result.localScan.metadata.any { it.label == "File name" && it.value == "installer.exe" })
         assertTrue(result.localScan.metadata.any { it.label == "File type" && it.value == "Windows executable" })

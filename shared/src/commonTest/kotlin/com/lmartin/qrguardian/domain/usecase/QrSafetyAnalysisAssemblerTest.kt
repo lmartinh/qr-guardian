@@ -60,7 +60,7 @@ class QrSafetyAnalysisAssemblerTest {
     }
 
     @Test
-    fun `pdf url exposes file metadata and download signal`() {
+    fun `pdf url exposes file metadata without download signal`() {
         val result =
             QrSafetyAnalysisAssembler.buildLocalSection(
                 baseLocalScan = scanSection(SecurityLevel.Safe),
@@ -69,7 +69,8 @@ class QrSafetyAnalysisAssemblerTest {
                     fileName = "report.pdf",
                     fileExtension = "pdf",
                     fileType = DownloadFileType.Pdf,
-                    isLikelyDownload = true,
+                    isLikelyDownload = false,
+                    resourceKind = com.lmartin.qrguardian.domain.metadata.UrlResourceKind.Document,
                 ),
                 sourceUrl = "https://example.com/report.pdf",
             )
@@ -78,12 +79,36 @@ class QrSafetyAnalysisAssemblerTest {
         assertTrue(result.metadata.any { it.label == "Content" && it.value == "PDF document" })
         assertTrue(result.metadata.any { it.label == "File name" && it.value == "report.pdf" })
         assertTrue(result.metadata.any { it.label == "File type" && it.value == "PDF" })
-        assertTrue(result.metadata.any { it.label == "Download" && it.value == "Downloadable file" })
+        assertTrue(result.metadata.none { it.label == "Download" })
         assertFalse(result.metadata.any { it.label == "Resolved destination" })
     }
 
     @Test
-    fun `apk url is marked dangerous and exposes download metadata`() {
+    fun `archive url is suspicious and exposes download metadata`() {
+        val result =
+            QrSafetyAnalysisAssembler.buildLocalSection(
+                baseLocalScan = scanSection(SecurityLevel.Safe),
+                metadataResult = metadata(
+                    contentType = "application/zip",
+                    fileName = "archive.zip",
+                    fileExtension = "zip",
+                    fileType = DownloadFileType.Archive,
+                    isLikelyDownload = true,
+                    resourceKind = com.lmartin.qrguardian.domain.metadata.UrlResourceKind.Archive,
+                ),
+                sourceUrl = "https://example.com/archive.zip",
+            )
+
+        assertEquals(SecurityLevel.Suspicious, result.level)
+        assertTrue(result.metadata.any { it.label == "Content" && it.value == "Archive" })
+        assertTrue(result.metadata.any { it.label == "File name" && it.value == "archive.zip" })
+        assertTrue(result.metadata.any { it.label == "File type" && it.value == "Archive" })
+        assertTrue(result.metadata.any { it.label == "Download" && it.value == "Downloadable file" })
+        assertTrue(result.reasons.any { it.contains("Compressed files can hide other files inside.") })
+    }
+
+    @Test
+    fun `apk url is dangerous and exposes download metadata`() {
         val result =
             QrSafetyAnalysisAssembler.buildLocalSection(
                 baseLocalScan = scanSection(SecurityLevel.Safe),
@@ -93,6 +118,7 @@ class QrSafetyAnalysisAssemblerTest {
                     fileExtension = "apk",
                     fileType = DownloadFileType.AndroidApp,
                     isLikelyDownload = true,
+                    resourceKind = com.lmartin.qrguardian.domain.metadata.UrlResourceKind.InstallerOrExecutable,
                 ),
                 sourceUrl = "https://example.com/app.apk",
             )
@@ -102,6 +128,7 @@ class QrSafetyAnalysisAssemblerTest {
         assertTrue(result.metadata.any { it.label == "File name" && it.value == "app.apk" })
         assertTrue(result.metadata.any { it.label == "File type" && it.value == "Android app" })
         assertTrue(result.metadata.any { it.label == "Download" && it.value == "Downloadable file" })
+        assertTrue(result.reasons.any { it.contains("run code or install software on your device") })
     }
 
     private fun scanSection(level: SecurityLevel): ScanSectionResult = ScanSectionResult(
@@ -119,6 +146,7 @@ class QrSafetyAnalysisAssemblerTest {
         fileExtension: String?,
         fileType: DownloadFileType,
         isLikelyDownload: Boolean,
+        resourceKind: com.lmartin.qrguardian.domain.metadata.UrlResourceKind = com.lmartin.qrguardian.domain.metadata.UrlResourceKind.Unknown,
     ): UrlMetadataResult = UrlMetadataResult(
         status = UrlMetadataStatus.Available,
         finalUrl = null,
@@ -130,5 +158,6 @@ class QrSafetyAnalysisAssemblerTest {
         fileType = fileType,
         isLikelyDownload = isLikelyDownload,
         reasons = emptyList(),
+        resourceKind = resourceKind,
     )
 }

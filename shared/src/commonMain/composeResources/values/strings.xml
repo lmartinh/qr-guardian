@@ -47,7 +47,14 @@
     <string name="result_loading_title">Analyzing…</string>
     <string name="result_loading_message">Preparing the link assessment.</string>
     <string name="result_loading_action">Please wait</string>
+    <string name="result_open_document">Open document</string>
+    <string name="result_open_image">Open image</string>
+    <string name="result_open_media">Open audio/video</string>
     <string name="result_open_link">Open link</string>
+    <string name="result_open_file">Open file</string>
+    <string name="result_download_file">Download file</string>
+    <string name="result_download_file_caution">Download file with caution</string>
+    <string name="result_download_app_file_caution">Download app or file with caution</string>
     <string name="result_rescan">Scan again</string>
     <string name="result_detail_type">Type</string>
     <string name="result_detail_action">Action</string>
@@ -105,7 +112,7 @@
     <string name="result_value_archive">Archive</string>
     <string name="result_value_file">File</string>
     <string name="result_value_unknown_binary_file">Unknown binary file</string>
-    <string name="result_value_downloadable_file">File link detected</string>
+    <string name="result_value_downloadable_file">Direct file link detected</string>
     <string name="result_value_server_suggests_file_download">Server suggests a file download</string>
     <string name="result_value_redirected_to">Resolved destination</string>
     <string name="result_value_open_network">Open network</string>

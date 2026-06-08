@@ -60,7 +60,14 @@ import qrguardian.shared.generated.resources.result_loading_message
 import qrguardian.shared.generated.resources.result_loading_title
 import qrguardian.shared.generated.resources.result_local_scan
 import qrguardian.shared.generated.resources.result_local_signals
+import qrguardian.shared.generated.resources.result_open_document
+import qrguardian.shared.generated.resources.result_open_file
+import qrguardian.shared.generated.resources.result_open_image
+import qrguardian.shared.generated.resources.result_open_media
 import qrguardian.shared.generated.resources.result_open_link
+import qrguardian.shared.generated.resources.result_download_app_file_caution
+import qrguardian.shared.generated.resources.result_download_file
+import qrguardian.shared.generated.resources.result_download_file_caution
 import qrguardian.shared.generated.resources.result_qr_content
 import qrguardian.shared.generated.resources.result_remote_reputation
 import qrguardian.shared.generated.resources.result_remote_status_completed
@@ -119,7 +126,14 @@ import qrguardian.shared.generated.resources.result_value_wifi_type
 @Composable
 internal fun rememberResultTexts(): ResultTexts = ResultTexts(
     title = stringResource(Res.string.result_title),
+    openDocument = stringResource(Res.string.result_open_document),
+    openImage = stringResource(Res.string.result_open_image),
+    openMedia = stringResource(Res.string.result_open_media),
     openLink = stringResource(Res.string.result_open_link),
+    openFile = stringResource(Res.string.result_open_file),
+    downloadFile = stringResource(Res.string.result_download_file),
+    downloadFileCaution = stringResource(Res.string.result_download_file_caution),
+    downloadAppFileCaution = stringResource(Res.string.result_download_app_file_caution),
     rescan = stringResource(Res.string.result_rescan),
     localScan = stringResource(Res.string.result_local_scan),
     localSignals = stringResource(Res.string.result_local_signals),
@@ -231,7 +245,14 @@ internal fun rememberResultTexts(): ResultTexts = ResultTexts(
 
 internal data class ResultTexts(
     val title: String,
+    val openDocument: String,
+    val openImage: String,
+    val openMedia: String,
     val openLink: String,
+    val openFile: String,
+    val downloadFile: String,
+    val downloadFileCaution: String,
+    val downloadAppFileCaution: String,
     val rescan: String,
     val localScan: String,
     val localSignals: String,

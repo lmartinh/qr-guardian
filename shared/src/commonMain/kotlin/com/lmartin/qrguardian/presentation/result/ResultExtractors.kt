@@ -73,7 +73,7 @@ internal fun buildUrlLocalDetails(
     detailItem(
         icon = actionIcon(analysis.contentType),
         label = texts.detailAction,
-        value = contentActionLabel(analysis.contentType, analysis.openableUrl, texts),
+        value = urlActionLabel(analysis, texts),
     ),
 )
 
@@ -412,6 +412,35 @@ internal fun contentActionLabel(
     QrContentType.PlainText -> texts.notALink
     QrContentType.Unknown -> texts.notClassifiedPrecisely
 }
+
+internal fun urlActionLabel(
+    analysis: QrAnalysisResult,
+    texts: ResultTexts,
+): String {
+    val contentValue = metadataValue(analysis.localScan.metadata, "Content")
+    val fileTypeValue = metadataValue(analysis.localScan.metadata, "File type")
+
+    return when {
+        contentValue == texts.webPageType -> texts.openLink
+        contentValue == texts.unknownBinaryFileType -> texts.downloadFileCaution
+        contentValue == texts.archiveType || fileTypeValue == texts.fileTypeZip || fileTypeValue == texts.fileTypeRar || fileTypeValue == texts.fileTypeSevenZip -> texts.downloadFile
+        contentValue == texts.fileTypeApk ||
+            fileTypeValue == texts.fileTypeApk ||
+            fileTypeValue.orEmpty().contains("disk image", ignoreCase = true) ||
+            fileTypeValue.orEmpty().contains("executable", ignoreCase = true) ||
+            fileTypeValue.orEmpty().contains("script", ignoreCase = true) -> texts.downloadAppFileCaution
+        contentValue == texts.pdfDocumentType || fileTypeValue == texts.fileTypePdf || fileTypeValue == texts.fileTypeDocument || fileTypeValue == texts.fileTypeSpreadsheet || fileTypeValue == texts.fileTypePresentation -> texts.openDocument
+        contentValue == texts.fileTypeImage || fileTypeValue == texts.fileTypeImage -> texts.openImage
+        contentValue == texts.fileTypeAudio || contentValue == texts.fileTypeVideo || fileTypeValue == texts.fileTypeAudio || fileTypeValue == texts.fileTypeVideo -> texts.openMedia
+        fileTypeValue == texts.fileType || contentValue == texts.fileType -> texts.openFile
+        else -> if (analysis.openableUrl.isNullOrBlank()) texts.notALink else texts.openLink
+    }
+}
+
+private fun metadataValue(
+    metadata: List<com.lmartin.qrguardian.domain.model.ScanMetadataItem>,
+    label: String,
+): String? = metadata.firstOrNull { it.label == label }?.value
 
 internal fun localScanSummary(
     section: ScanSectionResult,

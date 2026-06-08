@@ -4,6 +4,12 @@ import com.lmartin.qrguardian.domain.metadata.DownloadFileType
 import com.lmartin.qrguardian.domain.metadata.UrlMetadataRepository
 import com.lmartin.qrguardian.domain.metadata.UrlMetadataResult
 import com.lmartin.qrguardian.domain.metadata.UrlMetadataStatus
+import com.lmartin.qrguardian.domain.metadata.UrlResourceKind
+import com.lmartin.qrguardian.domain.metadata.inferFileExtensionFromName
+import com.lmartin.qrguardian.domain.metadata.inferFileNameFromPath
+import com.lmartin.qrguardian.domain.metadata.inferFileTypeFromExtension
+import com.lmartin.qrguardian.domain.metadata.inferUrlResourceKind
+import com.lmartin.qrguardian.domain.metadata.isAttachmentDisposition
 import com.lmartin.qrguardian.domain.metadata.normalizeUrlForRequest
 import com.lmartin.qrguardian.domain.rules.url.parseUrl
 import io.ktor.client.HttpClient
@@ -46,17 +52,19 @@ class KtorUrlMetadataRepository(
         val finalUrl =
             response.call.request.url
                 .toString()
-        val fileName = extractFileName(contentDisposition, contentType, finalUrl)
-        val fileExtension = extractFileExtension(fileName, finalUrl, contentType)
-        val fileType = detectFileType(fileName, fileExtension, contentType)
-        val isLikelyDownload =
-            detectLikelyDownload(
+        val path = parseUrl(finalUrl).path
+        val fileName = inferFileNameFromPath(path, contentType, contentDisposition)
+        val fileExtension = inferFileExtensionFromName(fileName)
+        val fileType = inferFileTypeFromExtension(fileName, fileExtension, contentType)
+        val resourceKind =
+            inferUrlResourceKind(
+                contentType = contentType,
                 contentDisposition = contentDisposition,
                 fileName = fileName,
                 fileExtension = fileExtension,
-                contentType = contentType,
                 fileType = fileType,
             )
+        val isLikelyDownload = detectLikelyDownload(contentDisposition, contentType, resourceKind)
 
         return UrlMetadataResult(
             status = UrlMetadataStatus.Available,
@@ -69,151 +77,23 @@ class KtorUrlMetadataRepository(
             fileType = fileType,
             isLikelyDownload = isLikelyDownload,
             reasons = emptyList(),
+            resourceKind = resourceKind,
         )
     }
 
     private fun detectLikelyDownload(
         contentDisposition: String?,
-        fileName: String?,
-        fileExtension: String?,
         contentType: String?,
-        fileType: DownloadFileType,
+        resourceKind: UrlResourceKind,
     ): Boolean {
-        val lowerContentDisposition = contentDisposition.orEmpty().lowercase()
         val lowerContentType = contentType.orEmpty().lowercase()
-        return lowerContentDisposition.contains("attachment") ||
-            lowerContentDisposition.contains("filename=") ||
-            lowerContentDisposition.contains("filename*=") ||
+        return isAttachmentDisposition(contentDisposition) ||
             lowerContentType == "application/octet-stream" ||
-            fileType in
-            setOf(
-                DownloadFileType.Pdf,
-                DownloadFileType.Document,
-                DownloadFileType.Spreadsheet,
-                DownloadFileType.Presentation,
-                DownloadFileType.Archive,
-                DownloadFileType.AndroidApp,
-                DownloadFileType.AppleDiskImage,
-                DownloadFileType.WindowsExecutable,
-                DownloadFileType.Script,
+            resourceKind in setOf(
+                UrlResourceKind.Archive,
+                UrlResourceKind.InstallerOrExecutable,
+                UrlResourceKind.UnknownBinary,
             )
-    }
-
-    private fun extractFileName(
-        contentDisposition: String?,
-        contentType: String?,
-        finalUrl: String,
-    ): String? {
-        val disposition = contentDisposition.orEmpty()
-        val filenameStar =
-            disposition
-                .split(';')
-                .firstOrNull { it.trim().startsWith("filename*=", ignoreCase = true) }
-                ?.substringAfter('=')
-                ?.trim()
-                ?.trim('"')
-        if (!filenameStar.isNullOrBlank()) {
-            val value = filenameStar.substringAfter("''", filenameStar)
-            return value.substringAfterLast('/')
-        }
-
-        val filename =
-            disposition
-                .split(';')
-                .firstOrNull { it.trim().startsWith("filename=", ignoreCase = true) }
-                ?.substringAfter('=')
-                ?.trim()
-                ?.trim('"')
-        if (!filename.isNullOrBlank()) {
-            return filename
-        }
-
-        if (isWebPageContentType(contentType)) {
-            return null
-        }
-
-        val parsedUrl = parseUrl(finalUrl)
-        val lastSegment = parsedUrl.path.substringAfterLast('/')
-        if (!isFileLikeSegment(lastSegment)) {
-            return null
-        }
-
-        return lastSegment
-    }
-
-    private fun extractFileExtension(
-        fileName: String?,
-        finalUrl: String,
-        contentType: String?,
-    ): String? {
-        if (isWebPageContentType(contentType)) {
-            return null
-        }
-
-        val candidate =
-            fileName ?: parseUrl(finalUrl).path
-                .substringAfterLast('/')
-
-        val extension = candidate.substringAfterLast('.', "")
-        return extension.takeIf { it.isNotBlank() && it != candidate }
-    }
-
-    private fun detectFileType(
-        fileName: String?,
-        fileExtension: String?,
-        contentType: String?,
-    ): DownloadFileType {
-        val normalizedExtension = fileExtension.orEmpty().lowercase()
-        val normalizedContentType = contentType.orEmpty().lowercase()
-        return when {
-            normalizedExtension == "pdf" || normalizedContentType == "application/pdf" -> DownloadFileType.Pdf
-
-            normalizedExtension in setOf("doc", "docx", "odt", "rtf", "txt") -> DownloadFileType.Document
-
-            normalizedExtension in setOf("xls", "xlsx", "csv", "ods") -> DownloadFileType.Spreadsheet
-
-            normalizedExtension in setOf("ppt", "pptx", "odp") -> DownloadFileType.Presentation
-
-            normalizedExtension in setOf("jpg", "jpeg", "png", "gif", "webp", "svg", "heic") -> DownloadFileType.Image
-
-            normalizedExtension in setOf("mp3", "wav", "aac", "ogg", "m4a") -> DownloadFileType.Audio
-
-            normalizedExtension in setOf("mp4", "mov", "avi", "mkv", "webm") -> DownloadFileType.Video
-
-            normalizedExtension in setOf("zip", "rar", "7z", "tar", "gz") -> DownloadFileType.Archive
-
-            normalizedExtension in
-                setOf(
-                    "apk",
-                    "aab",
-                ) || normalizedContentType == "application/vnd.android.package-archive" -> DownloadFileType.AndroidApp
-
-            normalizedExtension in setOf("dmg", "pkg") -> DownloadFileType.AppleDiskImage
-
-            normalizedExtension in setOf("exe", "msi", "scr") -> DownloadFileType.WindowsExecutable
-
-            normalizedExtension in setOf("js", "jar", "bat", "cmd", "sh", "ps1", "vbs") -> DownloadFileType.Script
-
-            else -> DownloadFileType.Unknown
-        }
-    }
-
-    private fun isWebPageContentType(contentType: String?): Boolean {
-        val normalized = contentType.orEmpty().lowercase()
-        return normalized == "text/html" || normalized == "application/xhtml+xml"
-    }
-
-    private fun isFileLikeSegment(segment: String): Boolean {
-        if (segment.isBlank()) {
-            return false
-        }
-
-        val extension = segment.substringAfterLast('.', "")
-        if (extension.isBlank() || extension == segment) {
-            return false
-        }
-
-        return extension.lowercase() !in WEB_PAGE_EXTENSIONS
     }
 
     private fun unavailableResult(): UrlMetadataResult = UrlMetadataResult(
@@ -227,6 +107,7 @@ class KtorUrlMetadataRepository(
         fileType = DownloadFileType.Unknown,
         isLikelyDownload = false,
         reasons = listOf("Destination metadata could not be checked."),
+        resourceKind = UrlResourceKind.Unknown,
     )
 
     private fun hasMeaningfulFinalUrl(
@@ -265,19 +146,5 @@ class KtorUrlMetadataRepository(
         }
 
         return path.trimEnd('/').ifBlank { "/" }
-    }
-
-    private companion object {
-        val WEB_PAGE_EXTENSIONS =
-            setOf(
-                "html",
-                "htm",
-                "xhtml",
-                "php",
-                "asp",
-                "aspx",
-                "jsp",
-                "shtml",
-            )
     }
 }

@@ -56,6 +56,69 @@ class ResultExtractorsTest {
     }
 
     @Test
+    fun `pdf url shows open document action`() {
+        val analysis = analysis(
+            contentType = QrContentType.Url,
+            normalizedText = "https://example.com/menu.pdf",
+            metadata =
+            listOf(
+                ScanMetadataItem(label = "Host", value = "example.com"),
+                ScanMetadataItem(label = "Connection", value = "HTTPS"),
+                ScanMetadataItem(label = "Content", value = "PDF document"),
+                ScanMetadataItem(label = "File name", value = "menu.pdf"),
+                ScanMetadataItem(label = "File type", value = "PDF"),
+            ),
+        )
+
+        val details = buildLocalAnalysisDetails(analysis, fakeTexts())
+
+        assertEquals("Open document", details[1].value)
+        assertTrue(details.any { it.label == "File name" && it.value == "menu.pdf" })
+        assertTrue(details.none { it.label == "Path" })
+    }
+
+    @Test
+    fun `archive url shows download file action`() {
+        val analysis = analysis(
+            contentType = QrContentType.Url,
+            normalizedText = "https://example.com/archive.zip",
+            metadata =
+            listOf(
+                ScanMetadataItem(label = "Host", value = "example.com"),
+                ScanMetadataItem(label = "Connection", value = "HTTPS"),
+                ScanMetadataItem(label = "Content", value = "Archive"),
+                ScanMetadataItem(label = "File name", value = "archive.zip"),
+                ScanMetadataItem(label = "File type", value = "Archive"),
+                ScanMetadataItem(label = "Download", value = "Direct file link detected"),
+            ),
+        )
+
+        val details = buildLocalAnalysisDetails(analysis, fakeTexts())
+
+        assertEquals("Download file", details[1].value)
+        assertTrue(details.any { it.label == "Download" && it.value == "Direct file link detected" })
+    }
+
+    @Test
+    fun `unknown binary url shows caution download action`() {
+        val analysis = analysis(
+            contentType = QrContentType.Url,
+            normalizedText = "https://example.com/file",
+            metadata =
+            listOf(
+                ScanMetadataItem(label = "Host", value = "example.com"),
+                ScanMetadataItem(label = "Connection", value = "HTTPS"),
+                ScanMetadataItem(label = "Content", value = "Unknown binary file"),
+                ScanMetadataItem(label = "Download", value = "Direct file link detected"),
+            ),
+        )
+
+        val details = buildLocalAnalysisDetails(analysis, fakeTexts())
+
+        assertEquals("Download file with caution", details[1].value)
+    }
+
+    @Test
     fun `sms details show a message preview without exposing the raw query`() {
         val analysis = analysis(
             contentType = QrContentType.Sms,
@@ -120,7 +183,14 @@ class ResultExtractorsTest {
 
     private fun fakeTexts(): ResultTexts = ResultTexts(
         title = "Title",
+        openDocument = "Open document",
+        openImage = "Open image",
+        openMedia = "Open audio/video",
         openLink = "Open link",
+        openFile = "Open file",
+        downloadFile = "Download file",
+        downloadFileCaution = "Download file with caution",
+        downloadAppFileCaution = "Download app or file with caution",
         rescan = "Scan again",
         localScan = "Local scan",
         localSignals = "Local signals",
@@ -205,7 +275,7 @@ class ResultExtractorsTest {
         archiveType = "Archive",
         fileType = "File",
         unknownBinaryFileType = "Unknown binary file",
-        downloadableFile = "File link detected",
+        downloadableFile = "Direct file link detected",
         serverSuggestsFileDownload = "Server suggests a file download",
         redirectedTo = "Resolved destination",
         openNetwork = "Open network",

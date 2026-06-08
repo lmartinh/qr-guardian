@@ -3,11 +3,13 @@ package com.lmartin.qrguardian.domain.usecase
 import com.lmartin.qrguardian.domain.metadata.DownloadFileType
 import com.lmartin.qrguardian.domain.metadata.UrlMetadataResult
 import com.lmartin.qrguardian.domain.metadata.UrlMetadataStatus
-import com.lmartin.qrguardian.domain.metadata.formatFileSize
+import com.lmartin.qrguardian.domain.metadata.isAttachmentDisposition
+import com.lmartin.qrguardian.domain.metadata.shouldShowPath
 import com.lmartin.qrguardian.domain.model.ScanMetadataItem
 import com.lmartin.qrguardian.domain.model.ScanSectionResult
 import com.lmartin.qrguardian.domain.model.ScanStatus
 import com.lmartin.qrguardian.domain.model.SecurityLevel
+import com.lmartin.qrguardian.domain.metadata.UrlResourceKind
 import com.lmartin.qrguardian.domain.reputation.ThreatCategory
 import com.lmartin.qrguardian.domain.reputation.UrlReputationResult
 import com.lmartin.qrguardian.domain.reputation.UrlReputationStatus
@@ -203,7 +205,7 @@ internal object QrSafetyAnalysisAssembler {
             return metadata
         }
 
-        displayContentLabel(contentType, fileType)?.let { contentLabel ->
+        displayContentLabel(contentType, fileType, resourceKind)?.let { contentLabel ->
             metadata += ScanMetadataItem(label = "Content", value = contentLabel)
         }
         finalUrl?.let {
@@ -222,7 +224,7 @@ internal object QrSafetyAnalysisAssembler {
             metadata +=
                 ScanMetadataItem(
                     label = "Download",
-                    value = if (contentDisposition.orEmpty().contains("attachment", ignoreCase = true)) {
+                    value = if (isAttachmentDisposition(contentDisposition)) {
                         "Server suggests a file download"
                     } else {
                         "Downloadable file"
@@ -245,17 +247,39 @@ internal object QrSafetyAnalysisAssembler {
             reasons += "The server suggests downloading this file."
         }
 
+        when (resourceKind) {
+            UrlResourceKind.Archive -> {
+                reasons += "Compressed files can hide other files inside."
+            }
+
+            UrlResourceKind.InstallerOrExecutable -> {
+                reasons += "This file can run code or install software on your device."
+            }
+
+            UrlResourceKind.UnknownBinary -> {
+                reasons += "The destination appears to be a generic binary download."
+            }
+
+            UrlResourceKind.OtherFile,
+            UrlResourceKind.Document,
+            UrlResourceKind.Image,
+            UrlResourceKind.Media,
+            UrlResourceKind.WebPage,
+            UrlResourceKind.Unknown,
+            -> {
+                Unit
+            }
+        }
+
         when (fileType) {
             DownloadFileType.AndroidApp,
             DownloadFileType.AppleDiskImage,
             DownloadFileType.WindowsExecutable,
             DownloadFileType.Script,
             -> {
-                reasons += "This file can run code or install software on your device."
-            }
-
-            DownloadFileType.Archive -> {
-                reasons += "Compressed files can hide other files inside."
+                if (resourceKind != UrlResourceKind.InstallerOrExecutable) {
+                    reasons += "This file can run code or install software on your device."
+                }
             }
 
             DownloadFileType.Unknown,
@@ -263,6 +287,7 @@ internal object QrSafetyAnalysisAssembler {
             DownloadFileType.Document,
             DownloadFileType.Spreadsheet,
             DownloadFileType.Presentation,
+            DownloadFileType.Archive,
             DownloadFileType.Image,
             DownloadFileType.Audio,
             DownloadFileType.Video,
@@ -293,7 +318,7 @@ internal object QrSafetyAnalysisAssembler {
         }
 
         val path = parsedUrl.path.takeIf { it.isNotBlank() && it != "/" }
-        if (path != null && shouldShowPath(path, fileName)) {
+        if (path != null && shouldShowPath(path, fileName, resourceKind)) {
             metadata += ScanMetadataItem(label = "Path", value = path)
         }
     }
@@ -311,27 +336,13 @@ internal object QrSafetyAnalysisAssembler {
             return false
         }
 
-        return isLikelyDownload
-    }
-
-    private fun shouldShowPath(
-        path: String,
-        fileName: String?,
-    ): Boolean {
-        if (path == "/") {
-            return false
-        }
-
-        if (fileName != null && path == "/$fileName") {
-            return false
-        }
-
-        return true
+        return isLikelyDownload || isAttachmentDisposition(contentDisposition)
     }
 
     private fun displayContentLabel(
         contentType: String?,
         fileType: DownloadFileType,
+        resourceKind: UrlResourceKind,
     ): String? {
         val normalizedContentType = contentType.orEmpty()
 
@@ -348,11 +359,12 @@ internal object QrSafetyAnalysisAssembler {
             normalizedContentType.startsWith("application/zip", ignoreCase = true) ||
                 normalizedContentType.contains("7z", ignoreCase = true) ||
                 normalizedContentType.contains("tar", ignoreCase = true) ||
-                fileType == DownloadFileType.Archive -> {
+                fileType == DownloadFileType.Archive ||
+                resourceKind == UrlResourceKind.Archive -> {
                 "Archive"
             }
 
-            normalizedContentType.startsWith("image/", ignoreCase = true) || fileType == DownloadFileType.Image -> {
+            normalizedContentType.startsWith("image/", ignoreCase = true) || fileType == DownloadFileType.Image || resourceKind == UrlResourceKind.Image -> {
                 "Image"
             }
 
@@ -367,10 +379,6 @@ internal object QrSafetyAnalysisAssembler {
             normalizedContentType.equals("application/vnd.android.package-archive", ignoreCase = true) ||
                 fileType == DownloadFileType.AndroidApp -> {
                 "Android app"
-            }
-
-            normalizedContentType.equals("application/octet-stream", ignoreCase = true) -> {
-                "Unknown binary file"
             }
 
             fileType == DownloadFileType.Document -> {
@@ -389,6 +397,10 @@ internal object QrSafetyAnalysisAssembler {
                 fileType.downloadFileTypeDisplayName()
             }
 
+            normalizedContentType.equals("application/octet-stream", ignoreCase = true) -> {
+                "Unknown binary file"
+            }
+
             fileType == DownloadFileType.Unknown && contentType.isNullOrBlank() -> null
 
             else -> {
@@ -403,19 +415,13 @@ internal object QrSafetyAnalysisAssembler {
         }
 
         return when {
-            metadataResult.fileType in
-                setOf(
-                    DownloadFileType.AndroidApp,
-                    DownloadFileType.AppleDiskImage,
-                    DownloadFileType.WindowsExecutable,
-                    DownloadFileType.Script,
-                )
-            -> {
+            metadataResult.resourceKind == UrlResourceKind.InstallerOrExecutable -> {
                 SecurityLevel.Dangerous
             }
 
-            metadataResult.fileType == DownloadFileType.Archive ||
-                metadataResult.contentDisposition.orEmpty().contains("attachment", ignoreCase = true) ||
+            metadataResult.resourceKind == UrlResourceKind.Archive ||
+                metadataResult.resourceKind == UrlResourceKind.UnknownBinary ||
+                isAttachmentDisposition(metadataResult.contentDisposition) ||
                 metadataResult.contentType.equals("application/octet-stream", ignoreCase = true) -> {
                 SecurityLevel.Suspicious
             }
