@@ -117,6 +117,16 @@
     <string name="result_value_redirected_to">Destino resuelto</string>
     <string name="result_value_open_network">Red abierta</string>
     <string name="result_value_present">Presente</string>
+    <string name="result_local_scan_dangerous_scheme_description">El contenido escaneado usa un esquema de URL bloqueado.</string>
+    <string name="result_local_scan_dangerous_scheme_reason">El contenido escaneado usa el esquema bloqueado \"{scheme}\".</string>
+    <string name="result_local_scan_file_download_description">Este enlace parece una descarga de archivo.</string>
+    <string name="result_local_scan_file_download_reason">Este destino parece un archivo descargable.</string>
+    <string name="result_local_scan_installer_description">Este archivo puede instalar software o ejecutar código en tu dispositivo.</string>
+    <string name="result_local_scan_installer_reason">Este archivo puede ejecutar código o instalar software en tu dispositivo.</string>
+    <string name="result_local_scan_archive_reason">Los archivos comprimidos pueden ocultar otros archivos en su interior.</string>
+    <string name="result_local_scan_unknown_binary_reason">El destino parece una descarga binaria genérica.</string>
+    <string name="result_local_scan_attachment_reason">El servidor sugiere descargar este archivo.</string>
+    <string name="result_local_scan_destination_redirect_reason">Este destino resuelve a una URL diferente.</string>
     <string name="result_file_type_apk">Aplicación Android</string>
     <string name="result_file_type_pdf">PDF</string>
     <string name="result_file_type_zip">ZIP</string>

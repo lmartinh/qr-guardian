@@ -1,6 +1,5 @@
 package com.lmartin.qrguardian.data.metadata
 
-import com.lmartin.qrguardian.domain.metadata.DownloadFileType
 import com.lmartin.qrguardian.domain.metadata.UrlMetadataRepository
 import com.lmartin.qrguardian.domain.metadata.UrlMetadataResult
 import com.lmartin.qrguardian.domain.metadata.UrlMetadataStatus
@@ -27,7 +26,7 @@ class KtorUrlMetadataRepository(
         return runCatching {
             val response = httpClient.head(normalizedRequestUrl)
             if (response.status.value !in 200..299 || response.status == HttpStatusCode.MethodNotAllowed) {
-                return unavailableResult()
+                return bestEffortResult(normalizedRequestUrl)
             }
 
             mapResponse(response, normalizedRequestUrl)
@@ -35,7 +34,7 @@ class KtorUrlMetadataRepository(
             if (exception is CancellationException) {
                 throw exception
             }
-            unavailableResult()
+            bestEffortResult(normalizedRequestUrl)
         }
     }
 
@@ -43,16 +42,32 @@ class KtorUrlMetadataRepository(
         response: HttpResponse,
         requestedUrl: String,
     ): UrlMetadataResult {
-        val contentType =
-            response.headers[HttpHeaders.ContentType]
-                ?.substringBefore(';')
-                ?.trim()
-        val contentDisposition = response.headers[HttpHeaders.ContentDisposition]?.trim()
-        val contentLength = response.headers[HttpHeaders.ContentLength]?.toLongOrNull()
-        val finalUrl =
-            response.call.request.url
-                .toString()
-        val path = parseUrl(finalUrl).path
+        return buildResult(
+            requestedUrl = requestedUrl,
+            finalUrl = response.call.request.url.toString(),
+            contentType = response.headers[HttpHeaders.ContentType]?.substringBefore(';')?.trim(),
+            contentDisposition = response.headers[HttpHeaders.ContentDisposition]?.trim(),
+            contentLength = response.headers[HttpHeaders.ContentLength]?.toLongOrNull(),
+        )
+    }
+
+    private fun bestEffortResult(requestedUrl: String): UrlMetadataResult = buildResult(
+        requestedUrl = requestedUrl,
+        finalUrl = null,
+        contentType = null,
+        contentDisposition = null,
+        contentLength = null,
+    )
+
+    private fun buildResult(
+        requestedUrl: String,
+        finalUrl: String?,
+        contentType: String?,
+        contentDisposition: String?,
+        contentLength: Long?,
+    ): UrlMetadataResult {
+        val identityUrl = finalUrl ?: requestedUrl
+        val path = parseUrl(identityUrl).path
         val fileName = inferFileNameFromPath(path, contentType, contentDisposition)
         val fileExtension = inferFileExtensionFromName(fileName)
         val fileType = inferFileTypeFromExtension(fileName, fileExtension, contentType)
@@ -68,7 +83,7 @@ class KtorUrlMetadataRepository(
 
         return UrlMetadataResult(
             status = UrlMetadataStatus.Available,
-            finalUrl = finalUrl.takeIf { hasMeaningfulFinalUrl(requestedUrl, it) },
+            finalUrl = finalUrl?.takeIf { hasMeaningfulFinalUrl(requestedUrl, it) },
             contentType = contentType,
             contentDisposition = contentDisposition,
             contentLength = contentLength,
@@ -95,20 +110,6 @@ class KtorUrlMetadataRepository(
                 UrlResourceKind.UnknownBinary,
             )
     }
-
-    private fun unavailableResult(): UrlMetadataResult = UrlMetadataResult(
-        status = UrlMetadataStatus.Unavailable,
-        finalUrl = null,
-        contentType = null,
-        contentDisposition = null,
-        contentLength = null,
-        fileName = null,
-        fileExtension = null,
-        fileType = DownloadFileType.Unknown,
-        isLikelyDownload = false,
-        reasons = listOf("Destination metadata could not be checked."),
-        resourceKind = UrlResourceKind.Unknown,
-    )
 
     private fun hasMeaningfulFinalUrl(
         requestedUrl: String,

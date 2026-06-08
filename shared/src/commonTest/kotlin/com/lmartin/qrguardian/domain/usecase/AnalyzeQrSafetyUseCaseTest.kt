@@ -1,5 +1,7 @@
 package com.lmartin.qrguardian.domain.usecase
 
+import com.lmartin.qrguardian.data.reputation.NoOpUrlReputationRepository
+import com.lmartin.qrguardian.data.metadata.KtorUrlMetadataRepository
 import com.lmartin.qrguardian.domain.analyzer.LocalScanAnalyzer
 import com.lmartin.qrguardian.domain.classifier.QrContentClassifier
 import com.lmartin.qrguardian.domain.metadata.DownloadFileType
@@ -15,6 +17,11 @@ import com.lmartin.qrguardian.domain.reputation.ThreatCategory
 import com.lmartin.qrguardian.domain.reputation.UrlReputationRepository
 import com.lmartin.qrguardian.domain.reputation.UrlReputationResult
 import com.lmartin.qrguardian.domain.reputation.UrlReputationStatus
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -151,6 +158,36 @@ class AnalyzeQrSafetyUseCaseTest {
         assertTrue(analysisResult.localScan.metadata.any { it.label == "File type" && it.value == "PDF" })
         assertFalse(analysisResult.localScan.metadata.any { it.label == "Download" })
         assertEquals(ScanStatus.Completed, analysisResult.remoteReputation.status)
+    }
+
+    @Test
+    fun `pdf url still resolves file metadata when head is not allowed`() = runBlocking {
+        val useCase =
+            AnalyzeQrSafetyUseCase(
+                urlMetadataRepository =
+                KtorUrlMetadataRepository(
+                    httpClient =
+                    HttpClient(
+                        MockEngine {
+                            respond(
+                                content = "",
+                                status = HttpStatusCode.MethodNotAllowed,
+                                headers = headersOf(),
+                            )
+                        },
+                    ),
+                ),
+                urlReputationRepository = NoOpUrlReputationRepository(),
+            )
+
+        val result = useCase("https://grupodanigarcia.com/wp-content/uploads/CARTAS/LENA/MADRID/ES/LENAMADRID_BRUNCH.pdf")
+
+        assertEquals(QrContentType.Url, result.contentType)
+        assertEquals(ScanStatus.Completed, result.localScan.status)
+        assertTrue(result.localScan.metadata.any { it.label == "Content" && it.value == "PDF document" })
+        assertTrue(result.localScan.metadata.any { it.label == "File name" && it.value == "LENAMADRID_BRUNCH.pdf" })
+        assertTrue(result.localScan.metadata.any { it.label == "File type" && it.value == "PDF" })
+        assertFalse(result.localScan.metadata.any { it.label == "Path" })
     }
 
     @Test

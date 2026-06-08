@@ -37,31 +37,19 @@ internal fun ResultActionArea(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(QrGuardianSpacing.S),
     ) {
-        if (showOpenButton && overallLevel == SecurityLevel.Safe) {
+        if (showOpenButton) {
             ResultOpenLinkButton(
                 text = openLinkText,
                 tone = tone,
                 level = overallLevel,
                 onClick = onOpenClick,
             )
-            ResultRescanButton(
-                text = rescanText,
-                onClick = onRescanClick,
-            )
-        } else {
-            ResultRescanButton(
-                text = rescanText,
-                onClick = onRescanClick,
-            )
-            if (showOpenButton) {
-                ResultOpenLinkButton(
-                    text = openLinkText,
-                    tone = tone,
-                    level = overallLevel,
-                    onClick = onOpenClick,
-                )
-            }
         }
+
+        ResultRescanButton(
+            text = rescanText,
+            onClick = onRescanClick,
+        )
     }
 }
 

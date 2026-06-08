@@ -48,16 +48,20 @@ class KtorUrlMetadataRepositoryTest {
     }
 
     @Test
-    fun `head method not allowed returns unavailable`() = runBlocking {
+    fun `head method not allowed still infers file metadata from url path`() = runBlocking {
         val repository =
             KtorUrlMetadataRepository(
                 httpClient = httpClient(status = HttpStatusCode.MethodNotAllowed),
             )
 
-        val result = repository.fetchMetadata("https://example.com")
+        val result = repository.fetchMetadata("https://example.com/menu.pdf")
 
-        assertEquals(UrlMetadataStatus.Unavailable, result.status)
-        assertFalse(result.reasons.isEmpty())
+        assertEquals(UrlMetadataStatus.Available, result.status)
+        assertEquals("menu.pdf", result.fileName)
+        assertEquals("pdf", result.fileExtension)
+        assertEquals(DownloadFileType.Pdf, result.fileType)
+        assertEquals("Document", result.resourceKind.name)
+        assertFalse(result.isLikelyDownload)
     }
 
     @Test
