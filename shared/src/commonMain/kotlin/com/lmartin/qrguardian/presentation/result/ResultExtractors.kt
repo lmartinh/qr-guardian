@@ -422,17 +422,25 @@ internal fun urlActionLabel(
 
     return when {
         contentValue == texts.webPageType -> texts.openLink
+
         contentValue == texts.unknownBinaryFileType -> texts.downloadFileCaution
+
         contentValue == texts.archiveType || fileTypeValue == texts.fileTypeZip || fileTypeValue == texts.fileTypeRar || fileTypeValue == texts.fileTypeSevenZip -> texts.downloadFile
+
         contentValue == texts.fileTypeApk ||
             fileTypeValue == texts.fileTypeApk ||
             fileTypeValue.orEmpty().contains("disk image", ignoreCase = true) ||
             fileTypeValue.orEmpty().contains("executable", ignoreCase = true) ||
             fileTypeValue.orEmpty().contains("script", ignoreCase = true) -> texts.downloadAppFileCaution
+
         contentValue == texts.pdfDocumentType || fileTypeValue == texts.fileTypePdf || fileTypeValue == texts.fileTypeDocument || fileTypeValue == texts.fileTypeSpreadsheet || fileTypeValue == texts.fileTypePresentation -> texts.openDocument
+
         contentValue == texts.fileTypeImage || fileTypeValue == texts.fileTypeImage -> texts.openImage
+
         contentValue == texts.fileTypeAudio || contentValue == texts.fileTypeVideo || fileTypeValue == texts.fileTypeAudio || fileTypeValue == texts.fileTypeVideo -> texts.openMedia
+
         fileTypeValue == texts.fileType || contentValue == texts.fileType -> texts.openFile
+
         else -> if (analysis.openableUrl.isNullOrBlank()) texts.notALink else texts.openLink
     }
 }

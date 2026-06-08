@@ -3,13 +3,13 @@ package com.lmartin.qrguardian.domain.usecase
 import com.lmartin.qrguardian.domain.metadata.DownloadFileType
 import com.lmartin.qrguardian.domain.metadata.UrlMetadataResult
 import com.lmartin.qrguardian.domain.metadata.UrlMetadataStatus
+import com.lmartin.qrguardian.domain.metadata.UrlResourceKind
 import com.lmartin.qrguardian.domain.metadata.isAttachmentDisposition
 import com.lmartin.qrguardian.domain.metadata.shouldShowPath
 import com.lmartin.qrguardian.domain.model.ScanMetadataItem
 import com.lmartin.qrguardian.domain.model.ScanSectionResult
 import com.lmartin.qrguardian.domain.model.ScanStatus
 import com.lmartin.qrguardian.domain.model.SecurityLevel
-import com.lmartin.qrguardian.domain.metadata.UrlResourceKind
 import com.lmartin.qrguardian.domain.reputation.ThreatCategory
 import com.lmartin.qrguardian.domain.reputation.UrlReputationResult
 import com.lmartin.qrguardian.domain.reputation.UrlReputationStatus
@@ -321,14 +321,6 @@ internal object QrSafetyAnalysisAssembler {
         if (path != null && shouldShowPath(path, fileName, resourceKind)) {
             metadata += ScanMetadataItem(label = "Path", value = path)
         }
-    }
-
-    private fun UrlMetadataResult.shouldShowFileDetails(): Boolean {
-        if (status != UrlMetadataStatus.Available) {
-            return false
-        }
-
-        return fileName != null || fileType != DownloadFileType.Unknown
     }
 
     private fun UrlMetadataResult.shouldShowDownloadMetadata(): Boolean {

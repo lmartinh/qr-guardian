@@ -119,11 +119,13 @@ class QrSampleDatasetRegressionTest {
                 -> com.lmartin.qrguardian.domain.metadata.UrlResourceKind.Document
 
                 DownloadFileType.Image -> com.lmartin.qrguardian.domain.metadata.UrlResourceKind.Image
+
                 DownloadFileType.Audio,
                 DownloadFileType.Video,
                 -> com.lmartin.qrguardian.domain.metadata.UrlResourceKind.Media
 
                 DownloadFileType.Archive -> com.lmartin.qrguardian.domain.metadata.UrlResourceKind.Archive
+
                 DownloadFileType.AndroidApp,
                 DownloadFileType.AppleDiskImage,
                 DownloadFileType.WindowsExecutable,

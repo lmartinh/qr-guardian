@@ -31,7 +31,7 @@ internal fun ResultContent(
     val analysis = state.analysis ?: return
     val tone = analysis.overallLevel.toResultTone()
     val scrollState = rememberScrollState()
-    val openButtonVisible = state.showOpenButton && state.openableUrl != null
+    val openButtonVisible = state.showOpenButton
     val localScanBadge = localScanBadgeLabel(analysis.localScan, texts)
 
     Column(

@@ -1,7 +1,7 @@
 package com.lmartin.qrguardian.domain.usecase
 
-import com.lmartin.qrguardian.data.reputation.NoOpUrlReputationRepository
 import com.lmartin.qrguardian.data.metadata.KtorUrlMetadataRepository
+import com.lmartin.qrguardian.data.reputation.NoOpUrlReputationRepository
 import com.lmartin.qrguardian.domain.analyzer.LocalScanAnalyzer
 import com.lmartin.qrguardian.domain.classifier.QrContentClassifier
 import com.lmartin.qrguardian.domain.metadata.DownloadFileType

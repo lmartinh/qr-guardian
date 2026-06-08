@@ -15,11 +15,10 @@ data class ResultUiState(
 
     val showOpenButton: Boolean
         get() =
-            analysis?.let {
-                it.contentType == QrContentType.Url &&
-                    canOpen &&
-                    it.overallLevel != SecurityLevel.Dangerous &&
-                    it.openableUrl != null
+            analysis?.let { analysis ->
+                analysis.contentType == QrContentType.Url &&
+                    analysis.canOpen &&
+                    analysis.openableUrl != null
             } == true
 
     val openableUrl: String?

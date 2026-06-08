@@ -171,21 +171,6 @@ internal fun shouldShowPath(
     return true
 }
 
-internal fun shouldShowDownload(
-    contentDisposition: String?,
-    resourceKind: UrlResourceKind,
-): Boolean {
-    if (isAttachmentDisposition(contentDisposition)) {
-        return true
-    }
-
-    return resourceKind in setOf(
-        UrlResourceKind.Archive,
-        UrlResourceKind.InstallerOrExecutable,
-        UrlResourceKind.UnknownBinary,
-    )
-}
-
 private fun resourceKindFromFileType(
     fileType: DownloadFileType,
     fileName: String?,

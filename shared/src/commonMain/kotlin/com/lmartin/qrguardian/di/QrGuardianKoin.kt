@@ -16,27 +16,20 @@ fun initKoin(
     }
 
     modules(
-        configurationModule(remoteReputationConfig),
+        module {
+            single<RemoteReputationConfig> { remoteReputationConfig }
+        },
         networkModule,
-        securityModule,
+        module {
+            single {
+                QrGuardianSecurityPipelineFactory.create(
+                    httpClient = get(),
+                    remoteReputationConfig = get(),
+                )
+            }
+        },
         *additionalModules.toTypedArray(),
     )
 }
-
-fun configurationModule(remoteReputationConfig: RemoteReputationConfig): Module = module {
-    single<RemoteReputationConfig> { remoteReputationConfig }
-}
-
-// Koin delegates security pipeline assembly to QrGuardianSecurityPipelineFactory so
-// the composition stays in one explicit place.
-val securityModule: Module =
-    module {
-        single {
-            QrGuardianSecurityPipelineFactory.create(
-                httpClient = get(),
-                remoteReputationConfig = get(),
-            )
-        }
-    }
 
 expect val networkModule: Module

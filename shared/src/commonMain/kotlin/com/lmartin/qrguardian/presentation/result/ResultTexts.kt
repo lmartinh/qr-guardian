@@ -33,6 +33,9 @@ import qrguardian.shared.generated.resources.result_detail_state
 import qrguardian.shared.generated.resources.result_detail_type
 import qrguardian.shared.generated.resources.result_detail_unknown
 import qrguardian.shared.generated.resources.result_detail_usage
+import qrguardian.shared.generated.resources.result_download_app_file_caution
+import qrguardian.shared.generated.resources.result_download_file
+import qrguardian.shared.generated.resources.result_download_file_caution
 import qrguardian.shared.generated.resources.result_error_title
 import qrguardian.shared.generated.resources.result_file_type_apk
 import qrguardian.shared.generated.resources.result_file_type_audio
@@ -63,11 +66,8 @@ import qrguardian.shared.generated.resources.result_local_signals
 import qrguardian.shared.generated.resources.result_open_document
 import qrguardian.shared.generated.resources.result_open_file
 import qrguardian.shared.generated.resources.result_open_image
-import qrguardian.shared.generated.resources.result_open_media
 import qrguardian.shared.generated.resources.result_open_link
-import qrguardian.shared.generated.resources.result_download_app_file_caution
-import qrguardian.shared.generated.resources.result_download_file
-import qrguardian.shared.generated.resources.result_download_file_caution
+import qrguardian.shared.generated.resources.result_open_media
 import qrguardian.shared.generated.resources.result_qr_content
 import qrguardian.shared.generated.resources.result_remote_reputation
 import qrguardian.shared.generated.resources.result_remote_status_completed

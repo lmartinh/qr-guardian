@@ -41,15 +41,13 @@ class KtorUrlMetadataRepository(
     private fun mapResponse(
         response: HttpResponse,
         requestedUrl: String,
-    ): UrlMetadataResult {
-        return buildResult(
-            requestedUrl = requestedUrl,
-            finalUrl = response.call.request.url.toString(),
-            contentType = response.headers[HttpHeaders.ContentType]?.substringBefore(';')?.trim(),
-            contentDisposition = response.headers[HttpHeaders.ContentDisposition]?.trim(),
-            contentLength = response.headers[HttpHeaders.ContentLength]?.toLongOrNull(),
-        )
-    }
+    ): UrlMetadataResult = buildResult(
+        requestedUrl = requestedUrl,
+        finalUrl = response.call.request.url.toString(),
+        contentType = response.headers[HttpHeaders.ContentType]?.substringBefore(';')?.trim(),
+        contentDisposition = response.headers[HttpHeaders.ContentDisposition]?.trim(),
+        contentLength = response.headers[HttpHeaders.ContentLength]?.toLongOrNull(),
+    )
 
     private fun bestEffortResult(requestedUrl: String): UrlMetadataResult = buildResult(
         requestedUrl = requestedUrl,
