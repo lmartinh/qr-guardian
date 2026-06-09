@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import android.content.pm.PackageManager
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
@@ -38,6 +39,9 @@ actual fun PlatformQrScanner(
     val onScanResultState = rememberUpdatedState(onScanResult)
     val onScannerErrorState = rememberUpdatedState(onScannerError)
     val onTorchAvailabilityChangedState = rememberUpdatedState(onTorchAvailabilityChanged)
+    val hasFlashFeature = remember(context) {
+        context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)
+    }
     val barcodeScanner = remember {
         BarcodeScanning.getClient(
             BarcodeScannerOptions.Builder()
@@ -71,9 +75,7 @@ actual fun PlatformQrScanner(
         if (isActive) {
             try {
                 cameraController.bindToLifecycle(lifecycleOwner)
-                onTorchAvailabilityChangedState.value.invoke(
-                    cameraController.cameraInfo?.hasFlashUnit() == true,
-                )
+                onTorchAvailabilityChangedState.value.invoke(hasFlashFeature)
                 cameraController.setImageAnalysisAnalyzer(
                     ContextCompat.getMainExecutor(context),
                 ) { imageProxy ->
