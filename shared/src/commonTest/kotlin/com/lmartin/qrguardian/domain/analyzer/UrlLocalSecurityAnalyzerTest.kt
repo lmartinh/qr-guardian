@@ -135,12 +135,11 @@ class UrlLocalSecurityAnalyzerTest {
                 rules =
                 listOf(
                     object : com.lmartin.qrguardian.domain.rules.SecurityRule {
-                        override fun evaluate(value: String) =
-                            com.lmartin.qrguardian.domain.model.SecurityRuleResult(
-                                triggered = true,
-                                level = SecurityLevel.Safe,
-                                reason = "Custom safe rule",
-                            )
+                        override fun evaluate(value: String) = com.lmartin.qrguardian.domain.model.SecurityRuleResult(
+                            triggered = true,
+                            level = SecurityLevel.Safe,
+                            reason = "Custom safe rule",
+                        )
                     },
                 ),
             )

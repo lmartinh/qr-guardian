@@ -702,15 +702,11 @@ class AnalyzeQrSafetyUseCaseTest {
             )
         val metadataRepository =
             object : UrlMetadataRepository {
-                override suspend fun fetchMetadata(url: String): UrlMetadataResult {
-                    throw IllegalStateException("metadata boom")
-                }
+                override suspend fun fetchMetadata(url: String): UrlMetadataResult = throw IllegalStateException("metadata boom")
             }
         val reputationRepository =
             object : UrlReputationRepository {
-                override suspend fun checkUrl(url: String): UrlReputationResult {
-                    throw IllegalStateException("reputation boom")
-                }
+                override suspend fun checkUrl(url: String): UrlReputationResult = throw IllegalStateException("reputation boom")
             }
         val useCase =
             AnalyzeQrSafetyUseCase(

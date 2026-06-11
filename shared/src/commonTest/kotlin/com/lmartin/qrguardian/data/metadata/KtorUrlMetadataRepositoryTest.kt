@@ -403,32 +403,30 @@ class KtorUrlMetadataRepositoryTest {
         sourceUrl: String,
         redirectedUrl: String,
         contentType: String,
-    ): HttpClient {
-        return HttpClient(
-            MockEngine { request ->
-                when (request.url.toString()) {
-                    sourceUrl -> {
-                        respond(
-                            content = "",
-                            status = HttpStatusCode.Found,
-                            headers =
-                            headersOf(
-                                HttpHeaders.Location to listOf(redirectedUrl),
-                            ),
-                        )
-                    }
-
-                    redirectedUrl -> {
-                        respond(
-                            content = "",
-                            status = HttpStatusCode.OK,
-                            headers = headersOf(HttpHeaders.ContentType, contentType),
-                        )
-                    }
-
-                    else -> error("Unexpected request: ${request.url}")
+    ): HttpClient = HttpClient(
+        MockEngine { request ->
+            when (request.url.toString()) {
+                sourceUrl -> {
+                    respond(
+                        content = "",
+                        status = HttpStatusCode.Found,
+                        headers =
+                        headersOf(
+                            HttpHeaders.Location to listOf(redirectedUrl),
+                        ),
+                    )
                 }
-            },
-        )
-    }
+
+                redirectedUrl -> {
+                    respond(
+                        content = "",
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, contentType),
+                    )
+                }
+
+                else -> error("Unexpected request: ${request.url}")
+            }
+        },
+    )
 }

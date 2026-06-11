@@ -354,9 +354,7 @@ class CompositeUrlReputationRepositoryTest {
             CompositeUrlReputationRepository(
                 listOf(
                     object : UrlReputationRepository {
-                        override suspend fun checkUrl(url: String): UrlReputationResult {
-                            throw IllegalStateException("boom")
-                        }
+                        override suspend fun checkUrl(url: String): UrlReputationResult = throw IllegalStateException("boom")
                     },
                     FakeUrlReputationRepository(
                         UrlReputationResult(

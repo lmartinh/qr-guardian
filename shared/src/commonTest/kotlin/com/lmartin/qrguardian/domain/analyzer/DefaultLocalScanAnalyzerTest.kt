@@ -152,7 +152,7 @@ class DefaultLocalScanAnalyzerTest {
                 rawText = "payload",
                 normalizedText = "payload",
                 contentType = QrContentType.Unknown,
-        )
+            )
 
         assertEquals(SecurityLevel.Unknown, result.level)
         assertTrue(result.reasons.any { it.contains("could not be fully evaluated locally") })
