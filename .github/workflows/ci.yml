@@ -1,7 +1,6 @@
 name: CI
 
 on:
-  push:
   pull_request:
   workflow_dispatch:
 
@@ -24,6 +23,8 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          add-job-summary: never
 
       - name: Validate environment
         shell: bash
@@ -75,6 +76,8 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          add-job-summary: never
 
       - name: Run quality checks
         shell: bash
@@ -130,6 +133,8 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          add-job-summary: never
 
       - name: Run shared tests
         shell: bash
@@ -201,6 +206,8 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          add-job-summary: never
 
       - name: Run assembleRelease
         shell: bash
