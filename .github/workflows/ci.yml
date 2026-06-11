@@ -243,3 +243,75 @@ jobs:
           if [ "${ASSEMBLE_EXIT_CODE:-0}" -ne 0 ]; then
             exit "$ASSEMBLE_EXIT_CODE"
           fi
+
+  compose-guardrails:
+    name: Compose Guardrails
+    runs-on: ubuntu-latest
+    needs: environment
+    env:
+      MOBILE_AI_PROVIDER: fake
+      COMPOSE_GUARDRAILS_WORKSPACE: ${{ github.workspace }}
+      MOBILE_AI_TOOLKIT_DIR: ${{ github.workspace }}/mobile-ai-toolkit
+      # Scope the analysis to shared Compose/KMP sources to avoid build-cache noise.
+      COMPOSE_GUARDRAILS_TARGET: shared/src
+      COMPOSE_GUARDRAILS_RULE_SET: default
+      COMPOSE_GUARDRAILS_REPORT_PATH: artifacts/compose-guardrails-report.md
+      COMPOSE_GUARDRAILS_CHANGED_FILES_ONLY: "false"
+      COMPOSE_GUARDRAILS_FAIL_ON_FINDINGS: "false"
+      COMPOSE_GUARDRAILS_REPORT_ARTIFACT: compose-guardrails-report
+    steps:
+      - name: Checkout QR Guardian
+        uses: actions/checkout@v4
+
+      - name: Checkout mobile-ai-toolkit
+        uses: actions/checkout@v4
+        with:
+          repository: lmartinh/mobile-ai-toolkit
+          path: mobile-ai-toolkit
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          add-job-summary: never
+
+      - name: Run compose-guardrails
+        shell: bash
+        run: |
+          set +e
+
+          .github/scripts/ci/run-compose-guardrails.sh
+          compose_guardrails_status=$?
+          echo "COMPOSE_GUARDRAILS_EXIT_CODE=$compose_guardrails_status" >> "$GITHUB_ENV"
+
+      - name: Write compose guardrails summary
+        if: always()
+        shell: bash
+        run: |
+          GITHUB_STEP_SUMMARY="$GITHUB_STEP_SUMMARY" \
+          COMPOSE_GUARDRAILS_WORKSPACE="$COMPOSE_GUARDRAILS_WORKSPACE" \
+          COMPOSE_GUARDRAILS_REPORT_PATH="$COMPOSE_GUARDRAILS_REPORT_PATH" \
+          COMPOSE_GUARDRAILS_REPORT_ARTIFACT="$COMPOSE_GUARDRAILS_REPORT_ARTIFACT" \
+          MOBILE_AI_PROVIDER="$MOBILE_AI_PROVIDER" \
+          bash .github/scripts/ci/write-compose-guardrails-summary.sh
+
+      - name: Upload compose guardrails report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compose-guardrails-report
+          if-no-files-found: ignore
+          path: artifacts/compose-guardrails-report.md
+
+      - name: Fail if compose-guardrails failed
+        if: always()
+        shell: bash
+        run: |
+          if [ "${COMPOSE_GUARDRAILS_EXIT_CODE:-0}" -ne 0 ]; then
+            exit "$COMPOSE_GUARDRAILS_EXIT_CODE"
+          fi
