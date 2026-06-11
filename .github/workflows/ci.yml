@@ -285,7 +285,7 @@ jobs:
         run: |
           set +e
 
-          .github/scripts/ci/run-compose-guardrails.sh
+          bash .github/scripts/ci/run-compose-guardrails.sh
           compose_guardrails_status=$?
           echo "COMPOSE_GUARDRAILS_EXIT_CODE=$compose_guardrails_status" >> "$GITHUB_ENV"
 
