@@ -1,0 +1,197 @@
+name: AI Mobile Tools
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_compose_guardrails:
+        description: "Run Compose Guardrails"
+        required: true
+        default: true
+        type: boolean
+      run_kmp_project_auditor:
+        description: "Run KMP Project Auditor"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-selection:
+    name: Validate Selection
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate tool selection
+        shell: bash
+        run: |
+          {
+            echo "## AI Mobile Tools Selection"
+            echo
+            echo "| Tool | Enabled |"
+            echo "|---|---|"
+            if [[ "${{ inputs.run_compose_guardrails }}" == "true" ]]; then
+              echo "| Compose Guardrails | ✅ Yes |"
+            else
+              echo "| Compose Guardrails | ❌ No |"
+            fi
+            if [[ "${{ inputs.run_kmp_project_auditor }}" == "true" ]]; then
+              echo "| KMP Project Auditor | ✅ Yes |"
+            else
+              echo "| KMP Project Auditor | ❌ No |"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ "${{ inputs.run_compose_guardrails }}" != "true" && "${{ inputs.run_kmp_project_auditor }}" != "true" ]]; then
+            echo
+            echo "No AI tool was selected. Enable at least one checkbox and rerun the workflow." >> "$GITHUB_STEP_SUMMARY"
+            echo "At least one AI tool must be selected." >&2
+            exit 1
+          fi
+
+  compose-guardrails:
+    name: Compose Guardrails
+    needs: validate-selection
+    if: ${{ inputs.run_compose_guardrails }}
+    runs-on: ubuntu-latest
+    env:
+      MOBILE_AI_PROVIDER: fake
+      COMPOSE_GUARDRAILS_WORKSPACE: ${{ github.workspace }}
+      MOBILE_AI_TOOLKIT_DIR: ${{ github.workspace }}/mobile-ai-toolkit
+      COMPOSE_GUARDRAILS_TARGET: shared/src/commonMain/kotlin/com/lmartin/qrguardian/presentation
+      COMPOSE_GUARDRAILS_RULE_SET: default
+      COMPOSE_GUARDRAILS_REPORT_PATH: artifacts/compose-guardrails-report.md
+      COMPOSE_GUARDRAILS_CHANGED_FILES_ONLY: "false"
+      COMPOSE_GUARDRAILS_FAIL_ON_FINDINGS: "false"
+      COMPOSE_GUARDRAILS_REPORT_ARTIFACT: compose-guardrails-report
+    steps:
+      - name: Checkout QR Guardian
+        uses: actions/checkout@v6
+
+      - name: Checkout mobile-ai-toolkit
+        uses: actions/checkout@v6
+        with:
+          repository: lmartinh/mobile-ai-toolkit
+          path: mobile-ai-toolkit
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          add-job-summary: never
+
+      - name: Run compose-guardrails
+        shell: bash
+        run: |
+          set +e
+
+          bash .github/scripts/ci/run-compose-guardrails.sh
+          compose_guardrails_status=$?
+          echo "COMPOSE_GUARDRAILS_EXIT_CODE=$compose_guardrails_status" >> "$GITHUB_ENV"
+
+      - name: Write compose guardrails summary
+        if: always()
+        shell: bash
+        run: |
+          GITHUB_STEP_SUMMARY="$GITHUB_STEP_SUMMARY" \
+          COMPOSE_GUARDRAILS_WORKSPACE="$COMPOSE_GUARDRAILS_WORKSPACE" \
+          COMPOSE_GUARDRAILS_REPORT_PATH="$COMPOSE_GUARDRAILS_REPORT_PATH" \
+          COMPOSE_GUARDRAILS_REPORT_ARTIFACT="$COMPOSE_GUARDRAILS_REPORT_ARTIFACT" \
+          MOBILE_AI_PROVIDER="$MOBILE_AI_PROVIDER" \
+          bash .github/scripts/ci/write-compose-guardrails-summary.sh
+
+      - name: Upload compose guardrails report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: compose-guardrails-report
+          if-no-files-found: ignore
+          path: artifacts/compose-guardrails-report.md
+
+      - name: Fail if compose-guardrails failed
+        if: always()
+        shell: bash
+        run: |
+          if [ "${COMPOSE_GUARDRAILS_EXIT_CODE:-0}" -ne 0 ]; then
+            exit "$COMPOSE_GUARDRAILS_EXIT_CODE"
+          fi
+
+  kmp-project-auditor:
+    name: KMP Project Auditor
+    needs: validate-selection
+    if: ${{ inputs.run_kmp_project_auditor }}
+    runs-on: ubuntu-latest
+    env:
+      MOBILE_AI_PROVIDER: fake
+      KMP_PROJECT_AUDITOR_WORKSPACE: ${{ github.workspace }}
+      MOBILE_AI_TOOLKIT_DIR: ${{ github.workspace }}/mobile-ai-toolkit
+      KMP_PROJECT_AUDITOR_TARGET: .
+      KMP_PROJECT_AUDITOR_REPORT_PATH: artifacts/kmp-project-auditor-report.md
+      KMP_PROJECT_AUDITOR_FAIL_ON_FINDINGS: "false"
+      KMP_PROJECT_AUDITOR_WRITE_STEP_SUMMARY: "false"
+      KMP_PROJECT_AUDITOR_REPORT_ARTIFACT: kmp-project-auditor-report
+    steps:
+      - name: Checkout QR Guardian
+        uses: actions/checkout@v6
+
+      - name: Checkout mobile-ai-toolkit
+        uses: actions/checkout@v6
+        with:
+          repository: lmartinh/mobile-ai-toolkit
+          path: mobile-ai-toolkit
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          add-job-summary: never
+
+      - name: Run kmp-project-auditor
+        shell: bash
+        run: |
+          set +e
+
+          bash .github/scripts/ci/run-kmp-project-auditor.sh
+          kmp_project_auditor_status=$?
+          echo "KMP_PROJECT_AUDITOR_EXIT_CODE=$kmp_project_auditor_status" >> "$GITHUB_ENV"
+
+      - name: Write kmp-project-auditor summary
+        if: always()
+        shell: bash
+        run: |
+          GITHUB_STEP_SUMMARY="$GITHUB_STEP_SUMMARY" \
+          KMP_PROJECT_AUDITOR_WORKSPACE="$KMP_PROJECT_AUDITOR_WORKSPACE" \
+          KMP_PROJECT_AUDITOR_REPORT_PATH="$KMP_PROJECT_AUDITOR_REPORT_PATH" \
+          KMP_PROJECT_AUDITOR_REPORT_ARTIFACT="$KMP_PROJECT_AUDITOR_REPORT_ARTIFACT" \
+          MOBILE_AI_PROVIDER="$MOBILE_AI_PROVIDER" \
+          bash .github/scripts/ci/write-kmp-project-auditor-summary.sh
+
+      - name: Upload kmp-project-auditor report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: kmp-project-auditor-report
+          if-no-files-found: error
+          path: artifacts/kmp-project-auditor-report.md
+
+      - name: Fail if kmp-project-auditor failed
+        if: always()
+        shell: bash
+        run: |
+          if [ "${KMP_PROJECT_AUDITOR_EXIT_CODE:-0}" -ne 0 ]; then
+            exit "$KMP_PROJECT_AUDITOR_EXIT_CODE"
+          fi
