@@ -28,6 +28,29 @@ class QrGuardianAppStateTest {
     }
 
     @Test
+    fun `permission denied shows the permission message`() {
+        val harness = createHarness()
+
+        harness.state.onCameraPermissionDenied()
+
+        assertEquals(AppScreen.Intro, harness.state.screen)
+        assertTrue(harness.getShowPermissionMessage())
+        assertFalse(harness.getWaitingForSettingsReturn())
+        assertFalse(harness.state.isCameraPermissionGranted)
+    }
+
+    @Test
+    fun `opening settings waits for return and hides the message`() {
+        val harness = createHarness()
+
+        harness.state.onCameraPermissionDenied()
+        harness.state.onOpenCameraSettings()
+
+        assertFalse(harness.getShowPermissionMessage())
+        assertTrue(harness.getWaitingForSettingsReturn())
+    }
+
+    @Test
     fun `blank qr is ignored`() {
         val harness = createHarness(initialPermissionGranted = true)
         harness.state.onCameraPermissionGranted()
@@ -108,6 +131,27 @@ class QrGuardianAppStateTest {
         assertFalse(harness.state.isProcessingScan)
         assertFalse(harness.state.hasAcceptedScan)
         assertEquals(null, harness.state.pendingAnalysisRawText)
+    }
+
+    @Test
+    fun `back to intro clears waiting state`() {
+        val harness = createHarness()
+
+        harness.state.onCameraPermissionDenied()
+        harness.state.onOpenCameraSettings()
+        harness.state.onBackToIntro()
+
+        assertEquals(AppScreen.Intro, harness.state.screen)
+        assertFalse(harness.getWaitingForSettingsReturn())
+    }
+
+    @Test
+    fun `sync permission state mirrors external updates`() {
+        val harness = createHarness()
+
+        harness.state.syncCameraPermissionState(true)
+
+        assertTrue(harness.state.isCameraPermissionGranted)
     }
 
     @Test

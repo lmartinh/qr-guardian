@@ -56,4 +56,22 @@ class DefaultQrContentClassifierTest {
     fun `classifies plain text`() {
         assertEquals(QrContentType.PlainText, classifier.classify("hello world"))
     }
+
+    @Test
+    fun `classifies bare domain as url and rejects malformed candidates`() {
+        assertEquals(QrContentType.Url, classifier.classify("example.com/path"))
+        assertEquals(QrContentType.PlainText, classifier.classify("example..com"))
+        assertEquals(QrContentType.PlainText, classifier.classify("localhost"))
+    }
+
+    @Test
+    fun `blank text stays unknown`() {
+        assertEquals(QrContentType.Unknown, classifier.classify("   "))
+    }
+
+    @Test
+    fun `classifies alternate crypto schemes`() {
+        assertEquals(QrContentType.Crypto, classifier.classify("ethereum:0xabc123"))
+        assertEquals(QrContentType.Crypto, classifier.classify("solana:base58payload"))
+    }
 }

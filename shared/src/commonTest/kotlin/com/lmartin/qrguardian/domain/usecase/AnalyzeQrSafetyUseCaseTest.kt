@@ -690,6 +690,48 @@ class AnalyzeQrSafetyUseCaseTest {
         assertEquals(ScanStatus.NotApplicable, result.remoteReputation.status)
     }
 
+    @Test
+    fun `metadata and reputation failures fall back without breaking the url flow`() = runBlocking {
+        val localAnalyzer =
+            RecordingLocalScanAnalyzer(
+                result =
+                scanSection(
+                    level = SecurityLevel.Safe,
+                    reasons = emptyList(),
+                ),
+            )
+        val metadataRepository =
+            object : UrlMetadataRepository {
+                override suspend fun fetchMetadata(url: String): UrlMetadataResult {
+                    throw IllegalStateException("metadata boom")
+                }
+            }
+        val reputationRepository =
+            object : UrlReputationRepository {
+                override suspend fun checkUrl(url: String): UrlReputationResult {
+                    throw IllegalStateException("reputation boom")
+                }
+            }
+        val useCase =
+            AnalyzeQrSafetyUseCase(
+                localScanAnalyzer = localAnalyzer,
+                urlMetadataRepository = metadataRepository,
+                urlReputationRepository = reputationRepository,
+            )
+
+        val result = useCase("https://example.com")
+
+        assertEquals(QrContentType.Url, result.contentType)
+        assertEquals(SecurityLevel.Safe, result.overallLevel)
+        assertTrue(result.canOpen)
+        assertEquals("https://example.com", result.openableUrl)
+        assertEquals(ScanStatus.Completed, result.localScan.status)
+        assertEquals(ScanStatus.Unavailable, result.remoteReputation.status)
+        assertTrue(result.localScan.metadata.any { it.label == "Host" && it.value == "example.com" })
+        assertTrue(result.localScan.metadata.any { it.label == "Connection" && it.value == "HTTPS" })
+        assertEquals(1, localAnalyzer.callCount)
+    }
+
     private fun scanSection(
         level: SecurityLevel,
         reasons: List<String>,

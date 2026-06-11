@@ -331,6 +331,56 @@ class KtorUrlMetadataRepositoryTest {
         assertEquals("InstallerOrExecutable", result.resourceKind.name)
     }
 
+    @Test
+    fun `redirects that change path query or fragment are treated as meaningful`() = runBlocking {
+        val pathRepository =
+            KtorUrlMetadataRepository(
+                httpClient = redirectingHttpClient(
+                    sourceUrl = "https://example.com/download",
+                    redirectedUrl = "https://example.com/files/report.pdf",
+                    contentType = ContentType.Application.Pdf.toString(),
+                ),
+            )
+        val queryRepository =
+            KtorUrlMetadataRepository(
+                httpClient = redirectingHttpClient(
+                    sourceUrl = "https://example.com/download",
+                    redirectedUrl = "https://example.com/download?token=1",
+                    contentType = ContentType.Application.Pdf.toString(),
+                ),
+            )
+        val fragmentRepository =
+            KtorUrlMetadataRepository(
+                httpClient = redirectingHttpClient(
+                    sourceUrl = "https://example.com/download",
+                    redirectedUrl = "https://example.com/download#section",
+                    contentType = ContentType.Application.Pdf.toString(),
+                ),
+            )
+
+        assertEquals("https://example.com/files/report.pdf", pathRepository.fetchMetadata("https://example.com/download").finalUrl)
+        assertEquals("https://example.com/download?token=1", queryRepository.fetchMetadata("https://example.com/download").finalUrl)
+        assertEquals("https://example.com/download#section", fragmentRepository.fetchMetadata("https://example.com/download").finalUrl)
+    }
+
+    @Test
+    fun `response with same url does not expose a final destination`() = runBlocking {
+        val repository =
+            KtorUrlMetadataRepository(
+                httpClient =
+                httpClient(
+                    status = HttpStatusCode.OK,
+                    headers = listOf(HttpHeaders.ContentType to listOf(ContentType.Text.Html.toString())),
+                ),
+            )
+
+        val result = repository.fetchMetadata("https://example.com/about")
+
+        assertEquals(UrlMetadataStatus.Available, result.status)
+        assertEquals(null, result.finalUrl)
+        assertFalse(result.isLikelyDownload)
+    }
+
     private fun httpClient(
         status: HttpStatusCode,
         headers: List<Pair<String, List<String>>> = emptyList(),
@@ -347,5 +397,38 @@ class KtorUrlMetadataRepositoryTest {
             }
 
         return HttpClient(engine)
+    }
+
+    private fun redirectingHttpClient(
+        sourceUrl: String,
+        redirectedUrl: String,
+        contentType: String,
+    ): HttpClient {
+        return HttpClient(
+            MockEngine { request ->
+                when (request.url.toString()) {
+                    sourceUrl -> {
+                        respond(
+                            content = "",
+                            status = HttpStatusCode.Found,
+                            headers =
+                            headersOf(
+                                HttpHeaders.Location to listOf(redirectedUrl),
+                            ),
+                        )
+                    }
+
+                    redirectedUrl -> {
+                        respond(
+                            content = "",
+                            status = HttpStatusCode.OK,
+                            headers = headersOf(HttpHeaders.ContentType, contentType),
+                        )
+                    }
+
+                    else -> error("Unexpected request: ${request.url}")
+                }
+            },
+        )
     }
 }

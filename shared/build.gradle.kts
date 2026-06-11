@@ -80,3 +80,30 @@ kotlin {
 dependencies {
     androidRuntimeClasspath(libs.compose.uiTooling)
 }
+
+kover {
+    reports {
+        filters {
+            excludes {
+                // Compose Multiplatform generated resources are not app logic and are not meaningfully testable.
+                classes(
+                    "qrguardian.shared.generated.resources.*",
+                    "components.resources.library.generated.resources.*",
+                )
+                // Presentation layers are mostly UI/state rendering and are not the target for coverage tracking here.
+                packages(
+                    "com.lmartin.qrguardian.presentation.app.*",
+                    "com.lmartin.qrguardian.presentation.camera.*",
+                    "com.lmartin.qrguardian.presentation.components.*",
+                    "com.lmartin.qrguardian.presentation.intro.*",
+                    "com.lmartin.qrguardian.presentation.permissions.*",
+                    "com.lmartin.qrguardian.presentation.result.*",
+                    "com.lmartin.qrguardian.presentation.theme.*",
+                )
+                classes(
+                    "com.lmartin.qrguardian.AppKt*",
+                )
+            }
+        }
+    }
+}
