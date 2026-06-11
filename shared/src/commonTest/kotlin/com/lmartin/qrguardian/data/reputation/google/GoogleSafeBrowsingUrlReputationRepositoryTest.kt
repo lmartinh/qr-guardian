@@ -82,6 +82,27 @@ class GoogleSafeBrowsingUrlReputationRepositoryTest {
     }
 
     @Test
+    fun `unwanted software and potentially harmful application map to distinct categories`() = runBlocking {
+        val repository =
+            GoogleSafeBrowsingUrlReputationRepository(
+                httpClient =
+                httpClientWithResponse(
+                    """{"matches":[{"threatType":"UNWANTED_SOFTWARE"},{"threatType":"POTENTIALLY_HARMFUL_APPLICATION"}]}""",
+                ),
+                apiKey = "test-key",
+            )
+
+        val result = repository.checkUrl("https://example.com")
+
+        assertEquals(UrlReputationStatus.Malicious, result.status)
+        assertEquals(
+            listOf(ThreatCategory.UnwantedSoftware, ThreatCategory.Malware),
+            result.categories,
+        )
+        assertEquals(2, result.reasons.size)
+    }
+
+    @Test
     fun `google malware test url is malicious`() = runBlocking {
         val repository =
             GoogleSafeBrowsingUrlReputationRepository(
@@ -140,6 +161,27 @@ class GoogleSafeBrowsingUrlReputationRepositoryTest {
         assertEquals("Google Safe Browsing", result.provider)
         assertTrue(result.categories.isEmpty())
         assertTrue(result.reasons.contains("Google Safe Browsing check is currently unavailable."))
+    }
+
+    @Test
+    fun `multiple matches keep distinct categories and reasons`() = runBlocking {
+        val repository =
+            GoogleSafeBrowsingUrlReputationRepository(
+                httpClient =
+                httpClientWithResponse(
+                    """{"matches":[{"threatType":"MALWARE"},{"threatType":"UNWANTED_SOFTWARE"},{"threatType":"MALWARE"},{"threatType":"UNKNOWN_THREAT"}]}""",
+                ),
+                apiKey = "test-key",
+            )
+
+        val result = repository.checkUrl("https://example.com")
+
+        assertEquals(UrlReputationStatus.Malicious, result.status)
+        assertEquals(
+            listOf(ThreatCategory.Malware, ThreatCategory.UnwantedSoftware, ThreatCategory.Unknown),
+            result.categories,
+        )
+        assertEquals(3, result.reasons.size)
     }
 
     private fun httpClientWithResponse(responseBody: String): HttpClient {

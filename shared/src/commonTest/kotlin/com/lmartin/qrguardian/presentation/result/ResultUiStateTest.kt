@@ -134,6 +134,21 @@ class ResultUiStateTest {
         assertEquals(SecurityLevel.Unknown, notApplicableRemoteState.localScan?.level)
     }
 
+    @Test
+    fun `idle loading and error states are exposed by the factory methods`() {
+        val idle = ResultUiState.idle()
+        val loading = ResultUiState.loading()
+        val error = ResultUiState.error("Boom")
+
+        assertFalse(idle.isLoading)
+        assertFalse(idle.canOpen)
+        assertFalse(idle.showOpenButton)
+        assertTrue(loading.isLoading)
+        assertEquals("Boom", error.errorMessage)
+        assertFalse(error.canOpen)
+        assertFalse(error.showOpenButton)
+    }
+
     private fun analysis(
         contentType: QrContentType,
         overallLevel: SecurityLevel,

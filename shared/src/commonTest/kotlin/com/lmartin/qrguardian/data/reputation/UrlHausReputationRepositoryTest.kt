@@ -63,6 +63,20 @@ class UrlHausReputationRepositoryTest {
     }
 
     @Test
+    fun `offline response is malicious`() = runBlocking {
+        val repository =
+            UrlHausReputationRepository(
+                httpClient = httpClientWithResponse("""{"query_status":"ok","url_status":"offline"}"""),
+                apiKey = "test-key",
+            )
+
+        val result = repository.checkUrl("https://example.com")
+
+        assertEquals(UrlReputationStatus.Malicious, result.status)
+        assertEquals(listOf(ThreatCategory.Malware), result.categories)
+    }
+
+    @Test
     fun `unknown response is unknown`() = runBlocking {
         val repository =
             UrlHausReputationRepository(
@@ -119,6 +133,28 @@ class UrlHausReputationRepositoryTest {
         assertEquals("URLhaus", result.provider)
         assertTrue(result.categories.isEmpty())
         assertTrue(result.reasons.contains("URLhaus check is currently unavailable."))
+    }
+
+    @Test
+    fun `invalid url and post expected responses map to unknown`() = runBlocking {
+        val invalidUrlRepository =
+            UrlHausReputationRepository(
+                httpClient = httpClientWithResponse("""{"query_status":"invalid_url"}"""),
+                apiKey = "test-key",
+            )
+        val postExpectedRepository =
+            UrlHausReputationRepository(
+                httpClient = httpClientWithResponse("""{"query_status":"http_post_expected"}"""),
+                apiKey = "test-key",
+            )
+
+        val invalidUrlResult = invalidUrlRepository.checkUrl("https://example.com")
+        val postExpectedResult = postExpectedRepository.checkUrl("https://example.com")
+
+        assertEquals(UrlReputationStatus.Unknown, invalidUrlResult.status)
+        assertEquals(UrlReputationStatus.Unknown, postExpectedResult.status)
+        assertTrue(invalidUrlResult.categories.contains(ThreatCategory.Unknown))
+        assertTrue(postExpectedResult.categories.contains(ThreatCategory.Unknown))
     }
 
     private fun httpClientWithResponse(responseBody: String): HttpClient {

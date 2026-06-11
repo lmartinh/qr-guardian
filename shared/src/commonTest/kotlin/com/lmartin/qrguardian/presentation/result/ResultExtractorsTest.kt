@@ -6,8 +6,11 @@ import com.lmartin.qrguardian.domain.model.ScanMetadataItem
 import com.lmartin.qrguardian.domain.model.ScanSectionResult
 import com.lmartin.qrguardian.domain.model.ScanStatus
 import com.lmartin.qrguardian.domain.model.SecurityLevel
+import com.lmartin.qrguardian.domain.reputation.UrlReputationStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ResultExtractorsTest {
@@ -170,6 +173,188 @@ class ResultExtractorsTest {
         assertTrue(details.none { it.value == "secret" })
     }
 
+    @Test
+    fun `non url content types map to the expected action labels`() {
+        val cases =
+            listOf(
+                analysis(QrContentType.Email, "mailto:test@example.com").let { "Compose email" to buildLocalAnalysisDetails(it, fakeTexts())[1].value },
+                analysis(QrContentType.Phone, "tel:+34123456789").let { "Call number" to buildLocalAnalysisDetails(it, fakeTexts())[1].value },
+                analysis(QrContentType.Sms, "sms:+34123456789").let { "Send SMS" to buildLocalAnalysisDetails(it, fakeTexts())[1].value },
+                analysis(QrContentType.Wifi, "WIFI:T:WPA;S:MyWifi;P:secret;;").let { "Join Wi‑Fi network" to buildLocalAnalysisDetails(it, fakeTexts())[1].value },
+                analysis(QrContentType.VCard, "BEGIN:VCARD").let { "Import contact" to buildLocalAnalysisDetails(it, fakeTexts())[1].value },
+                analysis(QrContentType.Geo, "geo:40.4,-3.7").let { "Open map" to buildLocalAnalysisDetails(it, fakeTexts())[1].value },
+                analysis(QrContentType.Crypto, "bitcoin:xxxx").let { "Open wallet" to buildLocalAnalysisDetails(it, fakeTexts())[1].value },
+                analysis(QrContentType.PlainText, "hello world").let { "No automatic action" to buildLocalAnalysisDetails(it, fakeTexts())[1].value },
+                analysis(QrContentType.Unknown, "mystery").let { "Could not be classified precisely" to buildLocalAnalysisDetails(it, fakeTexts())[1].value },
+            )
+
+        cases.forEach { (expected, actual) ->
+            assertEquals(expected, actual)
+        }
+    }
+
+    @Test
+    fun `remote analysis details only appear for completed sections`() {
+        val completedSection =
+            ScanSectionResult(
+                name = "Remote Reputation",
+                level = SecurityLevel.Suspicious,
+                status = ScanStatus.Completed,
+                title = SecurityLevel.Suspicious.title(),
+                description = SecurityLevel.Suspicious.description(),
+                reasons = listOf("Potential concern", "Second reason", "Ignored reason"),
+                metadata = listOf(ScanMetadataItem(label = "Provider", value = "URLhaus")),
+            )
+        val completedDetails = buildRemoteAnalysisDetails(completedSection, fakeTexts())
+        val notApplicableDetails =
+            buildRemoteAnalysisDetails(
+                completedSection.copy(status = ScanStatus.NotApplicable),
+                fakeTexts(),
+            )
+
+        assertEquals(3, completedDetails.size)
+        assertEquals("Remote check completed", completedDetails[0].value)
+        assertEquals("Potential concern", completedDetails[1].value)
+        assertEquals("Second reason", completedDetails[2].value)
+        assertTrue(notApplicableDetails.isEmpty())
+    }
+
+    @Test
+    fun `severity badges and tones map from the security level`() {
+        assertEquals("Safe", localScanBadgeLabel(section(SecurityLevel.Safe), fakeTexts()))
+        assertEquals("Careful", localScanBadgeLabel(section(SecurityLevel.Suspicious), fakeTexts()))
+        assertEquals("Dangerous", localScanBadgeLabel(section(SecurityLevel.Dangerous), fakeTexts()))
+        assertEquals("Unknown", localScanBadgeLabel(section(SecurityLevel.Unknown), fakeTexts()))
+
+        assertEquals("Remote check completed", remoteScanBadgeLabel(section(SecurityLevel.Safe), fakeTexts()))
+        assertEquals("Not configured", remoteScanBadgeLabel(section(SecurityLevel.Safe, ScanStatus.NotConfigured), fakeTexts()))
+        assertEquals("Not applicable", remoteScanBadgeLabel(section(SecurityLevel.Safe, ScanStatus.NotApplicable), fakeTexts()))
+        assertEquals("Unavailable", remoteScanBadgeLabel(section(SecurityLevel.Safe, ScanStatus.Unavailable), fakeTexts()))
+
+        assertEquals(androidx.compose.ui.graphics.Color(0xFF10B981), SecurityLevel.Safe.toSignalColor())
+        assertEquals(androidx.compose.ui.graphics.Color(0xFF9A6B00), SecurityLevel.Suspicious.toSignalColor())
+        assertEquals(androidx.compose.ui.graphics.Color(0xFFB42318), SecurityLevel.Dangerous.toSignalColor())
+        assertEquals(androidx.compose.ui.graphics.Color(0xFF6B7280), SecurityLevel.Unknown.toSignalColor())
+    }
+
+    @Test
+    fun `metadata labels and values are translated for visible rows`() {
+        val analysis =
+            analysis(
+                contentType = QrContentType.Url,
+                normalizedText = "https://example.com/file.apk",
+                metadata =
+                listOf(
+                    ScanMetadataItem(label = "Host", value = "example.com"),
+                    ScanMetadataItem(label = "Connection", value = "HTTPS"),
+                    ScanMetadataItem(label = "Content", value = "Android app"),
+                    ScanMetadataItem(label = "Resolved destination", value = "https://cdn.example.com/file.apk"),
+                    ScanMetadataItem(label = "File name", value = "file.apk"),
+                    ScanMetadataItem(label = "File type", value = "APK"),
+                    ScanMetadataItem(label = "Download", value = "Server suggests a file download"),
+                    ScanMetadataItem(label = "Path", value = "/file.apk"),
+                    ScanMetadataItem(label = "Custom", value = "Anything"),
+                ),
+            )
+
+        val details = buildLocalAnalysisDetails(analysis, fakeTexts())
+
+        assertTrue(details.any { it.label == "Host" && it.value == "example.com" })
+        assertTrue(details.any { it.label == "Connection" && it.value == "Secure HTTPS" })
+        assertTrue(details.any { it.label == "Content" && it.value == "Android app" })
+        assertTrue(details.any { it.label == "Resolved destination" && it.value == "https://cdn.example.com/file.apk" })
+        assertTrue(details.any { it.label == "File name" && it.value == "file.apk" })
+        assertTrue(details.any { it.label == "File type" && it.value == "Android app" })
+        assertTrue(details.any { it.label == "Download" && it.value == "Server suggests a file download" })
+        assertTrue(details.any { it.label == "Path" && it.value == "/file.apk" })
+        assertTrue(details.any { it.label == "Custom" && it.value == "Anything" })
+    }
+
+    @Test
+    fun `url action label selects the right open action`() {
+        val base = analysis(QrContentType.Url, "https://example.com")
+        val openLink = buildLocalAnalysisDetails(base, fakeTexts())[1].value
+        assertEquals("Open link", openLink)
+
+        assertEquals(
+            "Open document",
+            urlActionLabel(
+                base.copy(localScan = base.localScan.copy(metadata = listOf(ScanMetadataItem("Content", "PDF document")))),
+                fakeTexts(),
+            ),
+        )
+        assertEquals(
+            "Open image",
+            urlActionLabel(
+                base.copy(localScan = base.localScan.copy(metadata = listOf(ScanMetadataItem("Content", "Image")))),
+                fakeTexts(),
+            ),
+        )
+        assertEquals(
+            "Open audio/video",
+            urlActionLabel(
+                base.copy(localScan = base.localScan.copy(metadata = listOf(ScanMetadataItem("Content", "Video")))),
+                fakeTexts(),
+            ),
+        )
+        assertEquals(
+            "Download file",
+            urlActionLabel(
+                base.copy(localScan = base.localScan.copy(metadata = listOf(ScanMetadataItem("Content", "Archive")))),
+                fakeTexts(),
+            ),
+        )
+        assertEquals(
+            "Download file with caution",
+            urlActionLabel(
+                base.copy(localScan = base.localScan.copy(metadata = listOf(ScanMetadataItem("Content", "Unknown binary file")))),
+                fakeTexts(),
+            ),
+        )
+        assertEquals(
+            "Download app or file with caution",
+            urlActionLabel(
+                base.copy(localScan = base.localScan.copy(metadata = listOf(ScanMetadataItem("Content", "Android app")))),
+                fakeTexts(),
+            ),
+        )
+        assertEquals(
+            "Open file",
+            urlActionLabel(
+                base.copy(localScan = base.localScan.copy(metadata = listOf(ScanMetadataItem("File type", "File")))),
+                fakeTexts(),
+            ),
+        )
+        assertEquals(
+            "No automatic action",
+            urlActionLabel(
+                base.copy(openableUrl = null, localScan = base.localScan.copy(metadata = emptyList())),
+                fakeTexts(),
+            ),
+        )
+    }
+
+    @Test
+    fun `summary and signal helpers expose the underlying scan data`() {
+        val section =
+            ScanSectionResult(
+                name = "Local Scan",
+                level = SecurityLevel.Dangerous,
+                status = ScanStatus.Completed,
+                title = SecurityLevel.Dangerous.title(),
+                description = SecurityLevel.Dangerous.description(),
+                reasons = listOf("Reason 1", "Reason 2"),
+            )
+        val remoteSection =
+            section.copy(status = ScanStatus.NotConfigured)
+
+        assertEquals("This QR code contains high-risk signals. Opening it is not recommended.", localScanSummary(section, fakeTexts()))
+        assertEquals(listOf("Reason 1", "Reason 2"), buildLocalSignals(section))
+        assertEquals("Dangerous", localScanBadgeLabel(section, fakeTexts()))
+        assertEquals("Not configured", remoteScanBadgeLabel(remoteSection, fakeTexts()))
+        assertFalse(buildRemoteAnalysisDetails(remoteSection, fakeTexts()).isNotEmpty())
+    }
+
     private fun analysis(
         contentType: QrContentType,
         normalizedText: String,
@@ -203,6 +388,18 @@ class ResultExtractorsTest {
             reasons = emptyList(),
             metadata = emptyList(),
         ),
+    )
+
+    private fun section(
+        level: SecurityLevel,
+        status: ScanStatus = ScanStatus.Completed,
+    ): ScanSectionResult = ScanSectionResult(
+        name = "Section",
+        level = level,
+        status = status,
+        title = level.title(),
+        description = level.description(),
+        reasons = emptyList(),
     )
 
     private fun fakeTexts(): ResultTexts = ResultTexts(

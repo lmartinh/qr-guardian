@@ -129,6 +129,28 @@ class UrlLocalSecurityAnalyzerTest {
     }
 
     @Test
+    fun `safe triggered rule keeps the result safe`() {
+        val analyzer =
+            UrlLocalSecurityAnalyzer(
+                rules =
+                listOf(
+                    object : com.lmartin.qrguardian.domain.rules.SecurityRule {
+                        override fun evaluate(value: String) = com.lmartin.qrguardian.domain.model.SecurityRuleResult(
+                            triggered = true,
+                            level = SecurityLevel.Safe,
+                            reason = "Custom safe rule",
+                        )
+                    },
+                ),
+            )
+
+        val result = analyzer.analyze("https://example.com")
+
+        assertEquals(SecurityLevel.Safe, result.level)
+        assertTrue(result.reasons.any { it == "Custom safe rule" })
+    }
+
+    @Test
     fun `brand impersonation is suspicious`() {
         val result = analyzer.analyze("paypal-secure-login.example.com")
 
