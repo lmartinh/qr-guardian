@@ -13,25 +13,126 @@
 [![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS-0A7EA4)](https://developer.android.com/)
 [![Package](https://img.shields.io/badge/Package-com.lmartin.qrguardian-2ea44f)](https://kotlinlang.org/docs/packages.html)
 
-QR Guardian es una app móvil Kotlin Multiplatform para Android e iOS que escanea códigos QR y de barras, clasifica el contenido y muestra un resultado de seguridad antes de que el usuario decida abrir algo.
+QR Guardian es una app móvil Kotlin Multiplatform para Android e iOS que escanea códigos QR y de barras, clasifica su contenido y muestra un resultado orientado a seguridad antes de que el usuario decida abrir algo.
 
-## Qué hace QR Guardian
+El proyecto demuestra un pipeline de seguridad compartido en KMP, UI con Compose Multiplatform, escaneo con cámara, detección local de señales de riesgo, reputación remota opcional, inyección de dependencias, tests de regresión, validaciones de formato y CI.
 
-- Detecta códigos QR, códigos de barras y tipos de contenido habituales.
-- Ejecuta por defecto una verificación local en cada escaneo.
-- Solo realiza reputación remota opcional para URLs.
-- Nunca abre el contenido escaneado de forma automática.
-- Presenta resultados claros antes de que el usuario actúe.
+## Por qué existe este proyecto
+
+QR Guardian está construido como un proyecto móvil de portfolio centrado en una arquitectura Kotlin Multiplatform realista.
+
+Es lo bastante pequeño como para entenderse rápido, pero suficientemente completo como para demostrar preocupaciones cercanas a producción:
+
+- lógica de negocio compartida para Android e iOS
+- separación clara entre dominio, datos, presentación y código de plataforma
+- UX orientada a seguridad que nunca abre contenido escaneado automáticamente
+- comportamiento local-first sin requerir API keys
+- reputación remota opcional basada en proveedores
+- pipeline de escaneo testeable y validación determinista
+- CI, formato y documentación adecuados para un repositorio público
+
+## Funcionalidades de producto
+
+- Escanea códigos QR y de barras desde la cámara.
+- Clasifica payloads habituales como URLs, WiFi, SMS, email, texto plano, crypto, vCard y enlaces geo.
+- Ejecuta un análisis local de seguridad para cada payload detectado.
+- Realiza comprobaciones opcionales de reputación remota para URLs.
+- Muestra un resultado claro antes de que el usuario abra nada.
+- Bloquea la acción de abrir para resultados de URL peligrosos.
+- Funciona sin API keys en modo local-only.
+
+## Aspectos técnicos destacados
+
+- Dominio y lógica de presentación compartidos con Kotlin Multiplatform.
+- UI con Compose Multiplatform para Android e iOS.
+- Escaneo de QR y códigos de barras con cámara.
+- Verificaciones locales de URL con heurísticos deterministas.
+- Inspección HEAD de metadatos para recursos URL.
+- Inferencia de archivos/descargas usando headers, redirecciones y fallback basado en ruta.
+- Proveedores opcionales Google Safe Browsing y URLhaus.
+- Ktor Client para metadatos de red y llamadas de reputación.
+- Koin limitado al borde de wiring de la app.
+- Dominio independiente del framework.
+- Tests de regresión compartidos para el pipeline de seguridad.
+- Formato con Spotless y ktlint.
+- GitHub Actions CI para validación, tests, lint, Kover y ensamblado Android.
+- Workflows manuales de revisión asistida por IA usando Mobile AI Toolkit.
 
 ## Capturas
 
 | Intro | Cámara |
 |---|---|
-| ![Pantalla de introducción de QR Guardian](docs/assets/screenshots/intro.png) | ![Pantalla de cámara de QR Guardian](docs/assets/screenshots/camera.png) |
+| <img src="docs/assets/screenshots/intro.png" alt="Pantalla de introducción de QR Guardian" width="260"> | <img src="docs/assets/screenshots/camera.png" alt="Pantalla de cámara de QR Guardian" width="260"> |
 
 | Resultado: análisis local seguro | Resultado: análisis local sospechoso | Resultado: URL peligrosa bloqueada |
 |---|---|---|
-| ![Pantalla de resultado de QR Guardian mostrando detección de archivo PDF y detalles del análisis local](docs/assets/screenshots/result-safe.png) | ![Pantalla de resultado de QR Guardian mostrando un estado sospechoso](docs/assets/screenshots/result-suspicious.png) | ![Pantalla de resultado de QR Guardian mostrando una URL peligrosa bloqueada](docs/assets/screenshots/result-danger.png) |
+| <img src="docs/assets/screenshots/result-safe.png" alt="Pantalla de resultado de QR Guardian mostrando detección de archivo PDF y detalles del análisis local" width="260"> | <img src="docs/assets/screenshots/result-suspicious.png" alt="Pantalla de resultado de QR Guardian mostrando un estado sospechoso" width="260"> | <img src="docs/assets/screenshots/result-danger.png" alt="Pantalla de resultado de QR Guardian mostrando una URL peligrosa bloqueada" width="260"> |
+
+## Pipeline de seguridad
+
+```text
+Escaneo con cámara
+  ↓
+Payload QR / código de barras
+  ↓
+Clasificación de contenido
+  ↓
+Local Scan
+  ↓
+Inspección HEAD de metadatos, para URLs
+  ↓
+Remote Reputation, opcional y solo para URLs
+  ↓
+Resultado: Safe / Suspicious / Dangerous
+```
+
+La app siempre muestra el resultado antes de abrir cualquier cosa. La acción de abrir solo aparece para resultados de URL que no estén clasificados como peligrosos.
+
+## Modelo de seguridad
+
+### Local Scan
+
+- Siempre activo.
+- No requiere API keys.
+- Usa comprobaciones locales y deterministas de QR y contenido para clasificar el payload.
+- Bloquea esquemas peligrosos como `javascript:`, `file:`, `data:` e `intent:`.
+- Comprueba HTTP frente a HTTPS, formas sospechosas de URL, dominios tipo acortador y destinos con IP, localhost o aspecto privado.
+- Marca extensiones de archivo de riesgo y descargas con aspecto de ejecutable o script.
+- Hace inspección de metadata con HEAD para URLs cuando el servidor lo permite y, si hace falta, recurre a inferencias basadas en la ruta.
+- Detecta contenido descargable, como enlaces a PDF o menús, como metadata de archivo.
+- No llama a servicios externos de reputación.
+
+### Remote Reputation
+
+- Opcional y solo para URLs.
+- Usa Google Safe Browsing y URLhaus cuando está configurado.
+- Muestra `Not configured` cuando no hay keys.
+- Añade señales externas sin sustituir las comprobaciones locales.
+- Maneja los fallos de los proveedores de forma segura y mantiene visible el resultado local.
+- Un resultado limpio de reputación remota no garantiza que la URL sea segura.
+- No guarda claves en el repositorio.
+
+Los enlaces a PDF y menús se muestran primero como metadata de archivo. No se tratan automáticamente como peligrosos solo por apuntar a un archivo descargable.
+
+## Arquitectura
+
+```text
+shared/
+├── domain          # modelos de escaneo, clasificación, reglas locales y composición del resultado
+├── data            # metadata HEAD, proveedores de reputación remota y repositorios
+├── presentation    # estado UI compartido, estado de app y modelos de presentación del resultado
+└── di              # módulos Koin y wiring del pipeline
+```
+
+- La lógica compartida de dominio y presentación vive en Kotlin Multiplatform.
+- Compose Multiplatform se usa para la UI compartida.
+- El código específico de plataforma se encarga de la cámara y del wiring del motor HTTP cuando hace falta.
+- Ktor Client se encarga de las comprobaciones HEAD y de las peticiones de reputación remota.
+- Koin solo se usa en el borde de wiring de la app.
+- `QrGuardianSecurityPipelineFactory` es la única fuente de verdad para componer el pipeline.
+- El dominio sigue siendo independiente del framework y no depende de Koin.
+
+La inyección de dependencias se maneja con Koin, pero solo en el borde de wiring de la app. El pipeline de seguridad lo ensambla `QrGuardianSecurityPipelineFactory`, lo que mantiene el grafo de dependencias explícito, testeable e independiente del framework de DI.
 
 ## Dataset de QRs de ejemplo
 
@@ -43,42 +144,6 @@ Sirve para validar los heurísticos del análisis local, las comprobaciones HEAD
 Los payloads de texto subyacentes también están cubiertos por tests de regresión compartidos, así que las imágenes de ejemplo se mantienen como assets de QA manual y no como fixtures automatizadas de decodificación.
 
 Dataset: [docs/assets/sample-qrs/README.md](docs/assets/sample-qrs/README.md)
-
-## Flujo principal
-
-Intro
-→ Cámara
-→ QR/código de barras detectado
-→ Local Scan
-→ Remote Reputation, opcional
-→ Resultado
-
-La app siempre muestra el resultado antes de abrir cualquier cosa. La acción de abrir solo aparece para resultados de URL que no estén clasificados como peligrosos.
-
-## Modelo de seguridad
-
-### Local Scan
-
-- Siempre activo.
-- Funciona sin API keys.
-- Usa comprobaciones locales de QR y contenido para clasificar el payload.
-- Bloquea esquemas peligrosos como `javascript:`, `file:`, `data:` e `intent:`.
-- Comprueba HTTP frente a HTTPS, formas sospechosas de URL y destinos con IP o aspecto local.
-- Hace inspección de metadata con HEAD para URLs cuando el servidor lo permite y, si hace falta, recurre a inferencias basadas en la ruta.
-- Detecta contenido descargable, como enlaces a PDF o menús, como metadata de archivo.
-- Trata descargas de ejecutables o scripts como alto riesgo.
-- No llama a servicios externos de reputación.
-
-### Remote Reputation
-
-- Opcional y solo para URLs.
-- Usa Google Safe Browsing y URLhaus cuando está configurado.
-- Muestra `Not configured` cuando no hay keys.
-- Maneja los fallos de los proveedores de forma segura y mantiene visible el resultado local.
-- Un resultado limpio de reputación remota no garantiza que la URL sea segura.
-- No guarda claves en el repositorio.
-
-Los enlaces a PDF y menús se muestran primero como metadata de archivo. No se tratan automáticamente como peligrosos solo por apuntar a un archivo descargable.
 
 ## Primeros pasos
 
@@ -130,27 +195,6 @@ URLHAUS_API_KEY = your_urlhaus_auth_key
 
 Las API keys incrustadas en una app móvil no pueden protegerse por completo. Esta configuración es adecuada para desarrollo, demos y portfolio. En producción, lo correcto es usar un backend o un proxy.
 
-## Arquitectura e inyección de dependencias
-
-- La lógica compartida de dominio y presentación vive en Kotlin Multiplatform.
-- Compose Multiplatform se usa para la UI compartida.
-- Ktor Client se encarga de las comprobaciones HEAD y de las peticiones de reputación remota.
-- Koin solo se usa en el borde de wiring de la app.
-- `QrGuardianSecurityPipelineFactory` es la única fuente de verdad para componer el pipeline.
-- El dominio sigue siendo independiente del framework.
-
-La inyección de dependencias se maneja con Koin, pero solo en el borde de wiring de la app. El pipeline de seguridad lo ensambla `QrGuardianSecurityPipelineFactory`, lo que mantiene el grafo de dependencias explícito, testeable e independiente del framework de DI.
-
-## Aspectos de portfolio
-
-- Pipeline de seguridad compartido en Kotlin Multiplatform.
-- UI con Compose Multiplatform para Android e iOS.
-- Escaneo de QR y códigos de barras con cámara.
-- Verificaciones locales de URLs e inspección de metadata con HEAD.
-- Proveedores remotos de reputación opcionales.
-- Koin limitado al borde de wiring.
-- Lógica de dominio cubierta con tests unitarios.
-
 ## Tests y validación
 
 Validado recientemente con:
@@ -172,9 +216,28 @@ Comandos locales opcionales que también son válidos para este repositorio:
 ./gradlew :shared:koverHtmlReport
 ```
 
-El formato usa Spotless con ktlint para archivos Kotlin y scripts Gradle Kotlin. Ejecuta `spotlessApply` en local antes de hacer commit si `spotlessCheck` detecta problemas de formato. Los tests compartidos cubren normalización, heurísticos locales de URL, análisis de metadata, inferencia de archivos/descargas, composición de reputación remota y bloqueo del botón de abrir.
+El formato usa Spotless con ktlint para archivos Kotlin y scripts Gradle Kotlin. Ejecuta `spotlessApply` en local antes de hacer commit si `spotlessCheck` detecta problemas de formato.
 
-GitHub Actions CI ejecuta validación de entorno, Android lint, comprobaciones opcionales de Spotless, tests compartidos, generación no bloqueante de Kover XML y ensamblado Android release para pull requests y ejecuciones manuales.
+Los tests compartidos de regresión cubren:
+
+- normalización de contenido
+- heurísticos locales de URL
+- parsing de metadata
+- inferencia de archivos y descargas
+- composición de reputación remota
+- selección de proveedores
+- bloqueo del botón de abrir
+
+## Integración continua
+
+GitHub Actions CI se ejecuta en pull requests y por dispatch manual. Valida:
+
+- comprobaciones de entorno
+- Android lint
+- comprobaciones opcionales de Spotless
+- tests compartidos
+- generación no bloqueante de Kover XML
+- ensamblado Android release
 
 ## AI Mobile Tools
 
@@ -205,13 +268,6 @@ Los proveedores reales solo están disponibles cuando el repositorio o fork que 
 
 Los hallazgos de estas herramientas son consultivos y centrados en informes. Sirven como apoyo para la revisión, pero no sustituyen tests, code review ni criterio manual de seguridad.
 
-## Resolución de problemas
-
-- La cámara no se abre: revisa el permiso de cámara.
-- Remote Reputation muestra `Not configured`: faltan las API keys o están vacías.
-- No aparece el tipo de archivo o PDF: el servidor puede no soportar HEAD o no exponer `Content-Type` o `Content-Disposition`.
-- Las keys de iOS no se detectan: comprueba que `RemoteReputation.xcconfig` esté incluido y que `Info.plist` siga referenciando los valores.
-
 ## Documentación
 
 - [Overview](docs/00-overview.md)
@@ -224,9 +280,13 @@ Los hallazgos de estas herramientas son consultivos y centrados en informes. Sir
 - [Testing Strategy](docs/06-testing-strategy.md)
 - [Agent Guidelines](AGENTS.md)
 
-## Licencia
+## Resolución de problemas
 
-Licenciado bajo la [Apache License 2.0](LICENSE).
+- La cámara no se abre: revisa el permiso de cámara.
+- Remote Reputation muestra `Not configured`: faltan las API keys o están vacías.
+- No aparece el tipo de archivo o PDF: el servidor puede no soportar HEAD o no exponer `Content-Type` o `Content-Disposition`.
+- Las keys de iOS no se detectan: comprueba que `RemoteReputation.xcconfig` esté incluido y que `Info.plist` siga referenciando los valores.
+- Los resultados de proveedores remotos pueden cambiar porque dependen de datos externos en vivo.
 
 ## Limitaciones conocidas
 
@@ -235,3 +295,7 @@ Licenciado bajo la [Apache License 2.0](LICENSE).
 - HEAD depende del soporte del servidor, así que algunos enlaces no expondrán detalles de archivo.
 - Los proveedores remotos pueden devolver falsos negativos, así que una reputación limpia no garantiza seguridad.
 - QR Guardian es un proyecto de portfolio y demo, no un sustituto de herramientas de seguridad dedicadas.
+
+## Licencia
+
+Licenciado bajo la [Apache License 2.0](LICENSE).
