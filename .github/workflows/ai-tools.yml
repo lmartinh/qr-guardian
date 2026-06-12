@@ -133,6 +133,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: lmartinh/mobile-ai-toolkit
+          ref: v0.1.4
           path: mobile-ai-toolkit
 
       - name: Set up Java
@@ -229,6 +230,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: lmartinh/mobile-ai-toolkit
+          ref: v0.1.4
           path: mobile-ai-toolkit
 
       - name: Set up Java
