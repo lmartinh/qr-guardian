@@ -174,6 +174,37 @@ Comandos locales opcionales que también son válidos para este repositorio:
 
 El formato usa Spotless con ktlint para archivos Kotlin y scripts Gradle Kotlin. Ejecuta `spotlessApply` en local antes de hacer commit si `spotlessCheck` detecta problemas de formato. Los tests compartidos cubren normalización, heurísticos locales de URL, análisis de metadata, inferencia de archivos/descargas, composición de reputación remota y bloqueo del botón de abrir.
 
+GitHub Actions CI ejecuta validación de entorno, Android lint, comprobaciones opcionales de Spotless, tests compartidos, generación no bloqueante de Kover XML y ensamblado Android release para pull requests y ejecuciones manuales.
+
+## AI Mobile Tools
+
+Las herramientas de revisión asistida por IA se ejecutan manualmente desde el workflow de GitHub Actions [`AI Mobile Tools`](.github/workflows/ai-tools.yml). Usan [Mobile AI Toolkit](https://github.com/lmartinh/mobile-ai-toolkit/tree/main) para generar artefactos de informe con:
+
+- `compose-guardrails`, orientado a revisar arquitectura Compose, estado, efectos secundarios, accesibilidad y límites multiplataforma.
+- `kmp-project-auditor`, orientado a revisar source sets Kotlin Multiplatform y límites entre plataforma y código compartido.
+
+El workflow normal de CI no ejecuta proveedores reales de IA ni requiere secretos de proveedor. El proveedor por defecto de AI Mobile Tools es `fake`, seguro para validación determinista y sin secretos. Los proveedores reales son opt-in manual y requieren secretos configurados en el repositorio o fork donde se ejecuta el workflow.
+
+### Ejecutar AI Mobile Tools con tu propio proveedor
+
+1. Haz un fork del repositorio.
+2. Abre tu fork en GitHub.
+3. Ve a `Settings` → `Secrets and variables` → `Actions`.
+4. Añade el secreto del proveedor que quieras usar:
+   - `OPENAI_API_KEY`
+   - `ANTHROPIC_API_KEY`
+   - `GEMINI_API_KEY`
+5. Ve a `Actions` → `AI Mobile Tools`.
+6. Pulsa `Run workflow`.
+7. Selecciona la rama.
+8. Selecciona el proveedor.
+9. Selecciona las herramientas.
+10. Ejecuta el workflow.
+
+Los proveedores reales solo están disponibles cuando el repositorio o fork que ejecuta el workflow tiene configurado el secreto correspondiente. Las API keys no deben pasarse como inputs del workflow ni commitearse en el repositorio.
+
+Los hallazgos de estas herramientas son consultivos y centrados en informes. Sirven como apoyo para la revisión, pero no sustituyen tests, code review ni criterio manual de seguridad.
+
 ## Resolución de problemas
 
 - La cámara no se abre: revisa el permiso de cámara.

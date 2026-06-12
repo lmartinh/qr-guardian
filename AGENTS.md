@@ -68,6 +68,14 @@ The app scans QR codes and barcodes, classifies content, runs local security che
 - Keep `README.md` and `README.es.md` aligned.
 - Update documentation links when files are deleted or renamed.
 
+## CI And AI Tools
+
+- Keep normal CI deterministic and independent from real AI providers or provider secrets.
+- Treat `.github/workflows/ai-tools.yml` as manual, report-first review support.
+- Use `MOBILE_AI_PROVIDER=fake` as the safe default for AI tooling.
+- Do not pass API keys as workflow inputs and do not commit provider secrets.
+- If workflow behavior changes, update `README.md`, `README.es.md`, and `docs/06-testing-strategy.md` together.
+
 ## Testing
 
 Most regression coverage lives in `shared/src/commonTest`.

@@ -174,6 +174,27 @@ Useful optional commands:
 
 Run `spotlessApply` only when formatting needs to be fixed locally.
 
+## GitHub Actions
+
+`.github/workflows/ci.yml` is the main deterministic CI workflow. It runs on pull requests and manual dispatch, and covers:
+
+- environment validation with Java and Gradle
+- Android lint
+- optional Spotless checks when the task exists
+- `./gradlew :shared:allTests`
+- best-effort `:shared:koverXmlReport`
+- Android release assembly
+- test, coverage, and release artifacts
+
+`.github/workflows/ai-tools.yml` is a manual, report-first workflow for AI-assisted review with [Mobile AI Toolkit](https://github.com/lmartinh/mobile-ai-toolkit/tree/main). It can run:
+
+- `compose-guardrails` against shared Compose presentation code
+- `kmp-project-auditor` against the project root
+
+The default provider is `fake`, so the workflow can run without secrets. Real providers (`openai`, `anthropic`, or `gemini`) are opt-in and require GitHub Actions secrets in the repository or fork running the workflow.
+
+AI tool reports are advisory. They can help reviewers spot Compose, KMP, and architecture risks, but findings can include false positives or false negatives and do not replace deterministic tests or code review.
+
 ## Current Testing Limitations
 
 - QR image decoding is validated manually through the sample QR images, not by unit tests.
