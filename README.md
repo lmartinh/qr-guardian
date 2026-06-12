@@ -174,6 +174,37 @@ Optional local checks that are also valid for this repository:
 
 Formatting uses Spotless with ktlint for Kotlin sources and Gradle Kotlin scripts. Run `spotlessApply` locally before committing if `spotlessCheck` reports formatting issues. Shared regression tests cover normalization, local URL heuristics, metadata parsing, file/download inference, remote reputation composition, and result open-button gating.
 
+GitHub Actions CI runs environment validation, Android lint, optional Spotless checks, shared tests, best-effort Kover XML generation, and Android release assembly for pull requests and manual runs.
+
+## AI Mobile Tools
+
+AI-assisted review tools are run manually from the GitHub Actions workflow [`AI Mobile Tools`](.github/workflows/ai-tools.yml). They use [Mobile AI Toolkit](https://github.com/lmartinh/mobile-ai-toolkit/tree/main) to generate report artifacts with:
+
+- `compose-guardrails` for Compose architecture, state, side-effect, accessibility and multiplatform boundary review.
+- `kmp-project-auditor` for Kotlin Multiplatform source-set and platform-boundary review.
+
+The normal CI workflow does not run real AI providers or require provider secrets. The default AI provider is `fake`, which is safe for deterministic validation and does not require secrets. Real providers are manual opt-in only and require repository secrets configured in the repository or fork where the workflow runs.
+
+AI tool findings are advisory and report-first. They are useful review inputs, but they do not replace tests, code review, or manual security judgment.
+
+### Running AI Mobile Tools with your own provider
+
+1. Fork the repository.
+2. Open your fork on GitHub.
+3. Go to `Settings` → `Secrets and variables` → `Actions`.
+4. Add the secret for the provider you want to use:
+   - `OPENAI_API_KEY`
+   - `ANTHROPIC_API_KEY`
+   - `GEMINI_API_KEY`
+5. Go to `Actions` → `AI Mobile Tools`.
+6. Click `Run workflow`.
+7. Select the branch.
+8. Select the provider.
+9. Select the tools.
+10. Run the workflow.
+
+Real providers are available only when the repository or fork running the workflow has the required secret configured. API keys must not be passed as workflow inputs and must not be committed to the repository.
+
 ## Troubleshooting
 
 - Camera does not open: check camera permission.

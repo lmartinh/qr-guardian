@@ -3,6 +3,16 @@ name: AI Mobile Tools
 on:
   workflow_dispatch:
     inputs:
+      provider:
+        description: "AI provider"
+        required: true
+        default: fake
+        type: choice
+        options:
+          - fake
+          - openai
+          - anthropic
+          - gemini
       run_compose_guardrails:
         description: "Run Compose Guardrails"
         required: true
@@ -25,33 +35,77 @@ jobs:
   validate-selection:
     name: Validate Selection
     runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
     steps:
       - name: Validate tool selection
         shell: bash
         run: |
+          provider="${{ inputs.provider }}"
+          compose_enabled="${{ inputs.run_compose_guardrails }}"
+          kmp_enabled="${{ inputs.run_kmp_project_auditor }}"
+
           {
             echo "## AI Mobile Tools Selection"
             echo
-            echo "| Tool | Enabled |"
+            echo "| Provider | \`$provider\` |"
             echo "|---|---|"
-            if [[ "${{ inputs.run_compose_guardrails }}" == "true" ]]; then
+            if [[ "$compose_enabled" == "true" ]]; then
               echo "| Compose Guardrails | ✅ Yes |"
             else
               echo "| Compose Guardrails | ❌ No |"
             fi
-            if [[ "${{ inputs.run_kmp_project_auditor }}" == "true" ]]; then
+            if [[ "$kmp_enabled" == "true" ]]; then
               echo "| KMP Project Auditor | ✅ Yes |"
             else
               echo "| KMP Project Auditor | ❌ No |"
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
-          if [[ "${{ inputs.run_compose_guardrails }}" != "true" && "${{ inputs.run_kmp_project_auditor }}" != "true" ]]; then
+          if [[ "$compose_enabled" != "true" && "$kmp_enabled" != "true" ]]; then
             echo
             echo "No AI tool was selected. Enable at least one checkbox and rerun the workflow." >> "$GITHUB_STEP_SUMMARY"
             echo "At least one AI tool must be selected." >&2
             exit 1
           fi
+
+          case "$provider" in
+            fake)
+              ;;
+            openai)
+              if [[ -z "${OPENAI_API_KEY:-}" ]]; then
+                echo
+                echo "OPENAI_API_KEY secret is required when provider is openai." >> "$GITHUB_STEP_SUMMARY"
+                echo "Missing OPENAI_API_KEY secret for openai provider." >> "$GITHUB_STEP_SUMMARY"
+                echo "OPENAI_API_KEY secret is required when provider is openai." >&2
+                exit 1
+              fi
+              ;;
+            anthropic)
+              if [[ -z "${ANTHROPIC_API_KEY:-}" ]]; then
+                echo
+                echo "ANTHROPIC_API_KEY secret is required when provider is anthropic." >> "$GITHUB_STEP_SUMMARY"
+                echo "Missing ANTHROPIC_API_KEY secret for anthropic provider." >> "$GITHUB_STEP_SUMMARY"
+                echo "ANTHROPIC_API_KEY secret is required when provider is anthropic." >&2
+                exit 1
+              fi
+              ;;
+            gemini)
+              if [[ -z "${GEMINI_API_KEY:-}" ]]; then
+                echo
+                echo "GEMINI_API_KEY secret is required when provider is gemini." >> "$GITHUB_STEP_SUMMARY"
+                echo "Missing GEMINI_API_KEY secret for gemini provider." >> "$GITHUB_STEP_SUMMARY"
+                echo "GEMINI_API_KEY secret is required when provider is gemini." >&2
+                exit 1
+              fi
+              ;;
+            *)
+              echo "Unsupported provider: $provider" >&2
+              exit 1
+              ;;
+          esac
 
   compose-guardrails:
     name: Compose Guardrails
@@ -59,7 +113,7 @@ jobs:
     if: ${{ inputs.run_compose_guardrails }}
     runs-on: ubuntu-latest
     env:
-      MOBILE_AI_PROVIDER: fake
+      MOBILE_AI_PROVIDER: ${{ inputs.provider }}
       COMPOSE_GUARDRAILS_WORKSPACE: ${{ github.workspace }}
       MOBILE_AI_TOOLKIT_DIR: ${{ github.workspace }}/mobile-ai-toolkit
       COMPOSE_GUARDRAILS_TARGET: shared/src/commonMain/kotlin/com/lmartin/qrguardian/presentation
@@ -68,6 +122,9 @@ jobs:
       COMPOSE_GUARDRAILS_CHANGED_FILES_ONLY: "false"
       COMPOSE_GUARDRAILS_FAIL_ON_FINDINGS: "false"
       COMPOSE_GUARDRAILS_REPORT_ARTIFACT: compose-guardrails-report
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
     steps:
       - name: Checkout QR Guardian
         uses: actions/checkout@v6
@@ -93,6 +150,28 @@ jobs:
         shell: bash
         run: |
           set +e
+
+          case "$MOBILE_AI_PROVIDER" in
+            fake)
+              unset MOBILE_AI_API_KEY MOBILE_AI_MODEL
+              ;;
+            openai)
+              export MOBILE_AI_API_KEY="${OPENAI_API_KEY:-}"
+              export MOBILE_AI_MODEL="gpt-4.1-mini"
+              ;;
+            anthropic)
+              export MOBILE_AI_API_KEY="${ANTHROPIC_API_KEY:-}"
+              export MOBILE_AI_MODEL="claude-3-5-sonnet"
+              ;;
+            gemini)
+              export MOBILE_AI_API_KEY="${GEMINI_API_KEY:-}"
+              export MOBILE_AI_MODEL="gemini-1.5-pro"
+              ;;
+            *)
+              echo "Unsupported provider: $MOBILE_AI_PROVIDER" >&2
+              exit 1
+              ;;
+          esac
 
           bash .github/scripts/ci/run-compose-guardrails.sh
           compose_guardrails_status=$?
@@ -131,7 +210,7 @@ jobs:
     if: ${{ inputs.run_kmp_project_auditor }}
     runs-on: ubuntu-latest
     env:
-      MOBILE_AI_PROVIDER: fake
+      MOBILE_AI_PROVIDER: ${{ inputs.provider }}
       KMP_PROJECT_AUDITOR_WORKSPACE: ${{ github.workspace }}
       MOBILE_AI_TOOLKIT_DIR: ${{ github.workspace }}/mobile-ai-toolkit
       KMP_PROJECT_AUDITOR_TARGET: .
@@ -139,6 +218,9 @@ jobs:
       KMP_PROJECT_AUDITOR_FAIL_ON_FINDINGS: "false"
       KMP_PROJECT_AUDITOR_WRITE_STEP_SUMMARY: "false"
       KMP_PROJECT_AUDITOR_REPORT_ARTIFACT: kmp-project-auditor-report
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
     steps:
       - name: Checkout QR Guardian
         uses: actions/checkout@v6
@@ -164,6 +246,28 @@ jobs:
         shell: bash
         run: |
           set +e
+
+          case "$MOBILE_AI_PROVIDER" in
+            fake)
+              unset MOBILE_AI_API_KEY MOBILE_AI_MODEL
+              ;;
+            openai)
+              export MOBILE_AI_API_KEY="${OPENAI_API_KEY:-}"
+              export MOBILE_AI_MODEL="gpt-4.1-mini"
+              ;;
+            anthropic)
+              export MOBILE_AI_API_KEY="${ANTHROPIC_API_KEY:-}"
+              export MOBILE_AI_MODEL="claude-3-5-sonnet"
+              ;;
+            gemini)
+              export MOBILE_AI_API_KEY="${GEMINI_API_KEY:-}"
+              export MOBILE_AI_MODEL="gemini-1.5-pro"
+              ;;
+            *)
+              echo "Unsupported provider: $MOBILE_AI_PROVIDER" >&2
+              exit 1
+              ;;
+          esac
 
           bash .github/scripts/ci/run-kmp-project-auditor.sh
           kmp_project_auditor_status=$?
